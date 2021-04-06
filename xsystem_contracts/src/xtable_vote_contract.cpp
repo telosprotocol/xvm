@@ -278,19 +278,29 @@ void xtable_vote_contract::commit_total_votes_num() {
 
 void xtable_vote_contract::split_and_report(std::string const& report_contract, std::string const& report_func, std::map<std::string, std::string> const& report_content) {
     auto timer = TIME();
-    if (report_content.size() == 0) {
-        xinfo("[xtable_vote_contract::split_and_report] the report content size zero");
-        return;
-    }
+    auto res = trx_split_helper(report_content, XVOTE_TRX_LIMIT);
 
-
-    if (report_content.size() <= XVOTE_TRX_LIMIT) {
+    for (std::size_t i = 0; i < res.size(); ++i) {
         base::xstream_t  call_stream(base::xcontext_t::instance());
         call_stream << timer;
-        call_stream << report_content;
-        xinfo("[xtable_vote_contract::split_and_report] the report content size %u", report_content.size());
+        call_stream << res[i];
+        xinfo("[xtable_vote_contract::split_and_report] the report content size %u, round %u", res[i].size(), i + 1);
         CALL(common::xaccount_address_t{report_contract}, report_func, std::string((char *)call_stream.data(), call_stream.size()));
 
+    }
+}
+
+std::vector<std::map<std::string, std::string>> xtable_vote_contract::trx_split_helper(std::map<std::string, std::string> const& report_content, std::size_t limit) {
+    std::vector<std::map<std::string, std::string>> res;
+
+    if (report_content.size() == 0) {
+        xinfo("[xtable_vote_contract::trx_split_helper] the report content size zero");
+        return res;
+    }
+
+    if (report_content.size() <= limit) {
+        xinfo("[xtable_vote_contract::trx_split_helper] the report content size %u", report_content.size());
+        res.push_back(report_content);
     } else {
 
         uint16_t count = 0;
@@ -298,12 +308,9 @@ void xtable_vote_contract::split_and_report(std::string const& report_contract, 
         for (auto const& item: report_content) {
             count++;
             split_report_content[item.first] = item.second;
-            if (count % XVOTE_TRX_LIMIT == 0) {
-                base::xstream_t call_stream(base::xcontext_t::instance());
-                call_stream << timer;
-                call_stream << split_report_content;
-                xinfo("[xtable_vote_contract::split_and_report] the report content size %u, count %u", report_content.size(), count);
-                CALL(common::xaccount_address_t{report_contract}, report_func, std::string((char *)call_stream.data(), call_stream.size()));
+            if (count % limit == 0) {
+                xinfo("[xtable_vote_contract::trx_split_helper] the report content size %u, count %u", report_content.size(), count);
+                res.push_back(split_report_content);
                 count = 0;
                 split_report_content.clear();
             }
@@ -311,14 +318,12 @@ void xtable_vote_contract::split_and_report(std::string const& report_contract, 
         }
 
         if (!split_report_content.empty()) {
-            base::xstream_t call_stream(base::xcontext_t::instance());
-            call_stream << timer;
-            call_stream << split_report_content;
-            xinfo("[xtable_vote_contract::split_and_report] the report content size %u, count %u", report_content.size(), split_report_content.size());
-            CALL(common::xaccount_address_t{report_contract}, report_func, std::string((char *)call_stream.data(), call_stream.size()));
+            xinfo("[xtable_vote_contract::trx_split_helper] the report content size %u, count %u", report_content.size(), split_report_content.size());
+            res.push_back(split_report_content);
         }
-
     }
+
+    return res;
 }
 
 NS_END2

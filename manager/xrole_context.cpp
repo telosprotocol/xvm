@@ -18,7 +18,7 @@ NS_BEG2(top, contract)
 using base::xstring_utl;
 xrole_context_t::xrole_context_t(const observer_ptr<xstore_face_t> & store,
                                  const xobject_ptr_t<store::xsyncvstore_t> & syncstore,
-                                 const std::shared_ptr<xtxpool_service::xrequest_tx_receiver_face> & unit_service,
+                                 const std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face> & unit_service,
                                  const std::shared_ptr<xvnetwork_driver_face_t> & driver,
                                  xcontract_info_t * info)
   : m_store(store), m_syncstore(syncstore), m_unit_service(unit_service), m_driver(driver), m_contract_info(info) {

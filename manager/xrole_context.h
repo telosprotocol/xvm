@@ -6,7 +6,7 @@
 
 #include "xbasic/xns_macro.h"
 #include "xstore/xstore_face.h"
-#include "xtxpool_service/xrequest_tx_receiver_face.h"
+#include "xtxpool_service_v2/xrequest_tx_receiver_face.h"
 #include "xvm/xcontract_info.h"
 #include "xvnetwork/xvnetwork_driver_face.h"
 #include "xblockstore/xsyncvstore_face.h"
@@ -32,7 +32,7 @@ class xrole_context_t {
 public:
     xrole_context_t(const observer_ptr<xstore_face_t> &                                 store,
                     const xobject_ptr_t<store::xsyncvstore_t> &                         syncstore,
-                    const std::shared_ptr<xtxpool_service::xrequest_tx_receiver_face> & unit_service,
+                    const std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face> & unit_service,
                     const std::shared_ptr<xvnetwork_driver_face_t> &                    driver,
                     xcontract_info_t *                                                  info);
     virtual ~xrole_context_t();
@@ -126,7 +126,7 @@ protected:
 protected:
     observer_ptr<xstore_face_t>                                                 m_store{};
     xobject_ptr_t<store::xsyncvstore_t>                                         m_syncstore{};
-    std::shared_ptr<xtxpool_service::xrequest_tx_receiver_face>                 m_unit_service{};
+    std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face>                 m_unit_service{};
     std::shared_ptr<xvnetwork_driver_face_t>                                    m_driver{};
     xcontract_info_t *                                                          m_contract_info{};
     std::unordered_map<common::xaccount_address_t, uint64_t>                    m_address_round_map;  // record address and timer round
