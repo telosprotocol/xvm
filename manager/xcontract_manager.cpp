@@ -627,7 +627,7 @@ static void get_rec_nodes_map(observer_ptr<store::xstore_face_t const> store,
         xstream_t stream(xcontext_t::instance(), (uint8_t *)m.second.data(), m.second.size());
         reg_node_info.serialize_from(stream);
         xJson::Value j;
-        j["account_addr"] = reg_node_info.m_account;
+        j["account_addr"] = reg_node_info.m_account.value();
         j["node_deposit"] = static_cast<unsigned long long>(reg_node_info.m_account_mortgage);
         if (reg_node_info.m_genesis_node) {
             j["registered_node_type"] = std::string{"advance,validator,edge"};
