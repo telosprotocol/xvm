@@ -181,12 +181,12 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "calc_nodes_rewards_Called", 1);
     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "calc_nodes_rewards_ExecutionTime");
 
-    auto add_table_node_reward = [&]( std::string const & account, top::xstake::uint128_t node_reward) {
+    auto add_table_node_reward = [&](common::xaccount_address_t const & account, top::xstake::uint128_t node_reward) {
         if (node_reward == 0)
             return;
 
         uint32_t table_id = 0;
-        if (!EXTRACT_TABLE_ID(common::xaccount_address_t{account}, table_id)) {
+        if (!EXTRACT_TABLE_ID(account, table_id)) {
             xdbg("[xzec_reward_contract::calc_nodes_rewards][xzec_reward_contract::add_table_node_reward] node reward pid: %d, account: %s, node_reward: [%llu, %u]\n",
                 getpid(), account.c_str(), static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
             return;
@@ -200,17 +200,17 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
              static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
 
         contract_rewards[reward_contract] += node_reward;
-        table_nodes_rewards[reward_contract][account] = node_reward;
+        table_nodes_rewards[reward_contract][account.value()] = node_reward;
     };
 
-    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, std::string const & account) {
+    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, common::xaccount_address_t const & account) {
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
             auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 adv_total_votes += base::xstring_utl::touint64(iter->second);
             }
@@ -219,7 +219,7 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
         return adv_total_votes;
     };
 
-    auto add_table_vote_reward = [&](std::string const & account,
+    auto add_table_vote_reward = [&](common::xaccount_address_t const & account,
                                    uint64_t adv_total_votes,
                                    top::xstake::uint128_t const & adv_reward_to_voters,
                                    std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes) {
@@ -236,7 +236,7 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
                 continue;
             }
             auto const & reward_contract = CALC_CONTRACT_ADDRESS(sys_contract_sharding_reward_claiming_addr, table_id);
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 auto adv_reward_to_contract = adv_reward_to_voters * base::xstring_utl::touint64(iter->second) / adv_total_votes;
                 xdbg("[xzec_reward_contract::calc_nodes_rewards][add_table_vote_reward] account: %s, contract: %s, table votes: %llu, adv_total_votes: %llu, adv_reward_to_voters: [%llu, %u], adv_reward_to_contract: [%llu, %u]\n",
@@ -250,13 +250,13 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
                     static_cast<uint32_t>(adv_reward_to_contract % REWARD_PRECISION));
                 if (adv_reward_to_contract > 0) {
                     contract_rewards[reward_contract] += adv_reward_to_contract;
-                    contract_auditor_vote_rewards[reward_contract][account] += adv_reward_to_contract;
+                    contract_auditor_vote_rewards[reward_contract][account.value()] += adv_reward_to_contract;
                 }
             }
         }
     };
 
-    auto add_workload_reward = [&](bool is_auditor, bool is_seed, std::string const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & node_reward) {
+    auto add_workload_reward = [&](bool is_auditor, bool is_seed, common::xaccount_address_t const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & node_reward) {
         uint32_t zero_workload_val = 0;
         if (is_auditor) {
             zero_workload_val = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_zero_workload);
@@ -288,7 +288,7 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
                  workload.cluster_total_workload);
             if (workload.cluster_total_workload <= zero_workload_val)
                 continue;
-            auto it = workload.m_leader_count.find(account);
+            auto it = workload.m_leader_count.find(account.value());
             if (it != workload.m_leader_count.end()) {
                 auto const & work = it->second;
                 auto workload_reward = cluster_total_rewards * work / workload.cluster_total_workload;
@@ -595,12 +595,12 @@ void xzec_reward_contract::calc_nodes_rewards_v2(std::map<std::string, std::map<
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "calc_nodes_rewards_Called", 1);
     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "calc_nodes_rewards_ExecutionTime");
 
-    auto add_table_node_reward = [&]( std::string const & account, top::xstake::uint128_t node_reward) {
+    auto add_table_node_reward = [&](common::xaccount_address_t const & account, top::xstake::uint128_t node_reward) {
         if (node_reward == 0)
             return;
 
         uint32_t table_id = 0;
-        if (!EXTRACT_TABLE_ID(common::xaccount_address_t{account}, table_id)) {
+        if (!EXTRACT_TABLE_ID(account, table_id)) {
             xwarn("[xzec_reward_contract::calc_nodes_rewards_v2][xzec_reward_contract::add_table_node_reward] node reward pid: %d, account: %s, node_reward: [%llu, %u]\n",
                 getpid(), account.c_str(), static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
             return;
@@ -614,17 +614,17 @@ void xzec_reward_contract::calc_nodes_rewards_v2(std::map<std::string, std::map<
              static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
 
         contract_rewards[reward_contract] += node_reward;
-        table_nodes_rewards[reward_contract][account] = node_reward;
+        table_nodes_rewards[reward_contract][account.value()] = node_reward;
     };
 
-    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, std::string const & account) {
+    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, common::xaccount_address_t const & account) {
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
             auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 adv_total_votes += base::xstring_utl::touint64(iter->second);
             }
@@ -633,7 +633,7 @@ void xzec_reward_contract::calc_nodes_rewards_v2(std::map<std::string, std::map<
         return adv_total_votes;
     };
 
-    auto add_table_vote_reward = [&](std::string const & account,
+    auto add_table_vote_reward = [&](common::xaccount_address_t const & account,
                                    uint64_t adv_total_votes,
                                    top::xstake::uint128_t const & adv_reward_to_voters,
                                    std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes) {
@@ -650,7 +650,7 @@ void xzec_reward_contract::calc_nodes_rewards_v2(std::map<std::string, std::map<
                 continue;
             }
             auto const & reward_contract = CALC_CONTRACT_ADDRESS(sys_contract_sharding_reward_claiming_addr, table_id);
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 auto adv_reward_to_contract = adv_reward_to_voters * base::xstring_utl::touint64(iter->second) / adv_total_votes;
                 xdbg("[xzec_reward_contract::calc_nodes_rewards_v2][add_table_vote_reward] account: %s, contract: %s, table votes: %llu, adv_total_votes: %llu, adv_reward_to_voters: [%llu, %u], adv_reward_to_contract: [%llu, %u]\n",
@@ -664,13 +664,13 @@ void xzec_reward_contract::calc_nodes_rewards_v2(std::map<std::string, std::map<
                     static_cast<uint32_t>(adv_reward_to_contract % REWARD_PRECISION));
                 if (adv_reward_to_contract > 0) {
                     contract_rewards[reward_contract] += adv_reward_to_contract;
-                    contract_auditor_vote_rewards[reward_contract][account] += adv_reward_to_contract;
+                    contract_auditor_vote_rewards[reward_contract][account.value()] += adv_reward_to_contract;
                 }
             }
         }
     };
 
-    auto add_workload_reward = [&](bool is_auditor, std::string const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & node_reward) {
+    auto add_workload_reward = [&](bool is_auditor, common::xaccount_address_t const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & node_reward) {
         uint32_t zero_workload_val = 0;
         if (is_auditor) {
             zero_workload_val = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_zero_workload);
@@ -701,7 +701,7 @@ void xzec_reward_contract::calc_nodes_rewards_v2(std::map<std::string, std::map<
                  workload.cluster_total_workload);
             if (workload.cluster_total_workload <= zero_workload_val)
                 continue;
-            auto it = workload.m_leader_count.find(account);
+            auto it = workload.m_leader_count.find(account.value());
             if (it != workload.m_leader_count.end()) {
                 auto const & work = it->second;
                 auto workload_reward = cluster_total_rewards * work / workload.cluster_total_workload;
@@ -1074,12 +1074,12 @@ void xzec_reward_contract::calc_nodes_rewards_v3(std::map<std::string, std::map<
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "calc_nodes_rewards_Called", 1);
     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "calc_nodes_rewards_ExecutionTime");
 
-    auto add_table_node_reward = [&]( std::string const & account, top::xstake::uint128_t node_reward) {
+    auto add_table_node_reward = [&](common::xaccount_address_t const & account, top::xstake::uint128_t node_reward) {
         if (node_reward == 0)
             return;
 
         uint32_t table_id = 0;
-        if (!EXTRACT_TABLE_ID(common::xaccount_address_t{account}, table_id)) {
+        if (!EXTRACT_TABLE_ID(account, table_id)) {
             xwarn("[xzec_reward_contract::calc_nodes_rewards_v3][xzec_reward_contract::add_table_node_reward] node reward pid: %d, account: %s, node_reward: [%llu, %u]\n",
                 getpid(), account.c_str(), static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
             return;
@@ -1093,17 +1093,17 @@ void xzec_reward_contract::calc_nodes_rewards_v3(std::map<std::string, std::map<
              static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
 
         contract_rewards[reward_contract] += node_reward;
-        table_nodes_rewards[reward_contract][account] = node_reward;
+        table_nodes_rewards[reward_contract][account.value()] = node_reward;
     };
 
-    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, std::string const & account) {
+    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, common::xaccount_address_t const & account) {
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
             auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 adv_total_votes += base::xstring_utl::touint64(iter->second);
             }
@@ -1112,7 +1112,7 @@ void xzec_reward_contract::calc_nodes_rewards_v3(std::map<std::string, std::map<
         return adv_total_votes;
     };
 
-    auto add_table_vote_reward = [&](std::string const & account,
+    auto add_table_vote_reward = [&](common::xaccount_address_t const & account,
                                    uint64_t adv_total_votes,
                                    top::xstake::uint128_t const & adv_reward_to_voters,
                                    std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes) {
@@ -1129,7 +1129,7 @@ void xzec_reward_contract::calc_nodes_rewards_v3(std::map<std::string, std::map<
                 continue;
             }
             auto const & reward_contract = CALC_CONTRACT_ADDRESS(sys_contract_sharding_reward_claiming_addr, table_id);
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 auto adv_reward_to_contract = adv_reward_to_voters * base::xstring_utl::touint64(iter->second) / adv_total_votes;
                 xdbg("[xzec_reward_contract::calc_nodes_rewards_v3][add_table_vote_reward] account: %s, contract: %s, table votes: %llu, adv_total_votes: %llu, adv_reward_to_voters: [%llu, %u], adv_reward_to_contract: [%llu, %u]\n",
@@ -1143,13 +1143,13 @@ void xzec_reward_contract::calc_nodes_rewards_v3(std::map<std::string, std::map<
                     static_cast<uint32_t>(adv_reward_to_contract % REWARD_PRECISION));
                 if (adv_reward_to_contract > 0) {
                     contract_rewards[reward_contract] += adv_reward_to_contract;
-                    contract_auditor_vote_rewards[reward_contract][account] += adv_reward_to_contract;
+                    contract_auditor_vote_rewards[reward_contract][account.value()] += adv_reward_to_contract;
                 }
             }
         }
     };
 
-    auto add_workload_reward = [&](bool is_auditor, std::string const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & node_reward) {
+    auto add_workload_reward = [&](bool is_auditor, common::xaccount_address_t const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & node_reward) {
         uint32_t zero_workload_val = 0;
         if (is_auditor) {
             zero_workload_val = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_zero_workload);
@@ -1180,7 +1180,7 @@ void xzec_reward_contract::calc_nodes_rewards_v3(std::map<std::string, std::map<
                  workload.cluster_total_workload);
             if (workload.cluster_total_workload <= zero_workload_val)
                 continue;
-            auto it = workload.m_leader_count.find(account);
+            auto it = workload.m_leader_count.find(account.value());
             if (it != workload.m_leader_count.end()) {
                 auto const & work = it->second;
                 auto workload_reward = cluster_total_rewards * work / workload.cluster_total_workload;
@@ -1573,12 +1573,12 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "calc_nodes_rewards_Called", 1);
     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "calc_nodes_rewards_ExecutionTime");
 
-    auto add_table_node_reward = [&]( std::string const & account, top::xstake::uint128_t node_reward) {
+    auto add_table_node_reward = [&](common::xaccount_address_t const & account, top::xstake::uint128_t node_reward) {
         if (node_reward == 0)
             return;
 
         uint32_t table_id = 0;
-        if (!EXTRACT_TABLE_ID(common::xaccount_address_t{account}, table_id)) {
+        if (!EXTRACT_TABLE_ID(account, table_id)) {
             xwarn("[xzec_reward_contract::calc_nodes_rewards_v4][xzec_reward_contract::add_table_node_reward] node reward pid: %d, account: %s, node_reward: [%llu, %u]\n",
                 getpid(), account.c_str(), static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
             return;
@@ -1592,17 +1592,17 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
              static_cast<uint64_t>(node_reward / REWARD_PRECISION), static_cast<uint32_t>(node_reward % REWARD_PRECISION));
 
         contract_rewards[reward_contract] += node_reward;
-        table_nodes_rewards[reward_contract][account] = node_reward;
+        table_nodes_rewards[reward_contract][account.value()] = node_reward;
     };
 
-    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, std::string const & account) {
+    auto get_adv_total_votes = [&](std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes, common::xaccount_address_t const & account) {
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
             auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 adv_total_votes += base::xstring_utl::touint64(iter->second);
             }
@@ -1611,7 +1611,7 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
         return adv_total_votes;
     };
 
-    auto add_table_vote_reward = [&](std::string const & account,
+    auto add_table_vote_reward = [&](common::xaccount_address_t const & account,
                                    uint64_t adv_total_votes,
                                    top::xstake::uint128_t const & adv_reward_to_voters,
                                    std::map<std::string, std::map<std::string, std::string>> const & contract_auditor_votes) {
@@ -1628,7 +1628,7 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
                 continue;
             }
             auto const & reward_contract = CALC_CONTRACT_ADDRESS(sys_contract_sharding_reward_claiming_addr, table_id);
-            auto iter = auditor_votes.find(account);
+            auto iter = auditor_votes.find(account.value());
             if (iter != auditor_votes.end()) {
                 auto adv_reward_to_contract = adv_reward_to_voters * base::xstring_utl::touint64(iter->second) / adv_total_votes;
                 xdbg("[xzec_reward_contract::calc_nodes_rewards_v4][add_table_vote_reward] account: %s, contract: %s, table votes: %llu, adv_total_votes: %llu, adv_reward_to_voters: [%llu, %u], adv_reward_to_contract: [%llu, %u]\n",
@@ -1642,13 +1642,13 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
                     static_cast<uint32_t>(adv_reward_to_contract % REWARD_PRECISION));
                 if (adv_reward_to_contract > 0) {
                     contract_rewards[reward_contract] += adv_reward_to_contract;
-                    contract_auditor_vote_rewards[reward_contract][account] += adv_reward_to_contract;
+                    contract_auditor_vote_rewards[reward_contract][account.value()] += adv_reward_to_contract;
                 }
             }
         }
     };
 
-    auto add_workload_reward = [&](bool is_auditor, std::string const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & workload_reward) {
+    auto add_workload_reward = [&](bool is_auditor, common::xaccount_address_t const & account, top::xstake::uint128_t const & cluster_total_rewards, std::map<std::string, std::string> const & clusters_workloads, top::xstake::uint128_t & seed_node_rewards, top::xstake::uint128_t & workload_reward) {
         uint32_t zero_workload_val = 0;
         if (is_auditor) {
             zero_workload_val = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_zero_workload);
@@ -1679,7 +1679,7 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
                  workload.cluster_total_workload);
             if (workload.cluster_total_workload <= zero_workload_val)
                 continue;
-            auto it = workload.m_leader_count.find(account);
+            auto it = workload.m_leader_count.find(account.value());
             if (it != workload.m_leader_count.end()) {
                 auto const & work = it->second;
                 workload_reward += cluster_total_rewards * work / workload.cluster_total_workload;
@@ -2818,7 +2818,7 @@ void xzec_reward_contract::update_issuance_detail(xissue_detail const & issue_de
             issue_detail.m_auditor_reward_ratio,
             issue_detail.m_vote_reward_ratio,
             issue_detail.m_governance_reward_ratio);
-    auto issue_detail_str = issue_detail.serialize_to_string();
+    auto issue_detail_str = issue_detail.to_string();
     if (!STRING_EXIST(XPROPERTY_REWARD_DETAIL)) {
         STRING_CREATE(XPROPERTY_REWARD_DETAIL);
     }

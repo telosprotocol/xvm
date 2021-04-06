@@ -157,7 +157,7 @@ void xrec_registration_contract::registerNode2(const std::string & node_types,
     stream >> asset_out.m_token_name;
     stream >> asset_out.m_amount;
 
-    node_info.m_account          = account;
+    node_info.m_account = common::xaccount_address_t{ account };
     node_info.m_registered_role = role_type;
 #if defined XENABLE_MOCK_ZEC_STAKE
     node_info.m_account_mortgage = 100000000000000;
@@ -437,7 +437,7 @@ void xrec_registration_contract::update_node_info(xreg_node_info & node_info) {
     std::string stream_str = std::string((char *)stream.data(), stream.size());
 
     XMETRICS_TIME_RECORD(XREG_CONTRACT "XPORPERTY_CONTRACT_REG_KEY_SetExecutionTime");
-    MAP_SET(XPORPERTY_CONTRACT_REG_KEY, node_info.m_account, stream_str);
+    MAP_SET(XPORPERTY_CONTRACT_REG_KEY, node_info.m_account.value(), stream_str);
 }
 
 void xrec_registration_contract::delete_node_info(std::string const & account) {
