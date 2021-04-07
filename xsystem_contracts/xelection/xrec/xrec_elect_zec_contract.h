@@ -21,7 +21,7 @@ public:
 
     xcontract_base * clone() override { return new xtop_rec_elect_zec_contract(network_id()); }
 
-    void setup();
+    void setup() override;
 
     void on_timer(common::xlogic_time_t const current_time);
 #ifdef STATIC_CONSENSUS

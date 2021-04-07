@@ -32,7 +32,7 @@ public:
      * @brief setupo the contract
      *
      */
-    void        setup();
+    void        setup() override;
 
     /**
      * @brief timer processing functions

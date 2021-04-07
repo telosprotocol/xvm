@@ -26,8 +26,8 @@ public:
     ~xlua_engine();
     void process(common::xaccount_address_t const & contract_account, const string& code, xvm_context& ctx) override;
     void validate_script(const string& code, xvm_context& ctx);
-    void publish_script(const string& code, xvm_context& ctx);
-    void load_script(const std::string &code, xvm_context &ctx);
+    void publish_script(const string& code, xvm_context& ctx) override;
+    void load_script(const std::string &code, xvm_context &ctx) override;
     void call_init();
     void close();
     void register_function();

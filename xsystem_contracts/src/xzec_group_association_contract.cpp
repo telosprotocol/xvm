@@ -26,8 +26,6 @@ xtop_group_association_contract::clone() {
 
 void
 xtop_group_association_contract::setup() {
-    auto const & config_register = top::config::xconfig_register_t::get_instance();
-
     auto const validator_group_count = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_count);
     auto const auditor_group_count = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_count);
 

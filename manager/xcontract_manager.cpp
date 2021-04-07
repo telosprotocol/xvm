@@ -121,12 +121,12 @@ void xtop_contract_manager::install_monitors(observer_ptr<xmessage_bus_face_t> c
                                              xobject_ptr_t<store::xsyncvstore_t> const & syncstore) {
     m_store = store;
     m_syncstore = syncstore;
-    msg_callback_hub->register_message_ready_notify([this, nid = msg_callback_hub->network_id(), bus_ptr = bus.get()](xvnode_address_t const &, xmessage_t const & msg, std::uint64_t const) {
+    msg_callback_hub->register_message_ready_notify([this, bus](xvnode_address_t const &, xmessage_t const & msg, std::uint64_t const) {
         if (msg.id() == xmessage_block_broadcast_id) {
             base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)msg.payload().data(), msg.payload().size());
             base::xauto_ptr<xvblock_t> block(data::xblock_t::full_block_read_from(stream));
             if (block != nullptr) {
-                auto store_block = [this, bus_ptr](top::base::xcall_t & call,const int32_t thread_id, const uint64_t time_now_ms)->bool
+                auto store_block = [this, bus](top::base::xcall_t & call,const int32_t thread_id, const uint64_t time_now_ms)->bool
                 {
                     base::xvblock_t * block = dynamic_cast<base::xvblock_t*>(call.get_param1().get_object());
                     //xcontract_manager_t * contract_manager = reinterpret_cast<contract::xcontract_manager_t*>(call.get_param2().get_object());
@@ -145,7 +145,7 @@ void xtop_contract_manager::install_monitors(observer_ptr<xmessage_bus_face_t> c
                         }
                         if (succ) {
                             auto event_ptr = std::make_shared<xevent_chain_timer_t>(block);
-                            bus_ptr->push_event(event_ptr);
+                            bus.get()->push_event(event_ptr);
                             xdbg("[xtop_contract_manager::install_monitors] push event");
                         }
                     }
@@ -1009,17 +1009,6 @@ static void get_proposal_voting_map(observer_ptr<store::xstore_face_t const> sto
             jn[node.first] = node.second;
         }
         json[m.first] = jn;
-    }
-}
-
-static void get_other_map(observer_ptr<store::xstore_face_t const> store,
-                                                 common::xaccount_address_t const & contract_address,
-                                                 std::string const & property_name,
-                                                 xJson::Value & json) {
-    std::map<std::string, std::string> unknowns;
-    if ( store->map_copy_get(contract_address.value(), property_name, unknowns) != 0 ) return;
-    for (auto m : unknowns) {
-        json[m.first] = m.second;
     }
 }
 

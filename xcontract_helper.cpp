@@ -171,7 +171,7 @@ vector<string> xcontract_helper::list_get_all(const string& key, const string& a
     if (m_account_context->list_get_all(key, value_list, addr)) {
         throw xvm_error{enum_xvm_error_code::enum_vm_exception, "LIST_GET_ALL " + key + " error"};
     }
-    return std::move(value_list);
+    return value_list;
 }
 
 bool xcontract_helper::list_exist(const string& key) {

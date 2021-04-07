@@ -32,7 +32,7 @@ public:
      * @brief setup the contract
      *
      */
-    void setup();
+    void setup() override;
 
     /**
      * @brief register the node

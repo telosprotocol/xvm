@@ -80,7 +80,7 @@ void do_action(T* obj, top::base::xstream_t& stream, Callable&& callable, void (
  * @brief define exec function in contract
  *
  */
-#define BEGIN_CONTRACT_WITH_PARAM(class_name) void exec(top::xvm::xvm_context* vm_ctx) {\
+#define BEGIN_CONTRACT_WITH_PARAM(class_name) void exec(top::xvm::xvm_context* vm_ctx) override {\
     auto& func_name = vm_ctx->m_current_action.get_action_name();\
     const auto& params = vm_ctx->m_current_action.get_action_param();\
     xcontract_base::set_contract_helper(vm_ctx->m_contract_helper);\

@@ -197,7 +197,7 @@ static int L_lall(lua_State *L)
     if (lua_isstring(L, 1)) {
         string key = luaL_checkstring(L, 1);
         xcontract_helper* contract_helper = reinterpret_cast<xcontract_helper*>(lua_getuserdata(L));
-        vector<string> result_list = std::move(contract_helper->list_get_all(key));
+        vector<string> result_list = contract_helper->list_get_all(key);
         if (result_list.empty()) {
             lua_pushnil(L);
         } else {

@@ -27,7 +27,7 @@ public:
 
     xcontract::xcontract_base * clone() override { return new xtop_rec_standby_pool_contract(network_id()); }
 
-    void setup();
+    void setup() override;
 
     BEGIN_CONTRACT_WITH_PARAM(xtop_rec_standby_pool_contract)
     CONTRACT_FUNCTION_PARAM(xtop_rec_standby_pool_contract, nodeJoinNetwork);

@@ -125,7 +125,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     std::string value_str;
 
     // add tableblock num filter
-    uint32_t summarize_tableblock_count;
+    uint32_t summarize_tableblock_count = 0;
     try {
         XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_tableblock_num_key");
         if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM")) {

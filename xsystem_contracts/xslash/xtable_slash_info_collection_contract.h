@@ -28,8 +28,7 @@ public:
         return new xtable_slash_info_collection_contract(network_id());
     }
 
-    void
-    setup();
+    void setup() override;
 
     /**
      * @brief  collect the slash info on tables

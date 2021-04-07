@@ -16,7 +16,6 @@ class xtop_zec_elect_consensus_group_contract final : public xelect_consensus_gr
     using xbase_t = xelect_consensus_group_contract_t;
 
     common::xversion_t m_zec_round_version{0};
-    mutable bool m_update_registration_contract_read_status{ false };
 
 public:
     XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xtop_zec_elect_consensus_group_contract);

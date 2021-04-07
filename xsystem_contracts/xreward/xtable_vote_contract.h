@@ -33,7 +33,7 @@ public:
      * @brief setup the contract
      *
      */
-    void setup();
+    void setup() override;
 
     BEGIN_CONTRACT_WITH_PARAM(xtable_vote_contract)
     CONTRACT_FUNCTION_PARAM(xtable_vote_contract, voteNode);

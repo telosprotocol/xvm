@@ -515,7 +515,7 @@ bool xtop_elect_consensus_group_contract::do_normal_election(common::xzone_id_t 
                       return top::get<common::xnode_id_t>(lhs) > top::get<common::xnode_id_t>(rhs);
                   });
         auto const top_stake = top::get<common::xstake_t>(fts_current_nodes.front());
-        std::for_each(std::begin(fts_current_nodes), std::end(fts_current_nodes), [&fts_current_nodes, top_stake](common::xfts_merkle_tree_t<common::xnode_id_t>::value_type & v) {
+        std::for_each(std::begin(fts_current_nodes), std::end(fts_current_nodes), [top_stake](common::xfts_merkle_tree_t<common::xnode_id_t>::value_type & v) {
             auto const comprehensive_stake = top::get<common::xstake_t>(v);
             xdbg("watch_fts_start node:%s stake:%" PRIu64, top::get<common::xnode_id_t>(v).c_str(), comprehensive_stake);
             assert(comprehensive_stake > 0);
@@ -615,7 +615,7 @@ bool xtop_elect_consensus_group_contract::do_shrink_election(common::xzone_id_t 
                       return top::get<common::xnode_id_t>(lhs) > top::get<common::xnode_id_t>(rhs);
                   });
         auto const top_stake = top::get<common::xstake_t>(fts_current_nodes.front());
-        std::for_each(std::begin(fts_current_nodes), std::end(fts_current_nodes), [&fts_current_nodes, top_stake](common::xfts_merkle_tree_t<common::xnode_id_t>::value_type & v) {
+        std::for_each(std::begin(fts_current_nodes), std::end(fts_current_nodes), [top_stake](common::xfts_merkle_tree_t<common::xnode_id_t>::value_type & v) {
             auto const comprehensive_stake = top::get<common::xstake_t>(v);
             xdbg("watch_fts_start node:%s stake:%" PRIu64, top::get<common::xnode_id_t>(v).c_str(), comprehensive_stake);
             assert(comprehensive_stake > 0);

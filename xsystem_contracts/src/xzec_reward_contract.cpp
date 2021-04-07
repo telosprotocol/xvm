@@ -207,7 +207,6 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
-            auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
             auto iter = auditor_votes.find(account);
@@ -293,7 +292,7 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
                 auto const & work = it->second;
                 auto workload_reward = cluster_total_rewards * work / workload.cluster_total_workload;
                 if (!is_seed) {
-                    auto reward_type = is_auditor ? xreward_type::auditor_reward : xreward_type::validator_reward;
+                    // auto reward_type = is_auditor ? xreward_type::auditor_reward : xreward_type::validator_reward;
                     //add_node_reward(account, reward_type, workload_reward);
                     node_reward += workload_reward;
                 } else {
@@ -425,7 +424,6 @@ void xzec_reward_contract::calc_nodes_rewards(std::map<std::string, std::map<std
     top::xstake::uint128_t seed_node_rewards = 0;
 
     for (auto const & entity : map_nodes) {
-        auto const & account = entity.first;
         auto const & value_str = entity.second;
         xstream_t stream(xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
         node.serialize_from(stream);
@@ -621,7 +619,6 @@ void xzec_reward_contract::calc_nodes_rewards_v2(std::map<std::string, std::map<
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
-            auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
             auto iter = auditor_votes.find(account);
@@ -1100,7 +1097,6 @@ void xzec_reward_contract::calc_nodes_rewards_v3(std::map<std::string, std::map<
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
-            auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
             auto iter = auditor_votes.find(account);
@@ -1599,7 +1595,6 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
         uint64_t adv_total_votes = 0;
 
         for (auto const & contract_auditor_vote : contract_auditor_votes) {
-            auto const & contract = contract_auditor_vote.first;
             auto const & auditor_votes = contract_auditor_vote.second;
 
             auto iter = auditor_votes.find(account);

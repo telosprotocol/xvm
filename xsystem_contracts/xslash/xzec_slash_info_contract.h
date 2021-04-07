@@ -29,8 +29,7 @@ public:
         return new xzec_slash_info_contract(network_id());
     }
 
-    void
-    setup();
+    void setup() override;
 
     /**
      * @brief summarize the slash info from table slash contract
