@@ -7,7 +7,7 @@
 #include "json/json.h"
 #include "xapplication/xapplication.h"
 #include "xbase/xlock.h"
-#include "xbase/xvledger.h"
+#include "xvledger/xvaccount.h"
 #include "xbasic/xmemory.hpp"
 #include "xblockstore/xsyncvstore_face.h"
 #include "xcommon/xaddress.h"
