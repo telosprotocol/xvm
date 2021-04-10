@@ -7,7 +7,7 @@
 NS_BEG2(top, xvm)
 using std::string;
 
-static char const * xcodec_errc_map(int const errc) noexcept {
+static std::string xcodec_errc_map(int const errc) noexcept {
     auto const ec = static_cast<enum_xvm_error_code>(errc);
     switch (ec) {
         case enum_xvm_error_code::ok:
