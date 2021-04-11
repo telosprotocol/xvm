@@ -5,7 +5,7 @@
 #include "xvm/manager/xcontract_manager.h"
 
 #include "xbase/xmem.h"
-#include "xbase/xvblock.h"
+#include "xvledger/xvblock.h"
 #include "xcodec/xmsgpack_codec.hpp"
 #include "xcommon/xip.h"
 #include "xconfig/xconfig_register.h"
@@ -791,13 +791,13 @@ static void get_voter_dividend(observer_ptr<store::xstore_face_t> store,
                                                  xJson::Value & json) {
     xdbg("[get_voter_dividend] contract_address: %s, property_name: %s", contract_address.c_str(), property_name.c_str());
     std::map<std::string, std::string> voter_dividends;
-    
+
     //store->map_copy_get(contract_address.value(), property_name, voter_dividends);
     uint64_t blockchain_height = store->get_blockchain_height(contract_address.value());
     if(xsuccess != store->get_map_property(contract_address.value(), blockchain_height, property_name, voter_dividends)){
         return ;
     }
-    
+
     for (auto m : voter_dividends) {
         xstake::xreward_record record;
         auto detail = m.second;
