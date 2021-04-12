@@ -144,7 +144,7 @@ void xtop_contract_manager::install_monitors(observer_ptr<xmessage_bus_face_t> c
                             }
                         }
                         if (succ) {
-                            auto event_ptr = std::make_shared<xevent_chain_timer_t>(block);
+                            auto event_ptr = make_object_ptr<xevent_chain_timer_t>(block);
                             bus_ptr->push_event(event_ptr);
                             xdbg("[xtop_contract_manager::install_monitors] push event");
                         }
@@ -198,7 +198,7 @@ void xtop_contract_manager::process_event(const xevent_ptr_t & e) {
         do_on_block(e);
         break;
     case xevent_major_type_vnode: {
-        auto event = std::static_pointer_cast<xevent_vnode_t>(e);
+        auto event = dynamic_xobject_ptr_cast<xevent_vnode_t>(e);
         if (event->destory) {
             do_destory_vnode(event);
         } else {
@@ -236,8 +236,8 @@ void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
     xdbg("[xtop_contract_manager::do_on_block] map size %d", m_map.size());
 
     if (e->major_type == xevent_major_type_chain_timer) {
-        assert(std::dynamic_pointer_cast<xevent_chain_timer_t>(e) != nullptr);
-        auto const event = std::static_pointer_cast<xevent_chain_timer_t>(e);
+        assert(dynamic_xobject_ptr_cast<xevent_chain_timer_t>(e) != nullptr);
+        auto const event = dynamic_xobject_ptr_cast<xevent_chain_timer_t>(e);
         auto height = event->time_block->get_height();
         if (height <= m_latest_timer) {
             xdbg("[xtop_contract_manager::do_on_block] ignore timer block %" PRIu64 ", record timer height %" PRIu64, height, m_latest_timer);
