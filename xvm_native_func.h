@@ -7,7 +7,7 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xvm_define.h"
 
 NS_BEG2(top, xvm)

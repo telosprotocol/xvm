@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
 

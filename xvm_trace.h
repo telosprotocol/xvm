@@ -5,7 +5,7 @@
 #pragma once
 #include <string>
 #include <chrono>
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xvm_define.h"
 #include "xerror/xvm_error_code.h"
 

@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "xbasic/xobject_ptr.h"
-#include "xbasic/xns_macro.h"
+#include "xbase/xobject_ptr.h"
+#include "xbase/xns_macro.h"
 #include "xutility/xhash.h"
 
 NS_BEG2(top, xvm)

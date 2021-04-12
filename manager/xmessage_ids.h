@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xcommon/xmessage_id.h"
 
 NS_BEG2(top, contract)

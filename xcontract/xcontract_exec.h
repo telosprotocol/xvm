@@ -4,7 +4,7 @@
 
 #pragma once
 #include <string>
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xvm/xvm_context.h"
 #include "xvm/xerror/xvm_error.h"
 #include "xdata_stream.h"
