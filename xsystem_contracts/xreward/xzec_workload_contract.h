@@ -99,6 +99,26 @@ private:
      * @brief clear the workload
      */
     void        clear_workload();
+
+    /**
+     * @brief get_next_fulltableblock
+     */
+    std::vector<base::xauto_ptr<data::xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height);
+    
+    /**
+     * @brief is_validtor_group
+     */
+    bool is_validtor_group(common::xgroup_id_t const& id);
+
+    /**
+     * @brief is_auditor_group
+     */
+    bool is_auditor_group(common::xgroup_id_t const& id);
+
+    /**
+     * @brief calc_table_workload
+     */
+    void calc_table_workload();
 };
 
 NS_END2

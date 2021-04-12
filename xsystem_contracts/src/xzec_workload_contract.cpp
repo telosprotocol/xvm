@@ -7,6 +7,9 @@
 #include "xstore/xstore_error.h"
 #include "xbasic/xutility.h"
 #include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xvm/manager/xcontract_manager.h"
+#include "xdata/xblock_statistics_data.h"
+#include "xcommon/xip.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xworkload_info.h"
 #include "xbase/xutl.h"
@@ -54,50 +57,54 @@ int xzec_workload_contract::is_mainnet_activated() {
 };
 
 void xzec_workload_contract::on_receive_workload2(std::string const& workload_str) {
-    XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_receive_workload2_Called", 1);
-    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_receive_workload2_ExecutionTime");
-    auto const& source_address = SOURCE_ADDRESS();
+    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
+    auto fork_config = fork_config_center.chain_fork_config();
+	if (!chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, TIME())) {
+        XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_receive_workload2_Called", 1);
+        XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_receive_workload2_ExecutionTime");
+        auto const& source_address = SOURCE_ADDRESS();
 
-    std::string base_addr;
-    uint32_t    table_id;
-    if (!data::xdatautil::extract_parts(source_address, base_addr, table_id) || sys_contract_sharding_workload_addr != base_addr) {
-        xwarn("[xzec_workload_contract::on_receive_workload] invalid call from %s", source_address.c_str());
-        return;
-    }
+        std::string base_addr;
+        uint32_t    table_id;
+        if (!data::xdatautil::extract_parts(source_address, base_addr, table_id) || sys_contract_sharding_workload_addr != base_addr) {
+            xwarn("[xzec_workload_contract::on_receive_workload] invalid call from %s", source_address.c_str());
+            return;
+        }
 
-    xstream_t stream(xcontext_t::instance(), (uint8_t*)workload_str.data(), workload_str.size());
-    std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_workload_info;
-    std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_workload_info;
-    int64_t table_pledge_balance_change_tgas = 0;
+        xstream_t stream(xcontext_t::instance(), (uint8_t*)workload_str.data(), workload_str.size());
+        std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_workload_info;
+        std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_workload_info;
+        int64_t table_pledge_balance_change_tgas = 0;
 
-    MAP_OBJECT_DESERIALZE2(stream, auditor_workload_info);
-    MAP_OBJECT_DESERIALZE2(stream, validator_workload_info);
-    stream >> table_pledge_balance_change_tgas;
-    xdbg("[xzec_workload_contract::on_receive_workload] pid:%d, SOURCE_ADDRESS: %s, auditor_workload_info size: %zu, validator_workload_info size: %zu, table_pledge_balance_change_tgas: %lld\n", getpid(), source_address.c_str(), auditor_workload_info.size(), validator_workload_info.size(), table_pledge_balance_change_tgas);
+        MAP_OBJECT_DESERIALZE2(stream, auditor_workload_info);
+        MAP_OBJECT_DESERIALZE2(stream, validator_workload_info);
+        stream >> table_pledge_balance_change_tgas;
+        xdbg("[xzec_workload_contract::on_receive_workload] pid:%d, SOURCE_ADDRESS: %s, auditor_workload_info size: %zu, validator_workload_info size: %zu, table_pledge_balance_change_tgas: %lld\n", getpid(), source_address.c_str(), auditor_workload_info.size(), validator_workload_info.size(), table_pledge_balance_change_tgas);
 
-    // update system total tgas
-    update_tgas(table_pledge_balance_change_tgas);
+        // update system total tgas
+        update_tgas(table_pledge_balance_change_tgas);
 
-    if ( !is_mainnet_activated() ) return;
+        if ( !is_mainnet_activated() ) return;
 
-    //add_batch_workload2(auditor_workload_info, validator_workload_info);
-    for (auto const& workload : auditor_workload_info) {
-        xstream_t stream(xcontext_t::instance());
-        stream << workload.first;
-        auto const& cluster_id      = std::string((const char*)stream.data(), stream.size());
-        auto const& workload_info   = workload.second;
-        add_cluster_workload(true, cluster_id, workload_info.m_leader_count);
-    }
+        //add_batch_workload2(auditor_workload_info, validator_workload_info);
+        for (auto const& workload : auditor_workload_info) {
+            xstream_t stream(xcontext_t::instance());
+            stream << workload.first;
+            auto const& cluster_id      = std::string((const char*)stream.data(), stream.size());
+            auto const& workload_info   = workload.second;
+            add_cluster_workload(true, cluster_id, workload_info.m_leader_count);
+        }
 
-    for (auto const& workload : validator_workload_info) {
-        xstream_t stream(xcontext_t::instance());
-        stream << workload.first;
-        auto const& cluster_id      = std::string((const char*)stream.data(), stream.size());
-        auto const& workload_info   = workload.second;
-        add_cluster_workload(false, cluster_id, workload_info.m_leader_count);
-    }
+        for (auto const& workload : validator_workload_info) {
+            xstream_t stream(xcontext_t::instance());
+            stream << workload.first;
+            auto const& cluster_id      = std::string((const char*)stream.data(), stream.size());
+            auto const& workload_info   = workload.second;
+            add_cluster_workload(false, cluster_id, workload_info.m_leader_count);
+        }
 
-    XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_receive_workload2_Executed", 1);
+        XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_receive_workload2_Executed", 1);
+    } 
 }
 
 void xzec_workload_contract::add_cluster_workload(bool auditor, std::string const& cluster_id, std::map<std::string, uint32_t> const& leader_count) {
@@ -168,6 +175,195 @@ void xzec_workload_contract::update_tgas(int64_t table_pledge_balance_change_tga
     }
 }
 
+std::vector<base::xauto_ptr<data::xblock_t>> xzec_workload_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height) {
+    std::vector<base::xauto_ptr<data::xblock_t>> res;
+    auto cur_read_height = last_read_height;
+    auto blockchain_height = get_blockchain_height(owner.value());
+    for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
+        base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), i);
+        if (tableblock->is_fulltable()) {
+            xdbg("[xtable_workload_contract::get_next_fulltableblock] tableblock owner: %s, height: %" PRIu64, owner.value().c_str(), i);
+            cur_read_height = i;
+            res.push_back(std::move(tableblock));
+        }
+    }
+
+    {
+        XMETRICS_TIME_RECORD("sysContract_zecWorkload_set_property_contract_fulltableblock_num_key");
+        base::xstream_t stream{base::xcontext_t::instance()};
+        stream << cur_read_height;
+        MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT", std::string((char *)stream.data(), stream.size()));
+    }
+
+    return res;
+}
+
+bool xzec_workload_contract::is_validtor_group(common::xgroup_id_t const& id) {
+    return id.value() >= common::xvalidator_group_id_value_begin && id.value() <= common::xvalidator_group_id_value_end;
+
+}
+bool xzec_workload_contract::is_auditor_group(common::xgroup_id_t const& id) {
+    return id.value() >= common::xauditor_group_id_value_begin && id.value() <= common::xauditor_group_id_value_end;
+}
+
+void xzec_workload_contract::calc_table_workload() {
+    auto const & account = SELF_ADDRESS();
+    std::string source_address = SOURCE_ADDRESS();
+    XCONTRACT_ENSURE(source_address == account.value() && source_address == top::sys_contract_zec_workload_addr, "invalid source addr's call!");
+    uint32_t table_id = 0;
+    XCONTRACT_ENSURE(EXTRACT_TABLE_ID(account, table_id), "source address extract base_addr or table_id error!");
+
+    std::map<common::xcluster_address_t, xauditor_workload_info_t> bookload_auditor_group_workload_info;
+    std::map<common::xcluster_address_t, xvalidator_workload_info_t> bookload_validator_group_workload_info;
+    int64_t table_pledge_balance_change_tgas = 0;
+    int total_table_block_count = 0;
+    xdbg("[xzec_workload_contract::calc_table_workload] enum_vbucket_has_tables_count %d", enum_vledger_const::enum_vbucket_has_tables_count);
+    for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; ++i) {
+        uint64_t last_read_height = 0;
+        std::string value_str;
+        try {
+            XMETRICS_TIME_RECORD("sysContract_zecWorkload_get_property_contract_fulltableblock_num_key");
+            if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT")) {
+                value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT");
+            }
+        } catch (std::runtime_error & e) {
+            xwarn("[xzec_workload_contract::calc_table_workload] table %d read full tableblock height error:%s", i, e.what());
+            throw;
+        }  
+        if (!value_str.empty()) {
+            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+            stream >> last_read_height;
+            xdbg("[xzec_workload_contract::calc_table_workload]  table %d last read full tableblock height is: %", i, PRIu64, last_read_height);
+        }
+        auto full_blocks = get_next_fulltableblock(common::xaccount_address_t{std::string{sys_contract_sharding_table_block_addr} + "@" + std::to_string(i)}, last_read_height);      
+        for (std::size_t block_index = 0; block_index < full_blocks.size(); ++block_index) {
+            xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_blocks[block_index].get());
+            if (full_tableblock == nullptr) {
+                xdbg("[xzec_workload_contract::calc_table_workload] tableblock %d no load info. table_owner: %s, height: %llu", i, last_read_height);
+                break;
+            }
+            auto fulltable_statisitc_data = full_tableblock->get_fulltable_statistics_resource()->get_statistics_data();
+            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
+            data::xstatistics_data_t stat_data;
+            stream >> stat_data;
+
+            auto node_service = contract::xcontract_manager_t::instance().get_node_service();
+            for (auto const static_item: stat_data.detail) {
+                auto elect_statistic = static_item.second;
+                for (auto const group_item: elect_statistic.group_statistics_data) {
+                    common::xgroup_address_t group_addr = group_item.first;
+                    xvip2_t group_xvip2 = top::xtop_extended<common::xip_t>{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
+                    xdbg("[xzec_workload_contract::calc_table_workload] xvip2: %llu, %llu, table_owner: %s, height: %llu",
+                        group_xvip2.high_addr,
+                        group_xvip2.low_addr,
+                        last_read_height);
+                    std::string leader;
+                    auto ret = get_account_from_xip(group_xvip2, leader);
+                    XCONTRACT_ENSURE(ret == 0, "get leader failed");       
+                    common::xcluster_address_t cluster{common::xip_t{group_xvip2.low_addr}};
+                    xgroup_related_statistics_data_t group_account_data = group_item.second;
+                    uint32_t workload = 0;
+                    uint32_t workload_per_tx = 0;
+                    uint32_t workload_per_tableblock = 0;
+                    if (is_auditor_group(group_addr.group_id())) {
+                        for (size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                            workload_per_tableblock = group_account_data.account_statistics_data[slotid].block_data.block_count;
+                            workload_per_tx = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
+                            workload = workload_per_tableblock + full_tableblock->get_txs_count() * workload_per_tx;
+                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+
+                            auto it2 = bookload_auditor_group_workload_info.find(cluster);
+                            if (it2 == bookload_auditor_group_workload_info.end()) {
+                                xauditor_workload_info_t auditor_workload_info;
+                                std::pair<std::map<common::xcluster_address_t, xauditor_workload_info_t>::iterator, bool> ret =
+                                    bookload_auditor_group_workload_info.insert(std::make_pair(cluster, auditor_workload_info));
+                                XCONTRACT_ENSURE(ret.second, "insert auditor workload failed");
+                                it2 = ret.first;
+                            }
+                            it2->second.m_leader_count[leader] += workload;
+                        }
+                    } else if (is_validtor_group(group_addr.group_id())) {
+                        for (size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                            uint32_t workload_per_tableblock = group_account_data.account_statistics_data[slotid].block_data.block_count;
+                            uint32_t workload_per_tx = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
+                            workload = workload_per_tableblock + full_tableblock->get_txs_count() * workload_per_tx;
+                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+
+                            auto it2 = bookload_validator_group_workload_info.find(cluster);
+                            if (it2 == bookload_validator_group_workload_info.end()) {
+                                xvalidator_workload_info_t validator_workload_info;
+                                std::pair<std::map<common::xcluster_address_t, xvalidator_workload_info_t>::iterator, bool> ret =
+                                    bookload_validator_group_workload_info.insert(std::make_pair(cluster, validator_workload_info));
+                                XCONTRACT_ENSURE(ret.second, "insert auditor workload failed");
+                                it2 = ret.first;
+                            }
+                            it2->second.m_leader_count[leader] += workload;
+                        }
+                    } else { 
+                        // invalid group
+                        xwarn("[xzec_workload_contract][calc_table_workload] invalid group id: %d", group_addr.group_id().value());
+                        continue;
+                    }
+                    // m_table_pledge_balance_change_tgas
+                    table_pledge_balance_change_tgas += full_tableblock->get_pledge_balance_change_tgas();
+                    total_table_block_count++;
+                    xdbg(
+                        "[xzec_workload_contract::calc_table_workload] cluster: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, workload: %u, tx_count: "
+                        "%u, total_table_block_count: %u, workload_per_tableblock: %u, workload_per_tx: %u",
+                        cluster.to_string().c_str(),
+                        cluster.network_id().value(),
+                        cluster.zone_id().value(),
+                        cluster.cluster_id().value(),
+                        cluster.group_id().value(),
+                        leader.c_str(),
+                        workload,
+                        full_tableblock->get_txs_count(),
+                        total_table_block_count,
+                        workload_per_tableblock,
+                        workload_per_tx);
+                }
+            }
+        }
+
+        if (full_blocks.size() >  0) {
+            xinfo(
+                "[xzec_workload_contract::calc_table_workload] timer round: %" PRIu64 ", pid: %d, SELF_ADDRESS: %s, total_table_block_count: %d, table_pledge_balance_change_tgas: %lld, "
+                "this: %p\n",
+                TIME(),
+                getpid(),
+                account.c_str(),
+                total_table_block_count,
+                table_pledge_balance_change_tgas,
+                this);
+            XMETRICS_PACKET_INFO("sysContract_zecWorkload", "effective report timer round", std::to_string(TIME()));
+
+            for (auto & entity : bookload_auditor_group_workload_info) {
+                auto const & group = entity.first;
+                for (auto const & wl : entity.second.m_leader_count) {
+                    xdbg("[xzec_workload_contract::calc_table_workload] workload auditor group: %s, leader: %s, workload: %u", group.to_string().c_str(), wl.first.c_str(), wl.second);
+                }
+                xdbg("[xzec_workload_contract::calc_table_workload] workload auditor group: %s, group id: %u, ends", group.to_string().c_str(), group.group_id().value());
+            }
+
+            for (auto & entity : bookload_validator_group_workload_info) {
+                auto const & group = entity.first;
+                for (auto const & wl : entity.second.m_leader_count) {
+                    xdbg("[xzec_workload_contract::calc_table_workload] workload validator group: %s, leader: %s, workload: %u", group.to_string().c_str(), wl.first.c_str(), wl.second);
+                }
+                xdbg("[xzec_workload_contract::calc_table_workload] workload validator group: %s, group id: %u, ends", group.to_string().c_str(), group.group_id().value());
+            }
+
+            xstream_t stream(xcontext_t::instance());
+            MAP_OBJECT_SERIALIZE2(stream, bookload_auditor_group_workload_info);
+            MAP_OBJECT_SERIALIZE2(stream, bookload_validator_group_workload_info);
+            stream << table_pledge_balance_change_tgas;
+
+            std::string workload_str = std::string((char *)stream.data(), stream.size());
+            on_receive_workload2(workload_str);
+        }
+    }
+}
+
 void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
     if (!is_mainnet_activated()) return;
 
@@ -230,6 +426,11 @@ void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
         std::string workload_str = std::string((char *)stream.data(), stream.size());
         on_receive_workload2(workload_str);
     }*/
+    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
+    auto fork_config = fork_config_center.chain_fork_config();
+    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, timestamp)) {
+        calc_table_workload();
+    }
 
     std::map<std::string, std::string> auditor_clusters_workloads;
     std::map<std::string, std::string> validator_clusters_workloads;
@@ -239,66 +440,62 @@ void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
     // validator workload
     MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_clusters_workloads);
 
-    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
-    auto fork_config = fork_config_center.chain_fork_config();
-	if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.reward_fork_spark, TIME())) {
-        //std::map<std::string, std::string> auditor_clusters_workloads2;
-        //std::map<std::string, std::string> validator_clusters_workloads2;
-        std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
-        std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_clusters_workloads2;
-        int count = 0;
-        auto cur_time = TIME();
+    //std::map<std::string, std::string> auditor_clusters_workloads2;
+    //std::map<std::string, std::string> validator_clusters_workloads2;
+    std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
+    std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_clusters_workloads2;
+    int count = 0;
+    auto cur_time = TIME();
 
-        for (auto it = auditor_clusters_workloads.begin(); it != auditor_clusters_workloads.end(); it++) {
-            xstream_t stream(xcontext_t::instance(), (uint8_t*)it->second.data(), it->second.size());
-            cluster_workload_t workload;
-            workload.serialize_from(stream);
+    for (auto it = auditor_clusters_workloads.begin(); it != auditor_clusters_workloads.end(); it++) {
+        xstream_t stream(xcontext_t::instance(), (uint8_t*)it->second.data(), it->second.size());
+        cluster_workload_t workload;
+        workload.serialize_from(stream);
 
-            common::xcluster_address_t cluster_id2;
-            {
+        common::xcluster_address_t cluster_id2;
+        {
 
-                xstream_t stream(xcontext_t::instance(), (uint8_t*)it->first.data(), it->first.size());
-                stream >> cluster_id2;
-                xdbg("[xzec_workload_contract::on_timer] auditor, cluster_id: %s, group size: %d",
-                    cluster_id2.to_string().c_str(), workload.m_leader_count.size());
+            xstream_t stream(xcontext_t::instance(), (uint8_t*)it->first.data(), it->first.size());
+            stream >> cluster_id2;
+            xdbg("[xzec_workload_contract::on_timer] auditor, cluster_id: %s, group size: %d",
+                cluster_id2.to_string().c_str(), workload.m_leader_count.size());
+        }
+        for (auto const& leader_count_info : workload.m_leader_count) {
+            auto const& leader  = leader_count_info.first;
+            auto const& work   = leader_count_info.second;
+
+            auto it3 = auditor_clusters_workloads2.find(cluster_id2);
+            if (it3 == auditor_clusters_workloads2.end()) {
+                xauditor_workload_info_t auditor_workload_info;
+                std::pair<std::map<common::xcluster_address_t, xauditor_workload_info_t>::iterator, bool> ret =
+                    auditor_clusters_workloads2.insert(std::make_pair(cluster_id2, auditor_workload_info));
+                it3 = ret.first;
             }
-            for (auto const& leader_count_info : workload.m_leader_count) {
-                auto const& leader  = leader_count_info.first;
-                auto const& work   = leader_count_info.second;
+            it3->second.m_leader_count[leader] += work;
 
-                auto it3 = auditor_clusters_workloads2.find(cluster_id2);
-                if (it3 == auditor_clusters_workloads2.end()) {
-                    xauditor_workload_info_t auditor_workload_info;
-                    std::pair<std::map<common::xcluster_address_t, xauditor_workload_info_t>::iterator, bool> ret =
-                        auditor_clusters_workloads2.insert(std::make_pair(cluster_id2, auditor_workload_info));
-                    it3 = ret.first;
+            if (++count % 1000 == 0) {
+                std::string workload_info;
+                {
+                    xstream_t stream(xcontext_t::instance());
+                    MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
+                    MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
+
+                    xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
+                        auditor_clusters_workloads2.size(),
+                        validator_clusters_workloads2.size(),
+                        timestamp,
+                        cur_time,
+                        count,
+                        (count + 1000 - 1) / 1000);
+                    workload_info = std::string((char *)stream.data(), stream.size());
                 }
-                it3->second.m_leader_count[leader] += work;
 
-                if (++count % 1000 == 0) {
-                    std::string workload_info;
-                    {
-                        xstream_t stream(xcontext_t::instance());
-                        MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
-                        MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
-
-                        xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
-                            auditor_clusters_workloads2.size(),
-                            validator_clusters_workloads2.size(),
-                            timestamp,
-                            cur_time,
-                            count,
-                            (count + 1000 - 1) / 1000);
-                        workload_info = std::string((char *)stream.data(), stream.size());
-                    }
-
-                    {
-                        xstream_t stream(xcontext_t::instance());
-                        stream << timestamp;
-                        stream << workload_info;
-                        CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
-                        auditor_clusters_workloads2.clear();
-                    }
+                {
+                    xstream_t stream(xcontext_t::instance());
+                    stream << timestamp;
+                    stream << workload_info;
+                    CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
+                    auditor_clusters_workloads2.clear();
                 }
             }
         }
@@ -371,39 +568,6 @@ void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
                 workload_info = std::string((char *)stream.data(), stream.size());
             }
 
-            xstream_t stream(xcontext_t::instance());
-            stream << timestamp;
-            stream << workload_info;
-            CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
-        }
-    } else if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.reward_fork_point, TIME())) {
-		xstream_t stream(xcontext_t::instance());
-        MAP_SERIALIZE_SIMPLE(stream, auditor_clusters_workloads);
-        MAP_SERIALIZE_SIMPLE(stream, validator_clusters_workloads);
-		
-		std::string workload_info = std::string((char *)stream.data(), stream.size());
-        {
-            xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64,
-                auditor_clusters_workloads.size(),
-                validator_clusters_workloads.size(),
-                timestamp);
-            xstream_t stream(xcontext_t::instance());
-            stream << timestamp;
-            stream << workload_info;
-            CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
-        }
-    } else {
-        xstream_t stream(xcontext_t::instance());
-        stream << auditor_clusters_workloads.empty();
-        if(!auditor_clusters_workloads.empty()) MAP_SERIALIZE_SIMPLE(stream, auditor_clusters_workloads);
-        stream << validator_clusters_workloads.empty();
-        if(!validator_clusters_workloads.empty()) MAP_SERIALIZE_SIMPLE(stream, validator_clusters_workloads);
-        std::string workload_info = std::string((char *)stream.data(), stream.size());
-        {
-            xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64,
-                auditor_clusters_workloads.size(),
-                validator_clusters_workloads.size(),
-                timestamp);
             xstream_t stream(xcontext_t::instance());
             stream << timestamp;
             stream << workload_info;
