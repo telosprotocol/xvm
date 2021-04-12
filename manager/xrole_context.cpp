@@ -10,6 +10,7 @@
 #include "xvm/manager/xmessage_ids.h"
 #include "xvm/xvm_service.h"
 #include "xmbus/xevent_timer.h"
+#include "xchain_upgrade/xchain_upgrade_center.h"
 
 #include <cinttypes>
 #include <cmath>
@@ -110,6 +111,13 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
                     xdbg("[xrole_context_t::on_block] get timer block at %" PRIu64, block->get_height());
                     onchain_timer_round = block->get_height();
                     block_timestamp = block->get_timestamp();
+
+                    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
+                    auto fork_config = fork_config_center.chain_fork_config();
+                    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
+                        if (is_scheduled_table_contract(m_contract_info->address) return;
+                    }
+
                     if (is_scheduled_table_contract(m_contract_info->address) && valid_call(onchain_timer_round)) {
 
                         int table_num = m_driver->table_ids().size();
