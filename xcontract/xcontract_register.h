@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <memory>
 #include <utility>
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xbasic/xmulti_arg_macro.h"
 #include "xcontract_base.h"
 #include "xcontract_exec.h"

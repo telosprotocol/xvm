@@ -6,7 +6,7 @@
 #include <string>
 #include <chrono>
 #include <cstdint>
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xdata/xtransaction.h"
 #include "xvm_define.h"
 #include "xvm_service.h"

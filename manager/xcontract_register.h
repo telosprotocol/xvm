@@ -5,7 +5,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xbase/xlock.h"
 #include "xvm/xcontract/xcontract_base.h"
 

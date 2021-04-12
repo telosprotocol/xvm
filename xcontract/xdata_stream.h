@@ -5,7 +5,7 @@
 #pragma once
 
 #include "xbase/xmem.h"
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xdata/xblock.h"
 
 #include <string>

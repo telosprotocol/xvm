@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "xbasic/xns_macro.h"
+#include "xbase/xns_macro.h"
 #include "xstore/xstore_face.h"
 #include "xtxpool_service_v2/xrequest_tx_receiver_face.h"
 #include "xvm/xcontract_info.h"
