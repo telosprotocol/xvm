@@ -95,7 +95,7 @@ private:
      * @param owner the owner addr of the full tableblock
      * @param last_read_height the height of full tableblock last time read
      */
-    base::xauto_ptr<xfull_tableblock_t> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0);
+    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0);
 
 
 
