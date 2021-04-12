@@ -79,6 +79,26 @@ private:
     std::vector<data::xaction_node_info_t>
     filter_helper(data::xunqualified_node_info_t const & node_map);
 
+    /**
+     * @brief judge auditor or validator group by group id
+     *
+     * @param id the group id
+     * @return true
+     * @return false
+     */
+    bool is_validtor_group(common::xgroup_id_t const& id);
+    bool is_auditor_group(common::xgroup_id_t const& id);
+
+    /**
+     * @brief get the latest tablefullblock from last read height
+     *
+     * @param owner the owner addr of the full tableblock
+     * @param last_read_height the height of full tableblock last time read
+     */
+    base::xauto_ptr<xfull_tableblock_t> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0);
+
+
+
 };
 
 NS_END3

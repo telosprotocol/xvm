@@ -3,6 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
+#include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xvm/manager/xcontract_manager.h"
+#include "xdata/xblock_statistics_data.h"
+#include "xcommon/xip.h"
 
 #include "xdata/xgenesis_data.h"
 #include "xstake/xstake_algorithm.h"
@@ -10,6 +14,7 @@
 using namespace top::data;
 
 NS_BEG3(top, xvm, xcontract)
+
 
 xzec_slash_info_contract::xzec_slash_info_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
@@ -121,61 +126,75 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
          SOURCE_ADDRESS().c_str(),
          getpid());
 
-    xunqualified_node_info_t summarize_info;
-    std::string value_str;
 
-    // add tableblock num filter
-    uint32_t summarize_tableblock_count;
-    try {
-        XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_tableblock_num_key");
-        if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM")) {
-            value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM");
+    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
+    auto fork_config = fork_config_center.chain_fork_config();
+    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, timestamp)) {
+         xunqualified_node_info_t summarize_info;
+        // process the fulltable of 256 table
+        for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; ++i) {
+
+            // todo get latest fullblock
+            // base::xauto_ptr<data::xblock_t> tableblock(get_block_by_height(sys_contract_sharding_table_block_addr, i));
+            // if (!tableblock ) {
+            //     xwarn("[xzec_slash_info_contract][do_unqualified_node_slash]table block get error, table addr: %s, table id: %d", sys_contract_sharding_table_block_addr, i);
+            //     throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception,  "[xzec_slash_info_contract][do_unqualified_node_slash] get table block error"};
+            // }
+            data::xfull_tableblock_t* full_tableblock;
+
+            auto fulltable_statisitc_data = full_tableblock->get_fulltable_statistics_resource()->get_statistics_data();
+            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
+            data::xstatistics_data_t stat_data;
+            stream >> stat_data;
+
+            // process one full tableblock statistic data
+            auto node_service = contract::xcontract_manager_t::instance().get_node_service();
+            for (auto const static_item: stat_data.detail) {
+                auto elect_statistic = static_item.second;
+                for (auto const group_item: elect_statistic.group_statistics_data) {
+                    common::xgroup_address_t group_addr = group_item.first;
+                    xvip2_t group_xvip2 = top::xtop_extended<common::xip_t>{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
+                    xgroup_related_statistics_data_t group_account_data = group_item.second;
+
+                    // process auditor group
+                    if (is_auditor_group(group_addr.group_id())) {
+                        for (auto slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                            summarize_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                            summarize_info.auditor_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
+                            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
+                                   slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                        }
+                    } else if (is_validtor_group(group_addr.group_id())) {// process validator group
+                        for (auto slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                            summarize_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                            summarize_info.validator_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
+                            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental validator data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
+                                   slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                        }
+
+                    } else { // invalid group
+                        xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] invalid group id: %d", group_addr.group_id().value());
+                        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception, "[xzec_slash_info_contract][do_unqualified_node_slash] invalid group"};
+                    }
+
+                }
+
+            }
+
+
         }
-    } catch (std::runtime_error const & e) {
-        xwarn("[xzec_slash_info_contract][[do_unqualified_node_slash] read summarized tableblock num error:%s", e.what());
-        throw;
-    }
-    if (!value_str.empty()) {
-        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
-        stream >> summarize_tableblock_count;
-        xdbg("[xzec_slash_info_contract][do_unqualified_node_slash]  current summarized tableblock num is: %u", summarize_tableblock_count);
-    }
-    if (summarize_tableblock_count < XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_table_block)) {
-        xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count not enought, time round: %" PRIu64
-             ": SOURCE_ADDRESS: %s, pid:%d, tableblock_count:%u",
-             timestamp,
-             SOURCE_ADDRESS().c_str(),
-             getpid(),
-             summarize_tableblock_count);
-        return;
-    }
 
-    value_str.clear();
-    try {
-        XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_unqualified_node_key");
-        if (MAP_FIELD_EXIST(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE")) {
-            value_str = MAP_GET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE");
-        }
-    } catch (std::runtime_error const & e) {
-        xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] read summarized slash info error:%s", e.what());
-        throw;
-    }
-
-    if (!value_str.empty()) {
-        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
-        summarize_info.serialize_from(stream);
-#ifdef DEBUG
-        print_summarize_info(summarize_info);
-#endif
+        #ifdef DEBUG
+            print_summarize_info(summarize_info);
+        #endif
 
         auto node_to_action = filter_nodes(summarize_info);
         xdbg("[xzec_slash_info_contract][filter_slashed_nodes] remove summarize info, time round: %" PRIu64, timestamp);
-        // stream.reset();
-        // std::vector<std::string> pass_node_to_slash;
-        // for (auto const& nodeid: node_to_slash) {
-        //     pass_node_to_slash.push_back(nodeid.to_string());
-        // }
+
         if (!node_to_action.empty()) {
+            base::xstream_t stream{base::xcontext_t::instance()};
             VECTOR_OBJECT_SERIALIZE2(stream, node_to_action);
             std::string punish_node_str = std::string((char *)stream.data(), stream.size());
             {
@@ -186,12 +205,86 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
                 CALL(common::xaccount_address_t{sys_contract_rec_registration_addr}, "slash_unqualified_node", std::string((char *)stream.data(), stream.size()));
             }
         } else {
-            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] filter slash node empty!");
+            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] filter slash node empty! time round %" PRIu64, timestamp);
         }
 
+
     } else {
-        xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] no summarized slash info");
+
+        xunqualified_node_info_t summarize_info;
+        std::string value_str;
+
+        // add tableblock num filter
+        uint32_t summarize_tableblock_count;
+        try {
+            XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_tableblock_num_key");
+            if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM")) {
+                value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM");
+            }
+        } catch (std::runtime_error const & e) {
+            xwarn("[xzec_slash_info_contract][[do_unqualified_node_slash] read summarized tableblock num error:%s", e.what());
+            throw;
+        }
+        if (!value_str.empty()) {
+            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+            stream >> summarize_tableblock_count;
+            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash]  current summarized tableblock num is: %u", summarize_tableblock_count);
+        }
+        if (summarize_tableblock_count < XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_table_block)) {
+            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count not enought, time round: %" PRIu64
+                ": SOURCE_ADDRESS: %s, pid:%d, tableblock_count:%u",
+                timestamp,
+                SOURCE_ADDRESS().c_str(),
+                getpid(),
+                summarize_tableblock_count);
+            return;
+        }
+
+        value_str.clear();
+        try {
+            XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_unqualified_node_key");
+            if (MAP_FIELD_EXIST(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE")) {
+                value_str = MAP_GET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE");
+            }
+        } catch (std::runtime_error const & e) {
+            xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] read summarized slash info error:%s", e.what());
+            throw;
+        }
+
+        if (!value_str.empty()) {
+            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+            summarize_info.serialize_from(stream);
+    #ifdef DEBUG
+            print_summarize_info(summarize_info);
+    #endif
+
+            auto node_to_action = filter_nodes(summarize_info);
+            xdbg("[xzec_slash_info_contract][filter_slashed_nodes] remove summarize info, time round: %" PRIu64, timestamp);
+            // stream.reset();
+            // std::vector<std::string> pass_node_to_slash;
+            // for (auto const& nodeid: node_to_slash) {
+            //     pass_node_to_slash.push_back(nodeid.to_string());
+            // }
+            if (!node_to_action.empty()) {
+                VECTOR_OBJECT_SERIALIZE2(stream, node_to_action);
+                std::string punish_node_str = std::string((char *)stream.data(), stream.size());
+                {
+                    stream.reset();
+                    stream << punish_node_str;
+                    xinfo("[xzec_slash_info_contract][do_unqualified_node_slash] call register contract slash_unqualified_node, time round: %" PRIu64, timestamp);
+                    XMETRICS_PACKET_INFO("sysContract_zecSlash", "effective slash timer round", std::to_string(timestamp));
+                    CALL(common::xaccount_address_t{sys_contract_rec_registration_addr}, "slash_unqualified_node", std::string((char *)stream.data(), stream.size()));
+                }
+            } else {
+                xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] filter slash node empty!");
+            }
+
+        } else {
+            xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] no summarized slash info");
+        }
+
     }
+
 }
 
 std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunqualified_node_info_t const & summarize_info) {
@@ -299,6 +392,43 @@ void xzec_slash_info_contract::print_summarize_info(data::xunqualified_node_info
     }
 
     xdbg("[xzec_slash_info_contract][print_summarize_info] summarize info: %s", out.c_str());
+}
+
+bool xzec_slash_info_contract::is_validtor_group(common::xgroup_id_t const& id) {
+    return id.value() >= common::xvalidator_group_id_value_begin && id.value() <= common::xvalidator_group_id_value_end;
+
+}
+bool xzec_slash_info_contract::is_auditor_group(common::xgroup_id_t const& id) {
+    return id.value() >= common::xauditor_group_id_value_begin && id.value() <= common::xauditor_group_id_value_end;
+}
+
+base::xauto_ptr<data::xfull_tableblock_t> xzec_slash_info_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0) {
+    auto blockchain_height = get_blockchain_height(owner.value());
+    for (auto i = last_read_height; i <= blockchain_height; ++i) {
+        base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), i);
+        if (tableblock->is_fulltable()) {
+            std::string value_str;
+            try {
+
+                XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_fulltableblock_num_key");
+                if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT")) {
+                    value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT");
+                }
+            } catch (std::runtime_error & e) {
+                xwarn("[xzec_slash_info_contract][get_next_fulltableblock] read full tableblock height error:%s", e.what());
+                throw;
+            }
+
+            {
+                XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_num_key");
+                MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT", std::string((char *)stream.data(), stream.size()));
+            }
+        }
+
+        return
+    }
+
+    return nullptr;
 }
 
 NS_END3
