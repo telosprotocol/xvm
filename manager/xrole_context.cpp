@@ -115,7 +115,7 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
                     chain_upgrade::xtop_chain_fork_config_center fork_config_center;
                     auto fork_config = fork_config_center.chain_fork_config();
                     if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
-                        if (is_scheduled_table_contract(m_contract_info->address) return;
+                        if (is_scheduled_table_contract(m_contract_info->address)) return;
                     }
 
                     if (is_scheduled_table_contract(m_contract_info->address) && valid_call(onchain_timer_round)) {

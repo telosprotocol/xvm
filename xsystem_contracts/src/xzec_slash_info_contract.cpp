@@ -133,56 +133,71 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
          xunqualified_node_info_t summarize_info;
         // process the fulltable of 256 table
         for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; ++i) {
+            uint64_t last_read_height = 0;
+            std::string value_str;
+            try {
+                XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_fulltableblock_num_key");
+                if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT")) {
+                    value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT");
+                }
+            } catch (std::runtime_error & e) {
+                xwarn("[xzec_slash_info_contract][get_next_fulltableblock] read full tableblock height error:%s", e.what());
+                throw;
+            }
 
-            // todo get latest fullblock
-            // base::xauto_ptr<data::xblock_t> tableblock(get_block_by_height(sys_contract_sharding_table_block_addr, i));
-            // if (!tableblock ) {
-            //     xwarn("[xzec_slash_info_contract][do_unqualified_node_slash]table block get error, table addr: %s, table id: %d", sys_contract_sharding_table_block_addr, i);
-            //     throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception,  "[xzec_slash_info_contract][do_unqualified_node_slash] get table block error"};
-            // }
-            data::xfull_tableblock_t* full_tableblock;
+            if (!value_str.empty()) {
+                base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+                stream >> last_read_height;
+                xdbg("[xzec_slash_info_contract][do_unqualified_node_slash]  last read full tableblock height is: %" PRIu64, last_read_height);
+            }
 
-            auto fulltable_statisitc_data = full_tableblock->get_fulltable_statistics_resource()->get_statistics_data();
-            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
-            data::xstatistics_data_t stat_data;
-            stream >> stat_data;
+            auto full_blocks = get_next_fulltableblock(common::xaccount_address_t{std::string{sys_contract_sharding_table_block_addr} + "@" + std::to_string(i)}, last_read_height);
 
-            // process one full tableblock statistic data
-            auto node_service = contract::xcontract_manager_t::instance().get_node_service();
-            for (auto const static_item: stat_data.detail) {
-                auto elect_statistic = static_item.second;
-                for (auto const group_item: elect_statistic.group_statistics_data) {
-                    common::xgroup_address_t group_addr = group_item.first;
-                    xvip2_t group_xvip2 = top::xtop_extended<common::xip_t>{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
-                    xgroup_related_statistics_data_t group_account_data = group_item.second;
+            for (std::size_t block_index = 0; block_index < full_blocks.size(); ++block_index) {
 
-                    // process auditor group
-                    if (is_auditor_group(group_addr.group_id())) {
-                        for (auto slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
-                            summarize_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
-                            summarize_info.auditor_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
-                            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
-                                   slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_blocks[block_index].get());
+                auto fulltable_statisitc_data = full_tableblock->get_fulltable_statistics_resource()->get_statistics_data();
+                base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
+                data::xstatistics_data_t stat_data;
+                stream >> stat_data;
+
+                // process one full tableblock statistic data
+                auto node_service = contract::xcontract_manager_t::instance().get_node_service();
+                for (auto const static_item: stat_data.detail) {
+                    auto elect_statistic = static_item.second;
+                    for (auto const group_item: elect_statistic.group_statistics_data) {
+                        common::xgroup_address_t group_addr = group_item.first;
+                        xvip2_t group_xvip2 = top::xtop_extended<common::xip_t>{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
+                        xgroup_related_statistics_data_t group_account_data = group_item.second;
+
+                        // process auditor group
+                        if (is_auditor_group(group_addr.group_id())) {
+                            for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                                auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                                summarize_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                                summarize_info.auditor_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
+                                xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
+                                    slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                            }
+                        } else if (is_validtor_group(group_addr.group_id())) {// process validator group
+                            for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                                auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                                summarize_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                                summarize_info.validator_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
+                                xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental validator data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
+                                    slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                            }
+
+                        } else { // invalid group
+                            xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] invalid group id: %d", group_addr.group_id().value());
+                            throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception, "[xzec_slash_info_contract][do_unqualified_node_slash] invalid group"};
                         }
-                    } else if (is_validtor_group(group_addr.group_id())) {// process validator group
-                        for (auto slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
-                            summarize_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
-                            summarize_info.validator_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
-                            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental validator data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
-                                   slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
-                        }
 
-                    } else { // invalid group
-                        xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] invalid group id: %d", group_addr.group_id().value());
-                        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception, "[xzec_slash_info_contract][do_unqualified_node_slash] invalid group"};
                     }
 
                 }
 
             }
-
 
         }
 
@@ -402,33 +417,27 @@ bool xzec_slash_info_contract::is_auditor_group(common::xgroup_id_t const& id) {
     return id.value() >= common::xauditor_group_id_value_begin && id.value() <= common::xauditor_group_id_value_end;
 }
 
-base::xauto_ptr<data::xfull_tableblock_t> xzec_slash_info_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0) {
+std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height) {
+    std::vector<base::xauto_ptr<data::xblock_t>> res;
+    auto cur_read_height = last_read_height;
     auto blockchain_height = get_blockchain_height(owner.value());
-    for (auto i = last_read_height; i <= blockchain_height; ++i) {
+    for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
         base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), i);
         if (tableblock->is_fulltable()) {
-            std::string value_str;
-            try {
-
-                XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_fulltableblock_num_key");
-                if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT")) {
-                    value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT");
-                }
-            } catch (std::runtime_error & e) {
-                xwarn("[xzec_slash_info_contract][get_next_fulltableblock] read full tableblock height error:%s", e.what());
-                throw;
-            }
-
-            {
-                XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_num_key");
-                MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT", std::string((char *)stream.data(), stream.size()));
-            }
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, height: %"PRIu64, owner.value().c_str(), i);
+            cur_read_height = i;
+            res.push_back(std::move(tableblock));
         }
-
-        return
     }
 
-    return nullptr;
+    {
+        XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_num_key");
+        base::xstream_t stream{base::xcontext_t::instance()};
+        stream << cur_read_height;
+        MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT", std::string((char *)stream.data(), stream.size()));
+    }
+
+    return res;
 }
 
 NS_END3
