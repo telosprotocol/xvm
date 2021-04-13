@@ -61,6 +61,7 @@ public:
      *
      */
     void instantiate_sys_contracts();
+    void init(observer_ptr<xstore_face_t> const & store, xobject_ptr_t<store::xsyncvstore_t> const& syncstore);
     /**
      * @brief Set up blockchains
      *
