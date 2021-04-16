@@ -169,6 +169,11 @@ void xzec_workload_contract::update_tgas(int64_t table_pledge_balance_change_tga
 }
 
 void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, timestamp)) {
+        return;
+    }
+
     if (!is_mainnet_activated()) return;
 
     /*{
@@ -239,176 +244,139 @@ void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
     // validator workload
     MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_clusters_workloads);
 
-    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
-    auto fork_config = fork_config_center.chain_fork_config();
-	if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.reward_fork_spark, TIME())) {
-        //std::map<std::string, std::string> auditor_clusters_workloads2;
-        //std::map<std::string, std::string> validator_clusters_workloads2;
-        std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
-        std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_clusters_workloads2;
-        int count = 0;
-        auto cur_time = TIME();
+    //std::map<std::string, std::string> auditor_clusters_workloads2;
+    //std::map<std::string, std::string> validator_clusters_workloads2;
+    std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
+    std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_clusters_workloads2;
+    int count = 0;
+    auto cur_time = TIME();
 
-        for (auto it = auditor_clusters_workloads.begin(); it != auditor_clusters_workloads.end(); it++) {
-            xstream_t stream(xcontext_t::instance(), (uint8_t*)it->second.data(), it->second.size());
-            cluster_workload_t workload;
-            workload.serialize_from(stream);
+    for (auto it = auditor_clusters_workloads.begin(); it != auditor_clusters_workloads.end(); it++) {
+        xstream_t stream(xcontext_t::instance(), (uint8_t*)it->second.data(), it->second.size());
+        cluster_workload_t workload;
+        workload.serialize_from(stream);
 
-            common::xcluster_address_t cluster_id2;
-            {
-
-                xstream_t stream(xcontext_t::instance(), (uint8_t*)it->first.data(), it->first.size());
-                stream >> cluster_id2;
-                xdbg("[xzec_workload_contract::on_timer] auditor, cluster_id: %s, group size: %d",
-                    cluster_id2.to_string().c_str(), workload.m_leader_count.size());
-            }
-            for (auto const& leader_count_info : workload.m_leader_count) {
-                auto const& leader  = leader_count_info.first;
-                auto const& work   = leader_count_info.second;
-
-                auto it3 = auditor_clusters_workloads2.find(cluster_id2);
-                if (it3 == auditor_clusters_workloads2.end()) {
-                    xauditor_workload_info_t auditor_workload_info;
-                    std::pair<std::map<common::xcluster_address_t, xauditor_workload_info_t>::iterator, bool> ret =
-                        auditor_clusters_workloads2.insert(std::make_pair(cluster_id2, auditor_workload_info));
-                    it3 = ret.first;
-                }
-                it3->second.m_leader_count[leader] += work;
-
-                if (++count % 1000 == 0) {
-                    std::string workload_info;
-                    {
-                        xstream_t stream(xcontext_t::instance());
-                        MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
-                        MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
-
-                        xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
-                            auditor_clusters_workloads2.size(),
-                            validator_clusters_workloads2.size(),
-                            timestamp,
-                            cur_time,
-                            count,
-                            (count + 1000 - 1) / 1000);
-                        workload_info = std::string((char *)stream.data(), stream.size());
-                    }
-
-                    {
-                        xstream_t stream(xcontext_t::instance());
-                        stream << timestamp;
-                        stream << workload_info;
-                        CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
-                        auditor_clusters_workloads2.clear();
-                    }
-                }
-            }
-        }
-
-        for (auto it2 = validator_clusters_workloads.begin(); it2 != validator_clusters_workloads.end(); it2++) {
-            //validator_clusters_workloads[it2->first] = it2->second;
-            xstream_t stream(xcontext_t::instance(), (uint8_t*)it2->second.data(), it2->second.size());
-            cluster_workload_t workload;
-            workload.serialize_from(stream);
-            common::xcluster_address_t cluster_id2;
-            {
-                xstream_t stream(xcontext_t::instance(), (uint8_t*)it2->first.data(), it2->first.size());
-                stream >> cluster_id2;
-                xdbg("[xzec_workload_contract::on_timer] validator, cluster_id: %s, group size: %d",
-                    cluster_id2.to_string().c_str(), workload.m_leader_count.size());
-            }
-            for (auto const& leader_count_info : workload.m_leader_count) {
-                auto const& leader  = leader_count_info.first;
-                auto const& work   = leader_count_info.second;
-
-                auto it3 = validator_clusters_workloads2.find(cluster_id2);
-                if (it3 == validator_clusters_workloads2.end()) {
-                    xvalidator_workload_info_t validator_workload_info;
-                    std::pair<std::map<common::xcluster_address_t, xvalidator_workload_info_t>::iterator, bool> ret =
-                        validator_clusters_workloads2.insert(std::make_pair(cluster_id2, validator_workload_info));
-                    it3 = ret.first;
-                }
-                it3->second.m_leader_count[leader] += work;
-
-                if (++count % 1000 == 0) {
-                    std::string workload_info;
-                    {
-                        xstream_t stream(xcontext_t::instance());
-                        MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
-                        MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
-
-                        xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
-                            auditor_clusters_workloads2.size(),
-                            validator_clusters_workloads2.size(),
-                            timestamp,
-                            cur_time,
-                            count,
-                            (count + 1000 - 1) / 1000);
-                        workload_info = std::string((char *)stream.data(), stream.size());
-                    }
-                    {
-                        xstream_t stream(xcontext_t::instance());
-                        stream << timestamp;
-                        stream << workload_info;
-                        CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
-                        auditor_clusters_workloads2.clear();
-                        validator_clusters_workloads2.clear();
-                    }
-                }
-            }
-        }
-        if (auditor_clusters_workloads2.size() > 0 || validator_clusters_workloads.size() > 0) {
-            xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
-                auditor_clusters_workloads.size(),
-                validator_clusters_workloads.size(),
-                timestamp,
-                cur_time,
-                count,
-                (count + 1000 - 1) / 1000);
-            std::string workload_info;
-            {
-                xstream_t stream(xcontext_t::instance());
-                MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
-                MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
-                workload_info = std::string((char *)stream.data(), stream.size());
-            }
-
-            xstream_t stream(xcontext_t::instance());
-            stream << timestamp;
-            stream << workload_info;
-            CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
-        }
-    } else if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.reward_fork_point, TIME())) {
-		xstream_t stream(xcontext_t::instance());
-        MAP_SERIALIZE_SIMPLE(stream, auditor_clusters_workloads);
-        MAP_SERIALIZE_SIMPLE(stream, validator_clusters_workloads);
-		
-		std::string workload_info = std::string((char *)stream.data(), stream.size());
+        common::xcluster_address_t cluster_id2;
         {
-            xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64,
-                auditor_clusters_workloads.size(),
-                validator_clusters_workloads.size(),
-                timestamp);
-            xstream_t stream(xcontext_t::instance());
-            stream << timestamp;
-            stream << workload_info;
-            CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
+
+            xstream_t stream(xcontext_t::instance(), (uint8_t*)it->first.data(), it->first.size());
+            stream >> cluster_id2;
+            xdbg("[xzec_workload_contract::on_timer] auditor, cluster_id: %s, group size: %d",
+                cluster_id2.to_string().c_str(), workload.m_leader_count.size());
         }
-    } else {
+        for (auto const& leader_count_info : workload.m_leader_count) {
+            auto const& leader  = leader_count_info.first;
+            auto const& work   = leader_count_info.second;
+
+            auto it3 = auditor_clusters_workloads2.find(cluster_id2);
+            if (it3 == auditor_clusters_workloads2.end()) {
+                xauditor_workload_info_t auditor_workload_info;
+                std::pair<std::map<common::xcluster_address_t, xauditor_workload_info_t>::iterator, bool> ret =
+                    auditor_clusters_workloads2.insert(std::make_pair(cluster_id2, auditor_workload_info));
+                it3 = ret.first;
+            }
+            it3->second.m_leader_count[leader] += work;
+
+            if (++count % 1000 == 0) {
+                std::string workload_info;
+                {
+                    xstream_t stream(xcontext_t::instance());
+                    MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
+                    MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
+
+                    xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
+                        auditor_clusters_workloads2.size(),
+                        validator_clusters_workloads2.size(),
+                        timestamp,
+                        cur_time,
+                        count,
+                        (count + 1000 - 1) / 1000);
+                    workload_info = std::string((char *)stream.data(), stream.size());
+                }
+
+                {
+                    xstream_t stream(xcontext_t::instance());
+                    stream << timestamp;
+                    stream << workload_info;
+                    CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
+                    auditor_clusters_workloads2.clear();
+                }
+            }
+        }
+    }
+
+    for (auto it2 = validator_clusters_workloads.begin(); it2 != validator_clusters_workloads.end(); it2++) {
+        //validator_clusters_workloads[it2->first] = it2->second;
+        xstream_t stream(xcontext_t::instance(), (uint8_t*)it2->second.data(), it2->second.size());
+        cluster_workload_t workload;
+        workload.serialize_from(stream);
+        common::xcluster_address_t cluster_id2;
+        {
+            xstream_t stream(xcontext_t::instance(), (uint8_t*)it2->first.data(), it2->first.size());
+            stream >> cluster_id2;
+            xdbg("[xzec_workload_contract::on_timer] validator, cluster_id: %s, group size: %d",
+                cluster_id2.to_string().c_str(), workload.m_leader_count.size());
+        }
+        for (auto const& leader_count_info : workload.m_leader_count) {
+            auto const& leader  = leader_count_info.first;
+            auto const& work   = leader_count_info.second;
+
+            auto it3 = validator_clusters_workloads2.find(cluster_id2);
+            if (it3 == validator_clusters_workloads2.end()) {
+                xvalidator_workload_info_t validator_workload_info;
+                std::pair<std::map<common::xcluster_address_t, xvalidator_workload_info_t>::iterator, bool> ret =
+                    validator_clusters_workloads2.insert(std::make_pair(cluster_id2, validator_workload_info));
+                it3 = ret.first;
+            }
+            it3->second.m_leader_count[leader] += work;
+
+            if (++count % 1000 == 0) {
+                std::string workload_info;
+                {
+                    xstream_t stream(xcontext_t::instance());
+                    MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
+                    MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
+
+                    xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
+                        auditor_clusters_workloads2.size(),
+                        validator_clusters_workloads2.size(),
+                        timestamp,
+                        cur_time,
+                        count,
+                        (count + 1000 - 1) / 1000);
+                    workload_info = std::string((char *)stream.data(), stream.size());
+                }
+                {
+                    xstream_t stream(xcontext_t::instance());
+                    stream << timestamp;
+                    stream << workload_info;
+                    CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
+                    auditor_clusters_workloads2.clear();
+                    validator_clusters_workloads2.clear();
+                }
+            }
+        }
+    }
+    if (auditor_clusters_workloads2.size() > 0 || validator_clusters_workloads.size() > 0) {
+        xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
+            auditor_clusters_workloads.size(),
+            validator_clusters_workloads.size(),
+            timestamp,
+            cur_time,
+            count,
+            (count + 1000 - 1) / 1000);
+        std::string workload_info;
+        {
+            xstream_t stream(xcontext_t::instance());
+            MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
+            MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
+            workload_info = std::string((char *)stream.data(), stream.size());
+        }
+
         xstream_t stream(xcontext_t::instance());
-        stream << auditor_clusters_workloads.empty();
-        if(!auditor_clusters_workloads.empty()) MAP_SERIALIZE_SIMPLE(stream, auditor_clusters_workloads);
-        stream << validator_clusters_workloads.empty();
-        if(!validator_clusters_workloads.empty()) MAP_SERIALIZE_SIMPLE(stream, validator_clusters_workloads);
-        std::string workload_info = std::string((char *)stream.data(), stream.size());
-        {
-            xinfo("[xzec_workload_contract::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64,
-                auditor_clusters_workloads.size(),
-                validator_clusters_workloads.size(),
-                timestamp);
-            xstream_t stream(xcontext_t::instance());
-            stream << timestamp;
-            stream << workload_info;
-            CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
-        }
+        stream << timestamp;
+        stream << workload_info;
+        CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
     }
 
     clear_workload();
