@@ -44,27 +44,6 @@ public:
     BEGIN_CONTRACT_WITH_PARAM(xtable_workload_contract)
         CONTRACT_FUNCTION_PARAM(xtable_workload_contract, on_timer);
     END_CONTRACT_WITH_PARAM
-
-private:
-    /**
-     * @brief get_next_fulltableblock
-     */
-    std::vector<base::xauto_ptr<data::xblock_t>> get_fullblock(common::xaccount_address_t const& owner, uint64_t last_read_height, uint64_t & cur_read_height);
-    
-    /**
-     * @brief get_table_height
-     */
-    void get_table_height(common::xaccount_address_t const & table_owner, uint64_t & last_read_height, uint64_t & old_version_height);
-    
-    /**
-     * @brief update_table_height
-     */    
-    void update_table_height(common::xaccount_address_t const & table_owner, const uint64_t cur_read_height, const uint64_t old_version_height);
-
-    /**
-     * @brief add_workload_with_fullblock
-     */ 
-    void add_workload_with_fullblock(common::xaccount_address_t const & account);
 };
 
 

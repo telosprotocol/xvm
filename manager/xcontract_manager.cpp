@@ -36,6 +36,7 @@
 #include "xvm/xsystem_contracts/xreward/xzec_reward_contract.h"
 #include "xvm/xsystem_contracts/xreward/xzec_vote_contract.h"
 #include "xvm/xsystem_contracts/xreward/xzec_workload_contract.h"
+#include "xvm/xsystem_contracts/xworkload/xzec_workload_contract_v2.h"
 #include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
 #include "xvm/xsystem_contracts/xslash/xtable_slash_info_collection_contract.h"
 #include "xvm/xvm_service.h"
@@ -63,6 +64,7 @@ void xtop_contract_manager::instantiate_sys_contracts() {
     common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
     XREGISTER_CONTRACT(top::xstake::xrec_registration_contract, sys_contract_rec_registration_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xzec_workload_contract, sys_contract_zec_workload_addr, network_id);
+    // XREGISTER_CONTRACT(top::xstake::xzec_workload_contract_v2, sys_contract_zec_workload_addr2, network_id);
     XREGISTER_CONTRACT(top::xstake::xzec_vote_contract, sys_contract_zec_vote_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xzec_reward_contract, sys_contract_zec_reward_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xtable_vote_contract, sys_contract_sharding_vote_addr, network_id);
