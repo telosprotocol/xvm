@@ -5,6 +5,7 @@
 #pragma once
 
 #include "xcommon/xlogic_time.h"
+#include "xdata/xslash.h"
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
 
@@ -42,6 +43,35 @@ public:
     BEGIN_CONTRACT_WITH_PARAM(xtable_slash_info_collection_contract)
         CONTRACT_FUNCTION_PARAM(xtable_slash_info_collection_contract, on_collect_slash_info);
     END_CONTRACT_WITH_PARAM
+
+private:
+    /**
+     * @brief judge auditor or validator group by group id
+     *
+     * @param id the group id
+     * @return true
+     * @return false
+     */
+    bool is_validtor_group(common::xgroup_id_t const& id);
+    bool is_auditor_group(common::xgroup_id_t const& id);
+
+    /**
+     * @brief get the latest tablefullblocks from last read height
+     *
+     * @param owner the owner addr of the full tableblock
+     * @param blockchain_height current tableblock height
+     * @param last_read_height the height last time read
+     */
+    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t blockchain_height, uint64_t last_read_height = 0);
+
+
+    /**
+     * @brief process full tableblocks to get statistic data
+     *
+     * @param full_blocks  the full blocks to process
+     * @return xunqualified_node_info_t  the statistic data
+     */
+    xunqualified_node_info_t process_fulltableblock(std::vector<base::xauto_ptr<xblock_t>> const& full_blocks);
 
 };
 
