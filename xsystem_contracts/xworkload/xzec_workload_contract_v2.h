@@ -4,19 +4,19 @@
 
 #pragma once
 
-#include "xvm/xcontract_helper.h"
-#include "xvm/xcontract/xcontract_base.h"
-#include "xvm/xcontract/xcontract_exec.h"
 #include "xdata/xtableblock.h"
 #include "xstake/xstake_algorithm.h"
+#include "xvm/xcontract/xcontract_base.h"
+#include "xvm/xcontract/xcontract_exec.h"
+#include "xvm/xcontract_helper.h"
 
-NS_BEG2(top, xstake)
+NS_BEG3(top, xvm, system_contracts)
 
-using namespace xvm;
-using namespace xvm::xcontract;
+//using namespace xvm;
+//using namespace xvm::xcontract;
 
-class xzec_workload_contract_v2 : public xcontract_base {
-    using xbase_t = xcontract_base;
+class xzec_workload_contract_v2 : public xcontract::xcontract_base {
+    using xbase_t = xcontract::xcontract_base;
 public:
     XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xzec_workload_contract_v2);
     XDECLARE_DEFAULTED_OVERRIDE_DESTRUCTOR(xzec_workload_contract_v2);
@@ -24,13 +24,13 @@ public:
     explicit
     xzec_workload_contract_v2(common::xnetwork_id_t const & network_id);
 
-    // xcontract_base*  clone() override {return new xzec_workload_contract_v2(network_id());}
+    xcontract_base*  clone() override {return new xzec_workload_contract_v2(network_id());}
 
     /**
      * @brief setup the contract
      *
      */
-    void        setup();
+    void setup();
 
     /**
      * @brief call zec reward contract to calculate reward
@@ -41,20 +41,19 @@ public:
 
 
 
-    // BEGIN_CONTRACT_WITH_PARAM(xzec_workload_contract_V2)
-    //     CONTRACT_FUNCTION_PARAM(xzec_workload_contract, on_receive_workload2);
-    //     CONTRACT_FUNCTION_PARAM(xzec_workload_contract, on_timer);
-    // END_CONTRACT_WITH_PARAM
+    BEGIN_CONTRACT_WITH_PARAM(xzec_workload_contract_v2)
+        CONTRACT_FUNCTION_PARAM(xzec_workload_contract_v2, on_timer);
+    END_CONTRACT_WITH_PARAM
 
 private:
     /**
-     * @brief add cluster workload
+     * @brief add group workload
      *
      * @param auditor true - auditor, false - validator
-     * @param cluster_id cluster id
+     * @param group_id cluster id
      * @param leader_count nodes workload
      */
-    void        add_cluster_workload(bool auditor, std::string const& cluster_id, std::map<std::string, uint32_t> const& leader_count);
+    void add_group_workload(bool auditor, common::xgroup_address_t  const & group_id, std::map<std::string, uint32_t> const & leader_count);
 
     /**
      * @brief Get the node info
@@ -63,52 +62,39 @@ private:
      * @param reg_node_info node registration object
      * @return int32_t 0 - success, other - failure
      */
-    int32_t     get_node_info(const std::string& account, xreg_node_info& reg_node_info);
+    int32_t get_node_info(const std::string & account, xstake::xreg_node_info & reg_node_info);
 
     /**
      * @brief check if mainnet is activated
      *
      * @return int 0 - not activated, other - activated
      */
-    int         is_mainnet_activated();
+    int is_mainnet_activated();
 
     /**
      * @brief update tgas
      *
      * @param table_pledge_balance_change_tgas table pledge balance change tgas
      */
-    void        update_tgas(int64_t table_pledge_balance_change_tgas);
-
-    /**
-     * @brief check if we can dispatch tgas now
-     *
-     * @param onchain_timer_round chain timer height
-     * @return true we can now
-     * @return false we can not now
-     */
-    bool        tgas_is_expire(const uint64_t onchain_timer_round);
+    void update_tgas(int64_t table_pledge_balance_change_tgas);
 
     /**
      * @brief clear the workload
      */
-    void        clear_workload();
-    
-    /**
-     * @brief process on receiving workload
-     *
-     * @param workload_str workload
-     */
-    void on_receive_workload2(std::string const& workload_str);
+    void clear_workload();
 
     /**
      * @brief get_fullblock
      */
-    std::vector<base::xauto_ptr<data::xblock_t>> get_fullblock(common::xaccount_address_t const& owner, uint64_t last_read_height, uint64_t & cur_read_height);
-
+    std::vector<xfull_tableblock_t*> get_fullblock(common::xaccount_address_t const& owner, 
+                                                   const uint64_t last_read_height, 
+                                                   uint64_t & cur_read_height,
+                                                   const uint64_t & cur_time,
+                                                   uint64_t & cur_read_time);
     /**
      * @brief add_workload_with_fullblock
      */
-    void add_workload_with_fullblock();
+    void add_workload_with_fullblock(common::xlogic_time_t const timestamp);
 
     /**
      * @brief migrate_data
@@ -118,27 +104,22 @@ private:
     /**
      * @brief get_table_height
      */
-    uint64_t get_table_height(common::xaccount_address_t const & account);
+    uint64_t get_table_height(common::xaccount_address_t const & account) const;
 
     /**
      * @brief update_table_height
      */
     void update_table_height(common::xaccount_address_t const & account, uint64_t cur_read_height);
+    
+    /**
+     * @brief get_table_time
+     */
+    uint64_t get_table_time(common::xaccount_address_t const & table) const;
 
     /**
-     * @brief calc_table_block_status
+     * @brief update_table_height
      */
-    bool calc_table_block_status(const uint64_t cur_time,
-                                 const uint64_t last_read_time,
-                                 const uint64_t last_read_height,
-                                 const uint64_t latest_height,
-                                 const uint64_t height_step_limitation,
-                                 const common::xlogic_time_t timeout_limitation,
-                                 uint64_t & next_read_height);
-    /**
-     * @brief read_table_block_status
-     */
-    bool read_table_block_status(common::xaccount_address_t const & table, const uint64_t cur_time, const uint64_t cur_height);
+    void update_table_time(common::xaccount_address_t const & account, uint64_t cur_read_time);
 };
 
-NS_END2
+NS_END3
