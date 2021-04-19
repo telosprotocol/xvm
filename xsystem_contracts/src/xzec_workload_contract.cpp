@@ -241,10 +241,9 @@ void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
 
     // auditor workload
     MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, auditor_clusters_workloads);
-    // validator workload 
+    // validator workload
     MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_clusters_workloads);
 	if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.reward_fork_spark, TIME())) {
-
         //std::map<std::string, std::string> auditor_clusters_workloads2;
         //std::map<std::string, std::string> validator_clusters_workloads2;
         std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
