@@ -232,7 +232,7 @@ void xcontract_helper::map_copy_get(const std::string & key, std::map<std::strin
 }
 
 
-bool xcontract_helper::map_field_exist(const string& key, const string& field) {
+bool xcontract_helper::map_field_exist(const string& key, const string& field) const {
     string value{};
     int32_t ret = m_account_context->map_get(key, field, value);
     if (xaccount_property_map_field_not_create == ret || xaccount_property_not_create == ret) {
