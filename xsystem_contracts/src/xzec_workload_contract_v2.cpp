@@ -305,14 +305,7 @@ void xzec_workload_contract_v2::add_workload_with_fullblock() {
         for (std::size_t block_index = 0; block_index < full_blocks.size(); block_index++) {
             xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_blocks[block_index].get());
             assert(full_tableblock != nullptr);
-            auto fulltable_statisitc_resource = full_tableblock->get_fulltable_statistics_resource();
-            if (fulltable_statisitc_resource == nullptr) {
-                continue;
-            }
-            auto fulltable_statisitc_data = fulltable_statisitc_resource->get_statistics_data();
-            data::xstatistics_data_t stat_data;
-            xstream_t stream(base::xcontext_t::instance(), fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
-            stream >> stat_data;
+            auto stat_data = full_tableblock->get_table_statistics();
 
             auto node_service = contract::xcontract_manager_t::instance().get_node_service();
             for (auto const static_item: stat_data.detail) {
