@@ -224,17 +224,7 @@ void xtable_slash_info_collection_contract::on_collect_slash_info(common::xlogic
     }
 }
 
-
-bool xtable_slash_info_collection_contract::is_validtor_group(common::xgroup_id_t const& id) {
-    return id.value() >= common::xvalidator_group_id_value_begin && id.value() <= common::xvalidator_group_id_value_end;
-
-}
-
-bool xtable_slash_info_collection_contract::is_auditor_group(common::xgroup_id_t const& id) {
-    return id.value() >= common::xauditor_group_id_value_begin && id.value() <= common::xauditor_group_id_value_end;
-}
-
-std::vector<base::xauto_ptr<data::xblock_t>> xtable_slash_info_collection_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t blockchain_height, uint64_t last_read_height) {
+std::vector<base::xauto_ptr<data::xblock_t>> xtable_slash_info_collection_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t blockchain_height, uint64_t last_read_height) const {
     std::vector<base::xauto_ptr<data::xblock_t>> res;
 
     for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
@@ -268,13 +258,13 @@ xunqualified_node_info_t xtable_slash_info_collection_contract::process_fulltabl
         auto node_service = contract::xcontract_manager_t::instance().get_node_service();
         for (auto const static_item: stat_data.detail) {
             auto elect_statistic = static_item.second;
-            for (auto const group_item: elect_statistic.group_statistics_data) {
-                common::xgroup_address_t group_addr = group_item.first;
-                xvip2_t group_xvip2 = top::xtop_extended<common::xip_t>{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
-                xgroup_related_statistics_data_t group_account_data = group_item.second;
+            for (auto const& group_item: elect_statistic.group_statistics_data) {
+                common::xgroup_address_t const& group_addr = group_item.first;
+                xvip2_t const& group_xvip2 = top::common::xip2_t{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
+                xgroup_related_statistics_data_t const& group_account_data = group_item.second;
 
                 // process auditor group
-                if (is_auditor_group(group_addr.group_id())) {
+                if (top::common::has<top::common::xnode_type_t::auditor>(group_addr.type())) {
                     for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
                         auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
                         res_node_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
@@ -282,7 +272,7 @@ xunqualified_node_info_t xtable_slash_info_collection_contract::process_fulltabl
                         xdbg("[xtable_slash_info_collection_contract][process_fulltableblock] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
                             slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
                     }
-                } else if (is_validtor_group(group_addr.group_id())) {// process validator group
+                } else if (top::common::has<top::common::xnode_type_t::validator>(group_addr.type())) {// process validator group
                     for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
                         auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
                         res_node_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;

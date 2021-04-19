@@ -46,23 +46,13 @@ public:
 
 private:
     /**
-     * @brief judge auditor or validator group by group id
-     *
-     * @param id the group id
-     * @return true
-     * @return false
-     */
-    bool is_validtor_group(common::xgroup_id_t const& id);
-    bool is_auditor_group(common::xgroup_id_t const& id);
-
-    /**
      * @brief get the latest tablefullblocks from last read height
      *
      * @param owner the owner addr of the full tableblock
      * @param blockchain_height current tableblock height
      * @param last_read_height the height last time read
      */
-    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t blockchain_height, uint64_t last_read_height = 0);
+    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t blockchain_height, uint64_t last_read_height = 0) const;
 
 
     /**
