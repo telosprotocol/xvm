@@ -80,23 +80,31 @@ private:
     filter_helper(data::xunqualified_node_info_t const & node_map);
 
     /**
-     * @brief judge auditor or validator group by group id
-     *
-     * @param id the group id
-     * @return true
-     * @return false
-     */
-    bool is_validtor_group(common::xgroup_id_t const& id);
-    bool is_auditor_group(common::xgroup_id_t const& id);
-
-    /**
      * @brief get the latest tablefullblock from last read height
      *
      * @param owner the owner addr of the full tableblock
-     * @param last_read_height the height of full tableblock last time read
+     * @param block_num in&out the block num processed
+     * @param last_read_height in&out the height of full tableblock last time read
      */
-    base::xauto_ptr<xfull_tableblock_t> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0);
+    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint32_t& block_num, uint64_t& last_read_height) const;
 
+
+    /**
+     * @brief process full tableblocks to get statistic data
+     *
+     * @param full_blocks  the full blocks to process
+     * @return xunqualified_node_info_t  the statistic data
+     */
+    xunqualified_node_info_t process_fulltableblock(std::vector<base::xauto_ptr<xblock_t>> const& full_blocks);
+
+
+    /**
+     * @brief accumulate  node info of all tables
+     *
+     * @param  node_info  the node info
+     *
+     */
+    xunqualified_node_info_t  accumulate_node_info(xunqualified_node_info_t const&  node_info);
 
 
 };

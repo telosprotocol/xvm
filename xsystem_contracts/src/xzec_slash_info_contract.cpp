@@ -2,14 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
 #include "xchain_upgrade/xchain_upgrade_center.h"
-#include "xvm/manager/xcontract_manager.h"
-#include "xdata/xblock_statistics_data.h"
 #include "xcommon/xip.h"
-
+#include "xdata/xblock_statistics_data.h"
 #include "xdata/xgenesis_data.h"
 #include "xstake/xstake_algorithm.h"
+#include "xvm/manager/xcontract_manager.h"
+#include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
+
 
 using namespace top::data;
 
@@ -127,68 +127,75 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
          getpid());
 
 
-    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
-    auto fork_config = fork_config_center.chain_fork_config();
+    auto fork_config = chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
     if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, timestamp)) {
          xunqualified_node_info_t summarize_info;
+         uint32_t summarize_tableblock_count = 0;
         // process the fulltable of 256 table
         for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; ++i) {
-
-            // todo get latest fullblock
-            // base::xauto_ptr<data::xblock_t> tableblock(get_block_by_height(sys_contract_sharding_table_block_addr, i));
-            // if (!tableblock ) {
-            //     xwarn("[xzec_slash_info_contract][do_unqualified_node_slash]table block get error, table addr: %s, table id: %d", sys_contract_sharding_table_block_addr, i);
-            //     throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception,  "[xzec_slash_info_contract][do_unqualified_node_slash] get table block error"};
-            // }
-            data::xfull_tableblock_t* full_tableblock;
-
-            auto fulltable_statisitc_data = full_tableblock->get_fulltable_statistics_resource()->get_statistics_data();
-            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
-            data::xstatistics_data_t stat_data;
-            stream >> stat_data;
-
-            // process one full tableblock statistic data
-            auto node_service = contract::xcontract_manager_t::instance().get_node_service();
-            for (auto const static_item: stat_data.detail) {
-                auto elect_statistic = static_item.second;
-                for (auto const group_item: elect_statistic.group_statistics_data) {
-                    common::xgroup_address_t group_addr = group_item.first;
-                    xvip2_t group_xvip2 = top::xtop_extended<common::xip_t>{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
-                    xgroup_related_statistics_data_t group_account_data = group_item.second;
-
-                    // process auditor group
-                    if (is_auditor_group(group_addr.group_id())) {
-                        for (auto slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
-                            summarize_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
-                            summarize_info.auditor_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
-                            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
-                                   slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
-                        }
-                    } else if (is_validtor_group(group_addr.group_id())) {// process validator group
-                        for (auto slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                            auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
-                            summarize_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
-                            summarize_info.validator_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
-                            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental validator data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
-                                   slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
-                        }
-
-                    } else { // invalid group
-                        xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] invalid group id: %d", group_addr.group_id().value());
-                        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception, "[xzec_slash_info_contract][do_unqualified_node_slash] invalid group"};
-                    }
-
+            std::string height_key = std::string{"FULLTABLEBLOCK_HEIGHT_"} + std::to_string(i);
+            uint64_t read_height = 0;
+            std::string value_str;
+            try {
+                XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_fulltableblock_height_key");
+                if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, height_key)) {
+                    value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, height_key);
                 }
-
+            } catch (std::runtime_error & e) {
+                xwarn("[xzec_slash_info_contract][get_next_fulltableblock] read full tableblock height error:%s", e.what());
+                throw;
             }
 
+            // normally only first time will be empty(property not create yet), means height is zero, so no need else branch
+            if (!value_str.empty()) {
+                base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+                stream >> read_height;
+                xdbg("[xzec_slash_info_contract][do_unqualified_node_slash]  last read full tableblock height is: %" PRIu64, last_read_height);
+            }
+
+            std::string table_owner = xdatautil::serialize_owner_str(sys_contract_sharding_table_block_addr, i);
+            auto const& full_blocks = get_next_fulltableblock(common::xaccount_address_t{}, summarize_tableblock_count, read_height);
+            auto const node_info = process_fulltableblock(full_blocks);
+            summarize_info = accumulate_node_info(node_info);
+
+            {
+                XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_height_key");
+                base::xstream_t stream{base::xcontext_t::instance()};
+                stream << read_height;
+                MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, height_key, std::string((char *)stream.data(), stream.size()));
+            }
 
         }
 
         #ifdef DEBUG
             print_summarize_info(summarize_info);
         #endif
+        // for rpc and following previous flow
+        {
+            XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_unqualified_node_key");
+            base::xstream_t stream{base::xcontext_t::instance()};
+            summarize_info.serialize_to(stream);
+            MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
+        }
+        {
+            XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_tableblock_num_key");
+            base::xstream_t stream{base::xcontext_t::instance()};
+            stream << summarize_tableblock_count;
+            MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM", std::string((char *)stream.data(), stream.size()));
+        }
+
+
+        if (summarize_tableblock_count < XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_table_block)) {
+            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count not enought, time round: %" PRIu64
+                ": SOURCE_ADDRESS: %s, pid:%d, tableblock_count:%u",
+                timestamp,
+                SOURCE_ADDRESS().c_str(),
+                getpid(),
+                summarize_tableblock_count);
+            return;
+        }
+
+
 
         auto node_to_action = filter_nodes(summarize_info);
         xdbg("[xzec_slash_info_contract][filter_slashed_nodes] remove summarize info, time round: %" PRIu64, timestamp);
@@ -209,7 +216,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         }
 
 
-    } else {
+    } else { // origin logic
 
         xunqualified_node_info_t summarize_info;
         std::string value_str;
@@ -296,6 +303,8 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunquali
     } else {
         // summarized info
         nodes_to_slash = filter_helper(summarize_info);
+        auto fork_config = chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
+
         {
             XMETRICS_TIME_RECORD("sysContract_zecSlash_remove_property_contract_unqualified_node_key");
             MAP_REMOVE(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE");
@@ -304,6 +313,7 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunquali
             XMETRICS_TIME_RECORD("sysContract_zecSlash_remove_property_contract_tableblock_num_key");
             MAP_REMOVE(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM");
         }
+
     }
 
     xkinfo("[xzec_slash_info_contract][filter_slashed_nodes] the filter node to slash: size: %zu", nodes_to_slash.size());
@@ -394,41 +404,99 @@ void xzec_slash_info_contract::print_summarize_info(data::xunqualified_node_info
     xdbg("[xzec_slash_info_contract][print_summarize_info] summarize info: %s", out.c_str());
 }
 
-bool xzec_slash_info_contract::is_validtor_group(common::xgroup_id_t const& id) {
-    return id.value() >= common::xvalidator_group_id_value_begin && id.value() <= common::xvalidator_group_id_value_end;
-
-}
-bool xzec_slash_info_contract::is_auditor_group(common::xgroup_id_t const& id) {
-    return id.value() >= common::xauditor_group_id_value_begin && id.value() <= common::xauditor_group_id_value_end;
-}
-
-base::xauto_ptr<data::xfull_tableblock_t> xzec_slash_info_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0) {
+std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint32_t& block_num, uint64_t& last_read_height) const {
+    std::vector<base::xauto_ptr<data::xblock_t>> res;
+    auto time_interval = XGET_CONFIG(slash_fulltable_interval);
+    auto cur_read_height = last_read_height;
     auto blockchain_height = get_blockchain_height(owner.value());
-    for (auto i = last_read_height; i <= blockchain_height; ++i) {
+    for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
         base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), i);
-        if (tableblock->is_fulltable()) {
-            std::string value_str;
-            try {
 
-                XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_fulltableblock_num_key");
-                if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT")) {
-                    value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT");
-                }
-            } catch (std::runtime_error & e) {
-                xwarn("[xzec_slash_info_contract][get_next_fulltableblock] read full tableblock height error:%s", e.what());
-                throw;
-            }
-
-            {
-                XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_num_key");
-                MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "FULLTABLEBLOCK_HEIGHT", std::string((char *)stream.data(), stream.size()));
-            }
+        if (tableblock->get_clock() - TIME() < time_interval) { // less than time interval
+            break;
         }
 
-        return
+        if (tableblock->is_fulltable()) {
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, height: %"PRIu64, owner.value().c_str(), i);
+            cur_read_height = i;
+            res.push_back(std::move(tableblock));
+        }
+        block_num++;
     }
 
-    return nullptr;
+    // setup cur read height for out param
+    last_read_height = cur_read_height;
+
+
+    return res;
+}
+
+xunqualified_node_info_t xzec_slash_info_contract::process_fulltableblock(std::vector<base::xauto_ptr<xblock_t>> const& full_blocks) {
+    xunqualified_node_info_t res_node_info;
+
+    for (std::size_t block_index = 0; block_index < full_blocks.size(); ++block_index) {
+
+        xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_blocks[block_index].get());
+        auto fulltable_statisitc_data = full_tableblock->get_fulltable_statistics_resource()->get_statistics_data();
+        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
+        data::xstatistics_data_t stat_data;
+        stream >> stat_data;
+
+        // process one full tableblock statistic data
+        auto node_service = contract::xcontract_manager_t::instance().get_node_service();
+        for (auto const static_item: stat_data.detail) {
+            auto elect_statistic = static_item.second;
+            for (auto const group_item: elect_statistic.group_statistics_data) {
+                common::xgroup_address_t group_addr = group_item.first;
+                xvip2_t group_xvip2 = top::xtop_extended<common::xip_t>{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
+                xgroup_related_statistics_data_t group_account_data = group_item.second;
+
+                // process auditor group
+                if (top::common::has<top::common::xnode_type_t::auditor>(group_addr.type())) {
+                    for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                        auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                        res_node_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                        res_node_info.auditor_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
+                        xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
+                            slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                    }
+                } else if (top::common::has<top::common::xnode_type_t::validator>(group_addr.type())) {// process validator group
+                    for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                        auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                        res_node_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                        res_node_info.validator_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
+                        xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental validator data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
+                            slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                    }
+
+                } else { // invalid group
+                    xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] invalid group id: %d", group_addr.group_id().value());
+                    throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception, "[xzec_slash_info_contract][do_unqualified_node_slash] invalid group"};
+                }
+
+            }
+
+        }
+
+    }
+
+    return res_node_info;
+ }
+
+xunqualified_node_info_t  xzec_slash_info_contract::accumulate_node_info(xunqualified_node_info_t const&  node_info) {
+    xunqualified_node_info_t summarize_info;
+
+    for (auto const & item : node_info.auditor_info) {
+        summarize_info.auditor_info[item.first].block_count += item.second.block_count;
+        summarize_info.auditor_info[item.first].subset_count += item.second.subset_count;
+    }
+
+    for (auto const & item : node_info.validator_info) {
+        summarize_info.validator_info[item.first].block_count += item.second.block_count;
+        summarize_info.validator_info[item.first].subset_count += item.second.subset_count;
+    }
+
+    return summarize_info;
 }
 
 NS_END3
