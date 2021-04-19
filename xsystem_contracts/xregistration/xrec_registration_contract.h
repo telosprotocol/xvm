@@ -16,7 +16,14 @@ NS_BEG2(top, xstake)
 using namespace xvm;
 using namespace xvm::xcontract;
 
-class xrec_registration_contract final : public xcontract_base {
+struct xproperty_instruction_t {
+    std::string name;
+    data::xproperty_op_code_t op_code;
+    std::string op_para1;
+    std::string op_para2;
+};
+
+class xrec_registration_contract : public xcontract_base {
     using xbase_t = xcontract_base;
 public:
     XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xrec_registration_contract);
@@ -42,14 +49,14 @@ public:
      * @param signing_key
      */
     void registerNode(const std::string & node_types,
-                       const std::string & nickname,
-                       const std::string & signing_key,
-                       const uint32_t dividend_rate
+                      const std::string & nickname,
+                      const std::string & signing_key,
+                      const uint32_t dividend_rate
 #if defined XENABLE_MOCK_ZEC_STAKE
-                       , std::string const & registration_account
+                      ,
+                      std::string const & registration_account
 #endif
-    );
-
+                      );
     /**
      * @brief unregister the node
      *
@@ -57,6 +64,17 @@ public:
     void unregisterNode();
 
     void updateNodeInfo(const std::string & nickname, const int updateDepositType, const uint64_t deposit, const uint32_t dividend_rate, const std::string & node_types, const std::string & node_sign_key);
+    
+    /**
+     * @brief update node type
+     *
+     * @param node_types
+     */
+    
+    void updateNodeType(const std::string & node_types);  
+
+    void updateNodeSignKey(const std::string & node_sign_key);
+
     /**
      * @brief Set the Dividend Ratio
      *
@@ -70,8 +88,6 @@ public:
      * @param nickname
      */
     void setNodeName(const std::string & nickname);
-
-    // void update_node_credit(std::set<std::string> const& accounts);
 
     /**
      * @brief batch update stakes
@@ -95,13 +111,6 @@ public:
     void redeemNodeDeposit();
 
     /**
-     * @brief update node type
-     *
-     * @param node_types
-     */
-    void updateNodeType(const std::string & node_types);
-
-    /**
      * @brief stake deposit
      *
      */
@@ -113,8 +122,6 @@ public:
      * @param unstake_deposit
      */
     void unstakeDeposit(uint64_t unstake_deposit);
-
-    void updateNodeSignKey(const std::string & node_sign_key);
 
     /**
      * @brief slave unqualified node
@@ -142,70 +149,142 @@ public:
 private:
     /**
      * @brief register the node
-     *
+     * @param account
      * @param node_types
      * @param nickname
      * @param signing_key
+     * @param dividend_rate
      * @param network_ids
+     * @param asset_out
+     * @param node_info
      */
-    void registerNode2(const std::string & node_types,
-                        const std::string & nickname,
-                        const std::string & signing_key,
-                        const uint32_t dividend_rate,
-                        const std::set<uint32_t> & network_ids
-#if defined XENABLE_MOCK_ZEC_STAKE
-                        , std::string const & registration_account
-#endif
-    );
+    xproperty_instruction_t registerNode2(common::xaccount_address_t const & account,
+                                          const std::string & node_types,
+                                          const std::string & nickname,
+                                          const std::string & signing_key,
+                                          const uint32_t dividend_rate,
+                                          const std::set<common::xnetwork_id_t> & network_ids,
+                                          data::xproperty_asset const & asset_out,
+                                          xreg_node_info & node_info);
+
+    /**
+     * @brief handleNodeInfo
+     * @param cur_time
+     * @param nickname
+     * @param dividend_rate
+     * @param node_types
+     * @param node_sign_key
+     * @param node_info
+     */
+    xproperty_instruction_t handleNodeInfo(const uint64_t cur_time,
+                                           const std::string & nickname,
+                                           const uint32_t dividend_rate,
+                                           const std::string & node_types,
+                                           const std::string & node_sign_key,
+                                           xreg_node_info & node_info);
+
+    /**
+     * @brief handleNodeType
+     *
+     * @param node_types
+     * @param asset_out
+     * @param node_info
+     * @return xproperty_instruction_t
+     */
+    xproperty_instruction_t handleNodeType(const std::string & node_types, const data::xproperty_asset & asset_out, xreg_node_info & node_info);
+    
+    /**
+     * @brief handleNodeSignKey
+     *
+     * @param node_sign_key
+     * @param node_info
+     * @return xproperty_instruction_t
+     */
+    xproperty_instruction_t handleNodeSignKey(const std::string & node_sign_key, xreg_node_info & node_info);
+    
+    /**
+     * @brief handleDividendRatio
+     *
+     * @param cur_time
+     * @param dividend_rate
+     * @param node_info
+     * @return xproperty_instruction_t
+     */
+    xproperty_instruction_t handleDividendRatio(common::xlogic_time_t cur_time, uint32_t dividend_rate, xreg_node_info & node_info);
+    
+    /**
+     * @brief handleNodeName
+     *
+     * @param nickname
+     * @param node_info
+     * @return xproperty_instruction_t
+     */
+    xproperty_instruction_t handleNodeName(const std::string & nickname, xreg_node_info & node_info);
+    
+    /**
+     * @brief create_binlog
+     *
+     * @param name
+     * @param op_code
+     * @param op_para1
+     * @param op_para2
+     * @return xproperty_instruction_t
+     */
+    xproperty_instruction_t create_binlog(std::string name, data::xproperty_op_code_t op_code, std::string op_para1, xreg_node_info op_para2);
+    
+    /**
+     * @brief execute_instruction
+     *
+     * @param instruction
+     */
+    void execute_instruction(xproperty_instruction_t instruction);
 
     /**
      * @brief update node info
      *
      * @param node_info
      */
-    void        update_node_info(xreg_node_info & node_info);
+    void update_node_info(xreg_node_info & node_info, std::error_code & ec);
 
     /**
      * @brief delete node info
      *
      * @param account
      */
-    void        delete_node_info(std::string const & account);
+    void delete_node_info(common::xaccount_address_t const & account);
 
-    /**
-     * @brief Get the node info
-     *
-     * @param account
-     * @param node_info
-     * @return int32_t
-     */
-    int32_t     get_node_info(const std::string& account, xreg_node_info& node_info);
+    /// @brief Query the node info.
+    /// @param account The account to be queried.
+    /// @param ec Error code.
+    /// @return The registration info.
+    xreg_node_info get_node_info(common::xaccount_address_t const & account, std::error_code & ec) const ;
 
     /**
      * @brief insert the refund info
      *
      * @param account
      * @param refund_amount
-     * @return int32_t
+     * @param ec
+     * @return xproperty_instruction_t
      */
-    int32_t     ins_refund(const std::string& account, uint64_t const & refund_amount);
+    void update_node_refund(common::xaccount_address_t const & account, uint64_t const & refund_amount, std::error_code & ec);
 
     /**
      * @brief delete the refund info
      *
      * @param account
-     * @return int32_t
+     * @return xproperty_instruction_t
      */
-    int32_t     del_refund(const std::string& account);
+    void delete_node_refund(common::xaccount_address_t const & account);
 
     /**
      * @brief Get the refund info
      *
      * @param account
-     * @param refund
-     * @return int32_t
+     * @param ec
+     * @return xrefund_info
      */
-    int32_t     get_refund(const std::string& account, xrefund_info & refund);
+    xrefund_info get_node_refund(common::xaccount_address_t const & account, std::error_code & ec) const;
 
     /**
      * @brief check and set mainnet activation
@@ -218,15 +297,26 @@ private:
      *
      * @param account
      * @param node_slash_info
-     * @return int32_t
+     * @return xslash_info
      */
-    int32_t     get_slash_info(std::string const& account, xslash_info& node_slash_info);
+    xslash_info get_slash_info(common::xaccount_address_t const & account, std::error_code & ec) const ;
+    
+    /**
+     * @brief Get the slash info
+     *
+     * @param account
+     * @param s_info
+     * @param ec
+     * @return xproperty_instruction_t
+     */
+    void update_slash_info(common::xaccount_address_t const & account, xslash_info const & s_info, std::error_code & ec) ;
+    
     /**
      * @brief get slash staking time
      *
      * @param node_addr
      */
-    void        slash_staking_time(std::string const& node_addr);
+    void slash_staking_time(common::xaccount_address_t const & account);
 
     /**
      * @brief check if a valid nickname
@@ -236,15 +326,6 @@ private:
      * @return false
      */
     bool        is_valid_name(const std::string & nickname) const;
-
-    /**
-     * @brief check if signing key exists
-     *
-     * @param signing_key
-     * @return true
-     * @return false
-     */
-    bool        check_if_signing_key_exist(const std::string & signing_key);
 
     /**
      * @brief
