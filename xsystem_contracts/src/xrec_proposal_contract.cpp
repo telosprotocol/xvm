@@ -173,7 +173,7 @@ void xrec_proposal_contract::withdrawProposal(const std::string & proposal_id) {
     proposal_info proposal;
     if (!get_proposal_info(proposal_id, proposal)) {
         xdbg("[xrec_proposal_contract::withdrawProposal] can't find proposal: %s", proposal_id.c_str());
-        return;
+        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
     }
     XCONTRACT_ENSURE(src_account == proposal.proposal_client_address, "[xrec_proposal_contract::withdrawProposal] only proposer can cancel the proposal!");
 
@@ -202,13 +202,13 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
     // check if the voting client address exists in initial comittee
     if (!voter_in_committee(src_account)) {
         xwarn("[xrec_proposal_contract::tccVote] source addr is not a commitee voter: %s", src_account.c_str());
-        return;
+        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
     }
 
     proposal_info proposal;
     if (!get_proposal_info(proposal_id, proposal)) {
         xwarn("[xrec_proposal_contract::tccVote] can't find proposal: %s", proposal_id.c_str());
-        return;
+        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
     }
 
     if (proposal.voting_status == status_none) {
@@ -272,7 +272,7 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
         auto it = voting_result.find(src_account);
         if (it != voting_result.end()) {
             xinfo("[xrec_proposal_contract::tccVote] client addr(%s) already voted", src_account.c_str());
-            return;
+            throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
         }
         // record the voting for this client address
         voting_result.insert({src_account, option});
@@ -459,7 +459,7 @@ void xrec_proposal_contract::delete_expired_proposal() {
         MAP_COPY_GET(PROPOSAL_MAP_ID, proposals);
     } catch (...) {
         xkinfo("[xrec_proposal_contract::delete_expired_proposal] current cannot find any proposals");
-        return;
+        throw;
     }
 
     for (auto const& item: proposals) {

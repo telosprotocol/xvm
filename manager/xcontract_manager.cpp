@@ -5,7 +5,7 @@
 #include "xvm/manager/xcontract_manager.h"
 
 #include "xbase/xmem.h"
-#include "xbase/xvblock.h"
+#include "xvledger/xvblock.h"
 #include "xcodec/xmsgpack_codec.hpp"
 #include "xcommon/xip.h"
 #include "xconfig/xconfig_register.h"
@@ -119,8 +119,6 @@ void xtop_contract_manager::install_monitors(observer_ptr<xmessage_bus_face_t> c
                                              observer_ptr<vnetwork::xmessage_callback_hub_t> const & msg_callback_hub,
                                              observer_ptr<xstore_face_t> const & store,
                                              xobject_ptr_t<store::xsyncvstore_t> const & syncstore) {
-    m_store = store;
-    m_syncstore = syncstore;
     msg_callback_hub->register_message_ready_notify([this, nid = msg_callback_hub->network_id(), bus_ptr = bus.get()](xvnode_address_t const &, xmessage_t const & msg, std::uint64_t const) {
         if (msg.id() == xmessage_block_broadcast_id) {
             base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)msg.payload().data(), msg.payload().size());
@@ -144,7 +142,7 @@ void xtop_contract_manager::install_monitors(observer_ptr<xmessage_bus_face_t> c
                             }
                         }
                         if (succ) {
-                            auto event_ptr = std::make_shared<xevent_chain_timer_t>(block);
+                            auto event_ptr = make_object_ptr<xevent_chain_timer_t>(block);
                             bus_ptr->push_event(event_ptr);
                             xdbg("[xtop_contract_manager::install_monitors] push event");
                         }
@@ -198,7 +196,7 @@ void xtop_contract_manager::process_event(const xevent_ptr_t & e) {
         do_on_block(e);
         break;
     case xevent_major_type_vnode: {
-        auto event = std::static_pointer_cast<xevent_vnode_t>(e);
+        auto event = dynamic_xobject_ptr_cast<xevent_vnode_t>(e);
         if (event->destory) {
             do_destory_vnode(event);
         } else {
@@ -236,8 +234,8 @@ void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
     xdbg("[xtop_contract_manager::do_on_block] map size %d", m_map.size());
 
     if (e->major_type == xevent_major_type_chain_timer) {
-        assert(std::dynamic_pointer_cast<xevent_chain_timer_t>(e) != nullptr);
-        auto const event = std::static_pointer_cast<xevent_chain_timer_t>(e);
+        assert(dynamic_xobject_ptr_cast<xevent_chain_timer_t>(e) != nullptr);
+        auto const event = dynamic_xobject_ptr_cast<xevent_chain_timer_t>(e);
         auto height = event->time_block->get_height();
         if (height <= m_latest_timer) {
             xdbg("[xtop_contract_manager::do_on_block] ignore timer block %" PRIu64 ", record timer height %" PRIu64, height, m_latest_timer);
@@ -307,6 +305,11 @@ void xtop_contract_manager::add_to_map(xrole_map_t & m, xrole_context_t * rc, xv
     m[driver] = rc;
 }
 
+void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store, xobject_ptr_t<store::xsyncvstore_t> const& syncstore) {
+    m_store = store;
+    m_syncstore = syncstore;
+}
+
 void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address, xstore_face_t * store) {
     assert(contract_cluster_address.has_value());
     // first parameter is not used
@@ -333,11 +336,18 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     base::xauto_ptr<base::xvblock_t> block(data::xblocktool_t::create_genesis_lightunit(contract_cluster_address.value(), tx, result));
     xassert(block);
 
-    // first parameter is not used
-    auto ret = store->set_vblock(block->get_account(), block.get());
-    xassert(ret);
-    ret = store->execute_block(block.get());
-    xassert(ret);
+    base::xvaccount_t _vaddr(block->get_account());
+    // m_blockstore->delete_block(_vaddr, genesis_block.get());  // delete default genesis block
+    auto ret = m_syncstore->get_vblockstore()->store_block(_vaddr, block.get());
+    if (!ret) {
+        xerror("xtop_contract_manager::setup_chain store genesis block fail");
+        return;
+    }
+    ret = m_syncstore->get_vblockstore()->execute_block(_vaddr, block.get());
+    if (!ret) {
+        xerror("xtop_contract_manager::setup_chain execute genesis block fail");
+        return;
+    }
     xdbg("[xtop_contract_manager::setup_chain] setup %s, %s", contract_cluster_address.c_str(), ret ? "SUCC" : "FAIL");
 }
 
@@ -791,13 +801,13 @@ static void get_voter_dividend(observer_ptr<store::xstore_face_t> store,
                                                  xJson::Value & json) {
     xdbg("[get_voter_dividend] contract_address: %s, property_name: %s", contract_address.c_str(), property_name.c_str());
     std::map<std::string, std::string> voter_dividends;
-    
+
     //store->map_copy_get(contract_address.value(), property_name, voter_dividends);
     uint64_t blockchain_height = store->get_blockchain_height(contract_address.value());
     if(xsuccess != store->get_map_property(contract_address.value(), blockchain_height, property_name, voter_dividends)){
         return ;
     }
-    
+
     for (auto m : voter_dividends) {
         xstake::xreward_record record;
         auto detail = m.second;

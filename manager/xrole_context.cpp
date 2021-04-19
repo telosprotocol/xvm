@@ -18,7 +18,7 @@ NS_BEG2(top, contract)
 using base::xstring_utl;
 xrole_context_t::xrole_context_t(const observer_ptr<xstore_face_t> & store,
                                  const xobject_ptr_t<store::xsyncvstore_t> & syncstore,
-                                 const std::shared_ptr<xtxpool_service::xrequest_tx_receiver_face> & unit_service,
+                                 const std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face> & unit_service,
                                  const std::shared_ptr<xvnetwork_driver_face_t> & driver,
                                  xcontract_info_t * info)
   : m_store(store), m_syncstore(syncstore), m_unit_service(unit_service), m_driver(driver), m_contract_info(info) {
@@ -45,7 +45,8 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
         event->time_block->add_ref();
         block.attach((xblock_t*) event->time_block);
     } else if(e->major_type == xevent_major_type_store && e->minor_type == xevent_store_t::type_block_to_db) {
-        block = ((xevent_store_block_to_db_t *)e.get())->block;
+        block = mbus::extract_block_from(dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e));
+        // block = ((xevent_store_block_to_db_t *)e.get())->block;
         new_block = ((xevent_store_block_to_db_t *)e.get())->new_block;
     }
 
@@ -69,13 +70,15 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
                 switch (m_contract_info->broadcast_policy) {
                 case enum_broadcast_policy_t::normal:
                     xdbg("xrole_context_t::on_block::broadcast, normal, block=%s", block->dump().c_str());
-                    broadcast(((xevent_store_block_to_db_t *)e.get())->block, m_contract_info->broadcast_types);
+                    // broadcast(((xevent_store_block_to_db_t *)e.get())->block, m_contract_info->broadcast_types);
+                    broadcast(mbus::extract_block_from(dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e)), m_contract_info->broadcast_types);
                     break;
                 case enum_broadcast_policy_t::fullunit:
                     xdbg("xrole_context_t::on_block::broadcast, fullunit, block addr %s", address.to_string().c_str());
                     if (block->is_fullunit()) {
                         assert(false);
-                        broadcast(((xevent_store_block_to_db_t *)e.get())->block, m_contract_info->broadcast_types);
+                        // broadcast(((xevent_store_block_to_db_t *)e.get())->block, m_contract_info->broadcast_types);
+                        broadcast(mbus::extract_block_from(dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e)), m_contract_info->broadcast_types);
                     }
                     break;
                 default:

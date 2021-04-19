@@ -7,7 +7,7 @@
 #include "json/json.h"
 #include "xapplication/xapplication.h"
 #include "xbase/xlock.h"
-#include "xbase/xvledger.h"
+#include "xvledger/xvaccount.h"
 #include "xbasic/xmemory.hpp"
 #include "xblockstore/xsyncvstore_face.h"
 #include "xcommon/xaddress.h"
@@ -61,6 +61,7 @@ public:
      *
      */
     void instantiate_sys_contracts();
+    void init(observer_ptr<xstore_face_t> const & store, xobject_ptr_t<store::xsyncvstore_t> const& syncstore);
     /**
      * @brief Set up blockchains
      *
