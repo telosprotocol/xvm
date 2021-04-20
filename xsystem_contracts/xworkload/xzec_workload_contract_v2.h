@@ -5,6 +5,7 @@
 #pragma once
 
 #include "xdata/xtableblock.h"
+#include "xdata/xworkload_info.h"
 #include "xstake/xstake_algorithm.h"
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
@@ -69,7 +70,7 @@ private:
      *
      * @return int 0 - not activated, other - activated
      */
-    int is_mainnet_activated();
+    int is_mainnet_activated() const;
 
     /**
      * @brief update tgas
@@ -86,15 +87,20 @@ private:
     /**
      * @brief get_fullblock
      */
-    std::vector<xfull_tableblock_t*> get_fullblock(common::xaccount_address_t const& owner, 
-                                                   const uint64_t last_read_height, 
-                                                   uint64_t & cur_read_height,
-                                                   const uint64_t & cur_time,
-                                                   uint64_t & cur_read_time);
+    std::vector<xobject_ptr_t<data::xblock_t>> get_fullblock(common::xaccount_address_t const & owner, const uint64_t timestamp);
+
     /**
      * @brief add_workload_with_fullblock
      */
-    void add_workload_with_fullblock(common::xlogic_time_t const timestamp);
+    void accumulate_workload(xstatistics_data_t const & stat_data, 
+                             const uint32_t table_tx_count,
+                             std::map<common::xgroup_address_t, xauditor_workload_info_t> & bookload_auditor_group_workload_info,
+                             std::map<common::xgroup_address_t, xvalidator_workload_info_t> & bookload_validator_group_workload_info);
+
+    /**
+     * @brief add_workload_with_fullblock
+     */
+    void accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp);
 
     /**
      * @brief migrate_data
