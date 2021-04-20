@@ -44,7 +44,7 @@ void xzec_workload_contract_v2::setup() {
     STRING_SET(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG, xstring_utl::tostring(0));
 }
 
-int xzec_workload_contract_v2::is_mainnet_activated() const {
+bool xzec_workload_contract_v2::is_mainnet_activated() const {
     xactivation_record record;
 
     std::string value_str = STRING_GET2(xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
@@ -54,7 +54,7 @@ int xzec_workload_contract_v2::is_mainnet_activated() const {
         record.serialize_from(stream);
     }
     xdbg("[xzec_workload_contract::is_mainnet_activated] activated: %d, pid:%d\n", record.activated, getpid());
-    return record.activated;
+    return (record.activated == 0) ? false : true;
 };
 
 std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(common::xaccount_address_t const & table_owner, const uint64_t timestamp) {
@@ -62,8 +62,7 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
     uint64_t cur_read_height = 0;
     uint64_t last_read_height = get_table_height(table_owner);
     uint64_t cur_read_time = 0;
-    uint64_t last_read_time = get_table_time(table_owner);
-    XCONTRACT_ENSURE(last_read_time <= timestamp, "table last read time > cur timestamp!");
+    uint64_t last_read_time = get_table_time(table_owner);    
     // get block
     std::vector<xobject_ptr_t<data::xblock_t>> res;
     auto blockchain_height = get_blockchain_height(table_owner.value());
@@ -118,8 +117,7 @@ uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t 
     }
  
     if (!value_str.empty()) {
-        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
-        stream >> last_read_height;
+        last_read_height = xstring_utl::touint64(value_str);
     }    
     
     return last_read_height;
@@ -142,8 +140,7 @@ common::xlogic_time_t xzec_workload_contract_v2::get_table_time(common::xaccount
     }
  
     if (!value_str.empty()) {
-        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
-        stream >> last_read_time;
+        last_read_time = static_cast<common::xlogic_time_t>(xstring_utl::touint64(value_str));
     }    
     
     return last_read_time;
@@ -404,8 +401,6 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
     std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
     std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_clusters_workloads2;
     int count = 0;
-    // get TIME() to compare with timestamp
-    auto cur_time = TIME();
 
     const int upload_cnt = 1000;
     for (auto it = auditor_clusters_workloads.begin(); it != auditor_clusters_workloads.end(); it++) {
@@ -440,11 +435,10 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
                     MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
                     MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
 
-                    xinfo("[xzec_workload_contract_v2::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
+                    xinfo("[xzec_workload_contract_v2::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", count: %d, round: %d",
                         auditor_clusters_workloads2.size(),
                         validator_clusters_workloads2.size(),
                         timestamp,
-                        cur_time,
                         count,
                         (count + upload_cnt - 1) / upload_cnt);
                     workload_info = std::string((char *)stream.data(), stream.size());
@@ -491,11 +485,10 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
                         MAP_OBJECT_SERIALIZE2(stream, auditor_clusters_workloads2);
                         MAP_OBJECT_SERIALIZE2(stream, validator_clusters_workloads2);
 
-                        xinfo("[xzec_workload_contract_v2::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
+                        xinfo("[xzec_workload_contract_v2::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", count: %d, round: %d",
                             auditor_clusters_workloads2.size(),
                             validator_clusters_workloads2.size(),
                             timestamp,
-                            cur_time,
                             count,
                             (count + upload_cnt - 1) / upload_cnt);
                         workload_info = std::string((char *)stream.data(), stream.size());
@@ -512,11 +505,10 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
             }
         }
         if (auditor_clusters_workloads2.size() > 0 || validator_clusters_workloads.size() > 0) {
-            xinfo("[xzec_workload_contract_v2::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", cur_time: %llu, count: %d, round: %d",
+            xinfo("[xzec_workload_contract_v2::on_timer] report workload to zec reward, auditor_clusters_workloads size: %d, validator_clusters_workloads size: %d, timer round: %" PRIu64 ", count: %d, round: %d",
                 auditor_clusters_workloads.size(),
                 validator_clusters_workloads.size(),
                 timestamp,
-                cur_time,
                 count,
                 (count + upload_cnt - 1) / upload_cnt);
             std::string workload_info;

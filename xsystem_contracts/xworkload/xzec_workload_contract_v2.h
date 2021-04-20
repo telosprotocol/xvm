@@ -70,7 +70,7 @@ private:
      *
      * @return int 0 - not activated, other - activated
      */
-    int is_mainnet_activated() const;
+    bool is_mainnet_activated() const;
 
     /**
      * @brief update tgas
