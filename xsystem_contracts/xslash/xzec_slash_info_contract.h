@@ -6,6 +6,7 @@
 
 #include "xcommon/xlogic_time.h"
 #include "xdata/xslash.h"
+#include "xdata/xblock_statistics_data.h"
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
 
@@ -80,23 +81,32 @@ private:
     filter_helper(data::xunqualified_node_info_t const & node_map);
 
     /**
-     * @brief judge auditor or validator group by group id
-     *
-     * @param id the group id
-     * @return true
-     * @return false
-     */
-    bool is_validtor_group(common::xgroup_id_t const& id);
-    bool is_auditor_group(common::xgroup_id_t const& id);
-
-    /**
      * @brief get the latest tablefullblock from last read height
      *
      * @param owner the owner addr of the full tableblock
-     * @param last_read_height the height of full tableblock last time read
+     * @param block_num in&out the block num processed
+     * @param last_read_height in&out the height of full tableblock last time read
      */
-    base::xauto_ptr<xfull_tableblock_t> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t last_read_height = 0);
+    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint32_t& block_num, uint64_t& last_read_height) const;
 
+
+    /**
+     * @brief process statistic data to get nodeinfo
+     *
+     * @param block_statistic_data  the statistic data of a fulltable block
+     * @return xunqualified_node_info_t  the node info from statistic data
+     */
+    xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data);
+
+
+    /**
+     * @brief accumulate  node info of all tables
+     *
+     * @param  node_info  the node info to accumulate
+     * @param  summarize_info  in&out  the accumulated node info
+     *
+     */
+    void  accumulate_node_info(xunqualified_node_info_t const&  node_info, xunqualified_node_info_t& summarize_info);
 
 
 };
