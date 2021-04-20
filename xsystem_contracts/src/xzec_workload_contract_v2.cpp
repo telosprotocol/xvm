@@ -42,6 +42,8 @@ void xzec_workload_contract_v2::setup() {
     MAP_CREATE(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_TIME);
     STRING_CREATE(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG); 
     STRING_SET(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG, xstring_utl::tostring(0));
+    // total workload
+    STRING_CREATE(XPORPERTY_CONTRACT_TGAS_KEY);
 }
 
 bool xzec_workload_contract_v2::is_mainnet_activated() const {

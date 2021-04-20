@@ -1998,6 +1998,12 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
     issue_detail.m_auditor_group_count          = auditor_group_count;
     issue_detail.m_validator_group_count        = validator_group_count;
 
+    bool add_issue_self_reward = false;
+    auto fork_config = chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
+    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
+        add_issue_self_reward = true;
+    }
+
     for (auto const & entity : map_nodes) {
         auto const & account = entity.first;
         auto const & node = entity.second;
@@ -2054,6 +2060,9 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
             auto adv_reward_to_voters = node_reward - adv_reward_to_self;
             add_table_vote_reward(node.m_account, adv_total_votes, adv_reward_to_voters, contract_auditor_votes);
             node_reward = adv_reward_to_self;
+        }
+        if(add_issue_self_reward) {
+            issue_detail.m_node_rewards[account].m_self_reward = node_reward;
         }
         add_table_node_reward(node.m_account, node_reward);
     }
