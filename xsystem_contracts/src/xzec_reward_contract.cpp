@@ -158,7 +158,7 @@ void xzec_reward_contract::reward(const common::xlogic_time_t current_time, std:
 
     chain_upgrade::xtop_chain_fork_config_center fork_config_center;
     auto fork_config = fork_config_center.chain_fork_config();
-    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.reward_fork_refactoring, current_time)) {
+    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, current_time)) {
         // step1 get related params
         common::xlogic_time_t activation_time;  // system activation time
         xreward_onchain_param_t onchain_param;  // onchain params
