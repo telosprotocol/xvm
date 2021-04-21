@@ -98,6 +98,26 @@ private:
                              std::map<common::xgroup_address_t, xvalidator_workload_info_t> & bookload_validator_group_workload_info);
 
     /**
+     * @brief accumulate_validator_workload
+     */
+    void accumulate_validator_workload(common::xgroup_address_t const & group_addr,
+                                       std::string const & account_str,
+                                       const uint32_t slotid, 
+                                       xgroup_related_statistics_data_t const & group_account_data, 
+                                       const uint32_t table_tx_count, 
+                                       std::map<common::xgroup_address_t, xvalidator_workload_info_t> & validator_group_workload);
+    
+    /**
+     * @brief accumulate_auditor_workload
+     */
+    void accumulate_auditor_workload(common::xgroup_address_t const & group_addr,
+                                     std::string const & account_str,
+                                     const uint32_t slotid,     
+                                     xgroup_related_statistics_data_t const & group_account_data, 
+                                     const uint32_t table_tx_count, 
+                                     std::map<common::xgroup_address_t, xauditor_workload_info_t> & auditor_group_workload);
+ 
+    /**
      * @brief add_workload_with_fullblock
      */
     void accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp);
