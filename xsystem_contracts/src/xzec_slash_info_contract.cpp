@@ -168,6 +168,10 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
             base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
             present_summarize_info.serialize_from(stream);
         }
+        #ifdef DEBUG
+            print_summarize_info(present_summarize_info);
+            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] present tableblock num is " PRIu64, present_tableblock_count);
+        #endif
 
 
          /**
@@ -204,12 +208,8 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
             for (std::size_t block_index = 0; block_index < full_blocks.size(); ++block_index) {
 
                 xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_blocks[block_index].get());
-                auto fulltable_statisitc_data = full_tableblock->get_fulltable_statistics_resource()->get_statistics_data();
-                base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)fulltable_statisitc_data.data(), fulltable_statisitc_data.size());
-                data::xstatistics_data_t stat_data;
-                stream >> stat_data;
-
-                auto const node_info = process_statistic_data(stat_data);
+                auto fulltable_statisitc_data = full_tableblock->get_table_statistics();
+                auto const node_info = process_statistic_data(fulltable_statisitc_data);
                 accumulate_node_info(node_info, summarize_info);
             }
 
@@ -463,6 +463,7 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
     auto time_interval = XGET_CONFIG(slash_fulltable_interval);
     auto cur_read_height = last_read_height;
     auto blockchain_height = get_blockchain_height(owner.value());
+    xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, current blockchain height: %" PRIu64, owner.value().c_str(), blockchain_height);
     for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
         base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), i);
 
@@ -473,9 +474,9 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
 
         if (tableblock->is_fulltable()) {
             xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, height: %" PRIu64, owner.value().c_str(), i);
-            cur_read_height = i;
             res.push_back(std::move(tableblock));
         }
+        cur_read_height++;
         block_num++;
     }
 
