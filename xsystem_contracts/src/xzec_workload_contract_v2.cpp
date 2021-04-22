@@ -43,7 +43,7 @@ void xzec_workload_contract_v2::setup() {
     STRING_CREATE(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG); 
     STRING_SET(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG, xstring_utl::tostring(0));
     // total workload
-    STRING_CREATE(XPORPERTY_CONTRACT_TGAS_KEY);
+    // STRING_CREATE(XPORPERTY_CONTRACT_TGAS_KEY);
 }
 
 bool xzec_workload_contract_v2::is_mainnet_activated() const {
@@ -179,27 +179,31 @@ void xzec_workload_contract_v2::add_group_workload(bool auditor, common::xgroup_
         workload.serialize_from(stream);
     }
 
-    common::xgroup_address_t cluster;
-    xstream_t key_stream(xcontext_t::instance(), (uint8_t*)group_address.to_string().data(), group_address.to_string().size());
-    key_stream >> cluster;
     for (auto const& leader_count_info : leader_count) {
         auto const& leader  = leader_count_info.first;
         auto const& count   = leader_count_info.second;
 
         workload.m_leader_count[leader] += count;
         workload.cluster_total_workload += count;
-        xdbg("[xzec_workload_contract::add_group_workload] auditor: %d, group_address: %u, leader: %s, count: %d, total_workload: %d\n", auditor, cluster.group_id().value(), leader_count_info.first.c_str(), workload.m_leader_count[leader], workload.cluster_total_workload);
+        xdbg("[xzec_workload_contract::add_group_workload] auditor: %d, group_id: %u, leader: %s, count: %d, total_workload: %d\n", auditor, group_address.group_id().value(), leader_count_info.first.c_str(), workload.m_leader_count[leader], workload.cluster_total_workload);
     }
 
     xstream_t stream(xcontext_t::instance());
     workload.serialize_to(stream);
     std::string value = std::string((const char*)stream.data(), stream.size());
+
+    std::string group_address_str;
+    {
+        xstream_t stream(xcontext_t::instance());
+        stream << group_address;
+        group_address_str = std::string((const char*)stream.data(), stream.size());
+    }
     if (auditor) {
         XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "XPORPERTY_CONTRACT_WORKLOAD_KEY_SetExecutionTime");
-        MAP_SET(property, group_address.to_string(), value);
+        MAP_SET(property, group_address_str, value);
     } else {
         XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY_SetExecutionTime");
-        MAP_SET(property, group_address.to_string(), value);
+        MAP_SET(property, group_address_str, value);
     }
 }
 
@@ -228,17 +232,20 @@ void xzec_workload_contract_v2::accumulate_auditor_workload(common::xgroup_addre
                                                             const uint32_t workload_per_tableblock, 
                                                             const uint32_t workload_per_tx, 
                                                             std::map<common::xgroup_address_t, xauditor_workload_info_t> & auditor_group_workload) {
-    auto it2 = auditor_group_workload.find(group_addr);
-    if (it2 == auditor_group_workload.end()) {
-        xauditor_workload_info_t auditor_workload_info;
-        auto ret = auditor_group_workload.insert(std::make_pair(group_addr, auditor_workload_info));
-        XCONTRACT_ENSURE(ret.second, "insert auditor workload failed");
-        it2 = ret.first;
-    }
     uint32_t block_count = group_account_data.account_statistics_data[slotid].block_data.block_count;
     uint32_t tx_count = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
     uint32_t workload = block_count * workload_per_tableblock + tx_count * workload_per_tx;
-    it2->second.m_leader_count[account_str] += workload;
+    if (workload > 0) {
+        auto it2 = auditor_group_workload.find(group_addr);
+        if (it2 == auditor_group_workload.end()) {
+            xauditor_workload_info_t auditor_workload_info;
+            auto ret = auditor_group_workload.insert(std::make_pair(group_addr, auditor_workload_info));
+            XCONTRACT_ENSURE(ret.second, "insert auditor workload failed");
+            it2 = ret.first;
+        }
+        it2->second.m_leader_count[account_str] += workload;
+    }
+
     xdbg(
         "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] group_addr: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, "
         "workload: %u, block_count: %u, tx_count: %u, workload_per_tableblock: %u, workload_per_tx: %u",
@@ -262,17 +269,21 @@ void xzec_workload_contract_v2::accumulate_validator_workload(common::xgroup_add
                                                               const uint32_t workload_per_tableblock, 
                                                               const uint32_t workload_per_tx, 
                                                               std::map<common::xgroup_address_t, xvalidator_workload_info_t> & validator_group_workload) {
-    auto it2 = validator_group_workload.find(group_addr);
-    if (it2 == validator_group_workload.end()) {
-        xvalidator_workload_info_t validator_workload_info;
-        auto ret = validator_group_workload.insert(std::make_pair(group_addr, validator_workload_info));
-        XCONTRACT_ENSURE(ret.second, "insert auditor workload failed");
-        it2 = ret.first;
-    }
     uint32_t block_count = group_account_data.account_statistics_data[slotid].block_data.block_count;
     uint32_t tx_count = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
     uint32_t workload = block_count * workload_per_tableblock + tx_count * workload_per_tx;
-    it2->second.m_leader_count[account_str] += workload;
+    if (workload > 0) {
+        auto it2 = validator_group_workload.find(group_addr);
+        if (it2 == validator_group_workload.end()) {
+            xvalidator_workload_info_t validator_workload_info;
+            auto ret = validator_group_workload.insert(std::make_pair(group_addr, validator_workload_info));
+            XCONTRACT_ENSURE(ret.second, "insert auditor workload failed");
+            it2 = ret.first;
+        }
+
+        it2->second.m_leader_count[account_str] += workload;
+    }
+
     xdbg(
         "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] group_addr: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, "
         "workload: %u, block_count: %u, tx_count: %u, workload_per_tableblock: %u, workload_per_tx: %u",
@@ -299,6 +310,7 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
         auto elect_statistic = static_item.second;
         for (auto const group_item: elect_statistic.group_statistics_data) {
             common::xgroup_address_t const & group_addr = group_item.first;
+            xgroup_related_statistics_data_t const & group_account_data = group_item.second;
             xvip2_t const &group_xvip2 = top::common::xip2_t{
                 group_addr.network_id(),
                 group_addr.zone_id(),
@@ -310,7 +322,6 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
             xdbg("[xzec_workload_contract_v2::accumulate_workload] group xvip2: %llu, %llu",
                 group_xvip2.high_addr,
                 group_xvip2.low_addr);
-            xgroup_related_statistics_data_t const & group_account_data = group_item.second;
             bool is_auditor = false;
             if (common::has<common::xnode_type_t::auditor>(group_addr.type())) {
                 is_auditor = true;
