@@ -473,7 +473,7 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
         }
 
         if (tableblock->is_fulltable()) {
-            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, height: %" PRIu64, owner.value().c_str(), i);
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), i);
             res.push_back(std::move(tableblock));
         }
         cur_read_height++;
@@ -495,26 +495,33 @@ xunqualified_node_info_t xzec_slash_info_contract::process_statistic_data(top::d
     for (auto const static_item: block_statistic_data.detail) {
         auto elect_statistic = static_item.second;
         for (auto const group_item: elect_statistic.group_statistics_data) {
-            common::xgroup_address_t const& group_addr = group_item.first;
-            xvip2_t const& group_xvip2 = top::common::xip2_t{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
             xgroup_related_statistics_data_t const& group_account_data = group_item.second;
-
+            common::xgroup_address_t const& group_addr = group_item.first;
+            xvip2_t const& group_xvip2 = top::common::xip2_t{
+                group_addr.network_id(),
+                group_addr.zone_id(),
+                group_addr.cluster_id(),
+                group_addr.group_id(),
+                common::xdefault_network_version,
+                (uint16_t)group_account_data.account_statistics_data.size(),
+                static_item.first
+            };
             // process auditor group
             if (top::common::has<top::common::xnode_type_t::auditor>(group_addr.type())) {
                 for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
                     auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
-                    res_node_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                    res_node_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].vote_data.block_count;
                     res_node_info.auditor_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
                     xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
-                        slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                        slotid, group_account_data.account_statistics_data[slotid].vote_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
                 }
             } else if (top::common::has<top::common::xnode_type_t::validator>(group_addr.type())) {// process validator group
                 for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
                     auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
-                    res_node_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].block_data.block_count;
+                    res_node_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].vote_data.block_count;
                     res_node_info.validator_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
                     xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] incremental validator data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
-                        slotid, group_account_data.account_statistics_data[slotid].block_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
+                        slotid, group_account_data.account_statistics_data[slotid].vote_data.block_count, group_account_data.account_statistics_data[slotid].vote_data.vote_count);
                 }
 
             } else { // invalid group
