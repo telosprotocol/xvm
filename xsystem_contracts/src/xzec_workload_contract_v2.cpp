@@ -71,16 +71,18 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
     auto time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{5}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
     for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
         xobject_ptr_t<data::xblock_t> tableblock = get_block_by_height(table_owner.value(), i);
-        if (tableblock->is_fulltable()) {
-            uint64_t block_time = tableblock->get_timerblock_height();
-            xdbg("[xzec_workload_contract_v2::get_fullblock] tableblock table_owner: %s, time: %lu, height: %" PRIu64, table_owner.value().c_str(), block_time, i);
-            if (block_time + time_interval <= timestamp) {
-                res.push_back(tableblock);
-                cur_read_height = i;
-                cur_read_time = block_time;
-            }
+        uint64_t block_time = tableblock->get_timerblock_height();
+        xdbg("[xzec_workload_contract_v2::get_fullblock] tableblock table_owner: %s, time: %lu, height: %" PRIu64, table_owner.value().c_str(), block_time, i);
+        if (block_time + time_interval > timestamp) {
+            break;
         }
+        if (tableblock->is_fulltable()) {
+            res.push_back(tableblock);
+        }
+        cur_read_height = i;
+        cur_read_time = block_time;
     }
+    
 
     // update table address height
     if (cur_read_height > last_read_height) {
