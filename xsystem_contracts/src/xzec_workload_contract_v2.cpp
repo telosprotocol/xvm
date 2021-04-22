@@ -299,7 +299,14 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
         auto elect_statistic = static_item.second;
         for (auto const group_item: elect_statistic.group_statistics_data) {
             common::xgroup_address_t const & group_addr = group_item.first;
-            xvip2_t group_xvip2 = top::common::xip2_t{group_addr.network_id(), group_addr.zone_id(), group_addr.cluster_id(), group_addr.group_id()};
+            xvip2_t const &group_xvip2 = top::common::xip2_t{
+                group_addr.network_id(),
+                group_addr.zone_id(),
+                group_addr.cluster_id(),
+                group_addr.group_id(),
+                common::xdefault_network_version,
+                (uint16_t)group_account_data.account_statistics_data.size(),
+                static_item.first};
             xdbg("[xzec_workload_contract_v2::accumulate_workload] group xvip2: %llu, %llu",
                 group_xvip2.high_addr,
                 group_xvip2.low_addr);
