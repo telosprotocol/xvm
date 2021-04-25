@@ -210,8 +210,9 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
             for (std::size_t block_index = 0; block_index < full_blocks.size(); ++block_index) {
 
                 xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_blocks[block_index].get());
+                auto node_service = contract::xcontract_manager_t::instance().get_node_service();
                 auto fulltable_statisitc_data = full_tableblock->get_table_statistics();
-                auto const node_info = process_statistic_data(fulltable_statisitc_data);
+                auto const node_info = process_statistic_data(fulltable_statisitc_data, node_service);
                 accumulate_node_info(node_info, summarize_info);
             }
 
@@ -369,8 +370,14 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunquali
         xwarn("[xzec_slash_info_contract][filter_slashed_nodes] the summarized node info is empty!");
         return nodes_to_slash;
     } else {
+        // do filter
+        auto slash_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_publishment_threshold_value);
+        auto slash_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_publishment_threshold_value);
+        auto award_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_reward_threshold_value);
+        auto award_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_reward_threshold_value);
+
         // summarized info
-        nodes_to_slash = filter_helper(summarize_info);
+        nodes_to_slash = filter_helper(summarize_info, slash_vote, slash_persent, award_vote, award_persent);
 
         {
             XMETRICS_TIME_RECORD("sysContract_zecSlash_remove_property_contract_unqualified_node_key");
@@ -387,15 +394,10 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunquali
     return nodes_to_slash;
 }
 
-std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqualified_node_info_t const & node_map) {
+std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqualified_node_info_t const & node_map, uint32_t slash_vote, uint32_t slash_persent, uint32_t award_vote, uint32_t award_persent) {
     std::vector<xaction_node_info_t> res{};
 
-    // do punish filter
-    auto node_block_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_publishment_threshold_value);
-    auto node_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_publishment_threshold_value);
-    auto award_node_block_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_reward_threshold_value);
-    auto award_node_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_reward_threshold_value);
-
+    // do filter
     std::vector<xunqualified_filter_info_t> node_to_action{};
     for (auto const & node : node_map.auditor_info) {
         xunqualified_filter_info_t info;
@@ -408,17 +410,17 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqual
     std::sort(node_to_action.begin(), node_to_action.end(), [](xunqualified_filter_info_t const & lhs, xunqualified_filter_info_t const & rhs) {
         return lhs.vote_percent < rhs.vote_percent;
     });
-    // uint32_t slash_size = node_to_slash.size() * node_persent / 100 ?  node_to_slash.size() * node_persent / 100 : 1;
-    uint32_t slash_size = node_to_action.size() * node_persent / 100;
+    // uint32_t slash_size = node_to_slash.size() * slash_persent / 100 ?  node_to_slash.size() * slash_persent / 100 : 1;
+    uint32_t slash_size = node_to_action.size() * slash_persent / 100;
     for (size_t i = 0; i < slash_size; ++i) {
-        if (node_to_action[i].vote_percent < node_block_vote || 0 == node_to_action[i].vote_percent) {
+        if (node_to_action[i].vote_percent < slash_vote || 0 == node_to_action[i].vote_percent) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type});
         }
     }
 
-    uint32_t award_size = node_to_action.size() * award_node_persent / 100;
+    uint32_t award_size = node_to_action.size() * award_persent / 100;
     for (int i = (int)node_to_action.size() - 1; i >= (int)(node_to_action.size() - award_size); --i) {
-        if (node_to_action[i].vote_percent > award_node_block_vote) {
+        if (node_to_action[i].vote_percent > award_vote) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type, false});
         }
     }
@@ -436,17 +438,17 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqual
         return lhs.vote_percent < rhs.vote_percent;
     });
 
-    // uint32_t slash_size = node_to_slash.size() * node_persent / 100 ?  node_to_slash.size() * node_persent / 100 : 1;
-    slash_size = node_to_action.size() * node_persent / 100;
+    // uint32_t slash_size = node_to_slash.size() * slash_persent / 100 ?  node_to_slash.size() * slash_persent / 100 : 1;
+    slash_size = node_to_action.size() * slash_persent / 100;
     for (size_t i = 0; i < slash_size; ++i) {
-        if (node_to_action[i].vote_percent < node_block_vote || 0 == node_to_action[i].vote_percent) {
+        if (node_to_action[i].vote_percent < slash_vote || 0 == node_to_action[i].vote_percent) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type});
         }
     }
 
-    award_size = node_to_action.size() * award_node_persent / 100;
+    award_size = node_to_action.size() * award_persent / 100;
     for (int i = (int)node_to_action.size() - 1; i >= (int)(node_to_action.size() - award_size); --i) {
-        if (node_to_action[i].vote_percent > award_node_block_vote) {
+        if (node_to_action[i].vote_percent > award_vote) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type, false});
         }
     }
@@ -531,11 +533,10 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
     return res;
 }
 
-xunqualified_node_info_t xzec_slash_info_contract::process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data) {
+xunqualified_node_info_t xzec_slash_info_contract::process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data,  base::xvnodesrv_t * node_service) {
     xunqualified_node_info_t res_node_info;
 
     // process one full tableblock statistic data
-    auto node_service = contract::xcontract_manager_t::instance().get_node_service();
     for (auto const static_item: block_statistic_data.detail) {
         auto elect_statistic = static_item.second;
         for (auto const group_item: elect_statistic.group_statistics_data) {
