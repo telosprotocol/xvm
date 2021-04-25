@@ -249,7 +249,7 @@ void xzec_workload_contract_v2::accumulate_auditor_workload(common::xgroup_addre
     }
 
     xdbg(
-        "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] group_addr: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, "
+        "[xzec_workload_contract_v2::accumulate_auditor_workload] group_addr: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, "
         "workload: %u, block_count: %u, tx_count: %u, workload_per_tableblock: %u, workload_per_tx: %u",
         group_addr.to_string().c_str(),
         group_addr.network_id().value(),
@@ -287,7 +287,7 @@ void xzec_workload_contract_v2::accumulate_validator_workload(common::xgroup_add
     }
 
     xdbg(
-        "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] group_addr: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, "
+        "[xzec_workload_contract_v2::accumulate_validator_workload] group_addr: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, "
         "workload: %u, block_count: %u, tx_count: %u, workload_per_tableblock: %u, workload_per_tx: %u",
         group_addr.to_string().c_str(),
         group_addr.network_id().value(),
@@ -347,8 +347,9 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
 }
 
 void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp) {
-    xdbg("[xzec_workload_contract_v2::calc_table_workload] enum_vbucket_has_tables_count %d", enum_vledger_const::enum_vbucket_has_tables_count);
+    xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] enum_vbucket_has_tables_count %d, timestamp: %llu", enum_vledger_const::enum_vbucket_has_tables_count, timestamp);
     for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; i++) {
+        xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d", i);
         std::map<common::xgroup_address_t, xauditor_workload_info_t> auditor_group_workload;
         std::map<common::xgroup_address_t, xvalidator_workload_info_t> validator_group_workload;
         int64_t table_pledge_balance_change_tgas = 0;
@@ -366,13 +367,14 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
             // m_table_pledge_balance_change_tgas
             table_pledge_balance_change_tgas += full_tableblock->get_pledge_balance_change_tgas();
             total_table_block_count++;
-            xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] total_table_block_count: %" PRIu32 "", total_table_block_count);
+            xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] table_block_count: %u, total_table_block_count: %" PRIu32 "", block_index, total_table_block_count);
         }
 
         if (full_blocks.size() >  0) {
             xinfo(
-                "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] timer round: %" PRIu64 ", pid: %d, total_table_block_count: " PRIu32 ", table_pledge_balance_change_tgas: %lld, "
+                "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d, timer round: %" PRIu64 ", pid: %d, total_table_block_count: " PRIu32 ", table_pledge_balance_change_tgas: %lld, "
                 "this: %p\n",
+                i,
                 timestamp,
                 getpid(),
                 total_table_block_count,
