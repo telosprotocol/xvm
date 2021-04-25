@@ -81,10 +81,14 @@ private:
      * @brief filter helper to filter out the slash node
      *
      * @param node_map  the summarized node info
+     * @param slash_vote the vote threshhold to slash
+     * @param slash_percent the persent of node to slash
+     * @param award_vote the vote threshhold to award
+     * @param award_percent the persent of node to award
      * @return std::vector<data::xaction_node_info_t>  the node to slash or reward
      */
     std::vector<data::xaction_node_info_t>
-    filter_helper(data::xunqualified_node_info_t const & node_map);
+    filter_helper(data::xunqualified_node_info_t const & node_map, uint32_t slash_vote, uint32_t slash_persent, uint32_t award_vote, uint32_t award_persent);
 
     /**
      * @brief get the latest tablefullblock from last read height
@@ -102,7 +106,7 @@ private:
      * @param block_statistic_data  the statistic data of a fulltable block
      * @return xunqualified_node_info_t  the node info from statistic data
      */
-    xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data);
+    xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service);
 
 
     /**
