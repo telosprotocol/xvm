@@ -16,7 +16,7 @@ NS_BEG3(top, xvm, xcontract)
  * @brief the zec slash contract
  *
  */
-class xzec_slash_info_contract final : public xcontract_base {
+class xzec_slash_info_contract : public xcontract_base {
     using xbase_t = xcontract_base;
 public:
     XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xzec_slash_info_contract);
@@ -61,6 +61,12 @@ private:
      * @param summarize_slash_info   the current summarized slash info to print
      */
     void print_summarize_info(data::xunqualified_node_info_t const & summarize_slash_info);
+
+    /**
+     * @brief print stored table height info
+     *
+     */
+    void print_table_height_info();
 
     /**
      * @brief filter out the slash node according the summarized slash info
