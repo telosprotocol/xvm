@@ -57,7 +57,7 @@ public:
     void map_remove(const std::string& key, const std::string& field, bool native = false);
     int32_t map_size(const std::string& key, const std::string& addr="");
     void map_copy_get(const std::string & key, std::map<std::string, std::string> & map, const std::string& addr = "");
-    bool map_field_exist(const std::string& key, const std::string& field);
+    bool map_field_exist(const std::string& key, const std::string& field) const;
     bool map_key_exist(const std::string& key);
     void map_clear(const std::string& key, bool native = false);
     void get_map_property(const std::string& key, std::map<std::string, std::string>& value, uint64_t height, const std::string& addr="");
