@@ -181,10 +181,11 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
           */
          xunqualified_node_info_t summarize_info = present_summarize_info;
          uint32_t summarize_tableblock_count = present_tableblock_count;
+         std::vector<uint64_t> present_table_height(enum_vledger_const::enum_vbucket_has_tables_count);
          std::vector<uint64_t> table_height(enum_vledger_const::enum_vbucket_has_tables_count);
         // process the fulltable of 256 table
         for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; ++i) {
-            std::string height_key = std::string{"FULLTABLEBLOCK_HEIGHT_"} + std::to_string(i);
+            std::string height_key = std::to_string(i);
             uint64_t read_height = 0;
             std::string value_str;
             try {
@@ -203,6 +204,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
                 stream >> read_height;
                 xdbg("[xzec_slash_info_contract][do_unqualified_node_slash]  last read full tableblock height is: %" PRIu64, read_height);
             }
+            present_table_height[i] = read_height;
 
             std::string table_owner = xdatautil::serialize_owner_str(sys_contract_sharding_table_block_addr, i);
             auto const& full_blocks = get_next_fulltableblock(common::xaccount_address_t{table_owner}, summarize_tableblock_count, read_height);
@@ -237,9 +239,12 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         {
             XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_height_key");
             for (std::size_t i = 0; i < table_height.size(); ++i) {
-                base::xstream_t stream{base::xcontext_t::instance()};
-                stream << table_height[i];
-                MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, std::string{"FULLTABLEBLOCK_HEIGHT_"} + std::to_string(i), std::string((char *)stream.data(), stream.size()));
+                // for optimize
+                if (present_table_height[i] != table_height[i]) {
+                    base::xstream_t stream{base::xcontext_t::instance()};
+                    stream << table_height[i];
+                    MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, std::to_string(i), std::string((char *)stream.data(), stream.size()));
+                }
             }
         }
 
@@ -477,7 +482,7 @@ void xzec_slash_info_contract::print_table_height_info() {
     std::string out = "|";
 
     for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; ++i) {
-        std::string height_key = std::string{"FULLTABLEBLOCK_HEIGHT_"} + std::to_string(i);
+        std::string height_key =  std::to_string(i);
         std::string value_str;
         try {
             XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_fulltableblock_height_key");
