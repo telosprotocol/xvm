@@ -169,6 +169,11 @@ void xzec_workload_contract::update_tgas(int64_t table_pledge_balance_change_tga
 }
 
 void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, timestamp)) {
+        return;
+    }
+
     if (!is_mainnet_activated()) return;
 
     /*{
@@ -238,9 +243,6 @@ void xzec_workload_contract::on_timer(common::xlogic_time_t const timestamp) {
     MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, auditor_clusters_workloads);
     // validator workload
     MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_clusters_workloads);
-
-    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
-    auto fork_config = fork_config_center.chain_fork_config();
 	if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.reward_fork_spark, TIME())) {
         //std::map<std::string, std::string> auditor_clusters_workloads2;
         //std::map<std::string, std::string> validator_clusters_workloads2;

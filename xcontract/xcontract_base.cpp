@@ -248,7 +248,7 @@ void xcontract_base::MAP_CREATE(const string& key) {
     m_contract_helper->map_create(key);
 }
 
-string xcontract_base::MAP_GET(const string& key, const string& field) {
+string xcontract_base::MAP_GET(const string& key, const string& field) const {
     return m_contract_helper->map_get(key, field);
 }
 
@@ -288,7 +288,7 @@ int32_t xcontract_base::MAP_SIZE(const string& key) {
     return m_contract_helper->map_size(key);
 }
 
-bool xcontract_base::MAP_FIELD_EXIST(const string& key, const string& field) {
+bool xcontract_base::MAP_FIELD_EXIST(const string& key, const string& field) const {
     return m_contract_helper->map_field_exist(key, field);
 }
 
