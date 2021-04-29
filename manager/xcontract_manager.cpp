@@ -39,11 +39,8 @@
 #include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
 #include "xvm/xsystem_contracts/xslash/xtable_slash_info_collection_contract.h"
 #include "xvm/xvm_service.h"
-#include "xvm/xvm_trace.h"
 
 #include <cinttypes>
-
-using namespace top::xvm;
 
 NS_BEG2(top, contract)
 
@@ -332,14 +329,6 @@ void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store, xobj
 
 void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address, xstore_face_t * store) {
     assert(contract_cluster_address.has_value());
-
-    // not 0 height return
-    auto cur_height = store->get_blockchain_height(contract_cluster_address.value());
-    if (0 != cur_height) {
-        xdbg("xtop_contract_manager::setup_chain blockchain %s height %lu not 0, exit setup_chain()", contract_cluster_address.value().c_str(), cur_height);
-        return;
-    }
-
     // first parameter is not used
     base::xauto_ptr<base::xvblock_t> db_block(store->get_block_by_height(contract_cluster_address.value(), (uint64_t)0));
     if (db_block != nullptr) {
@@ -356,11 +345,7 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     xaccount_context_t ac(contract_cluster_address.value(), store);
 
     xvm::xvm_service s;
-    xtransaction_trace_ptr trace = s.deal_transaction(tx, &ac);
-    if (trace->m_errno == enum_xvm_error_code::enum_vm_exception) {
-        xwarn("xtop_contract_manager::setup_chain deal_transaction fail, error: %d, %s", trace->m_errno, trace->m_errmsg.c_str());
-        return;
-    }
+    s.deal_transaction(tx, &ac);
 
     store::xtransaction_result_t result;
     ac.get_transaction_result(result);
@@ -377,7 +362,7 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     }
     ret = m_syncstore->get_vblockstore()->execute_block(_vaddr, block.get());
     if (!ret) {
-        xwarn("xtop_contract_manager::setup_chain execute genesis block fail");
+        xerror("xtop_contract_manager::setup_chain execute genesis block fail");
         return;
     }
     xdbg("[xtop_contract_manager::setup_chain] setup %s, %s", contract_cluster_address.c_str(), ret ? "SUCC" : "FAIL");
@@ -402,11 +387,7 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     xaccount_context_t ac(contract_cluster_address.value(), store);
 
     xvm::xvm_service s;
-    xtransaction_trace_ptr trace = s.deal_transaction(tx, &ac);
-    if (trace->m_errno == enum_xvm_error_code::enum_vm_exception) {
-        xwarn("xtop_contract_manager::setup_chain deal_transaction fail, error: %d, %s", trace->m_errno, trace->m_errmsg.c_str());
-        return;
-    }
+    s.deal_transaction(tx, &ac);
 
     store::xtransaction_result_t result;
     ac.get_transaction_result(result);
@@ -423,7 +404,7 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     }
     ret = m_syncstore->get_vblockstore()->execute_block(_vaddr, block.get());
     if (!ret) {
-        xwarn("xtop_contract_manager::setup_chain execute genesis block fail");
+        xerror("xtop_contract_manager::setup_chain execute genesis block fail");
         return;
     }
     xdbg("[xtop_contract_manager::setup_chain] setup %s, %s", contract_cluster_address.c_str(), ret ? "SUCC" : "FAIL");
