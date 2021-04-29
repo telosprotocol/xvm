@@ -86,6 +86,23 @@ void xtop_contract_manager::instantiate_sys_contracts() {
 
 #undef XREGISTER_CONTRACT
 
+void xtop_contract_manager::setup_blockchains(xstore_face_t * store) {
+    // setup all contracts' accounts, then no need
+    // sync generation block at all
+    for (auto const & pair : xcontract_deploy_t::instance().get_map()) {
+        if (data::is_sys_sharding_contract_address(pair.first)) {
+            for (auto i = 0; i < enum_vbucket_has_tables_count; i++) {
+                auto addr = data::make_address_by_prefix_and_subaddr(pair.first.value(), i);
+                register_contract_cluster_address(pair.first, addr);
+                setup_chain(addr, store);
+            }
+        } else {
+            register_contract_cluster_address(pair.first, pair.first);
+            setup_chain(pair.first, store);
+        }
+    }
+}
+
 void xtop_contract_manager::setup_blockchains(xstore_face_t * store, xvblockstore_t * blockstore) {
     // setup all contracts' accounts, then no need
     // sync generation block at all
@@ -313,14 +330,67 @@ void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store, xobj
     m_syncstore = syncstore;
 }
 
+void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address, xstore_face_t * store) {
+    assert(contract_cluster_address.has_value());
+
+    // not 0 height return
+    auto cur_height = store->get_blockchain_height(contract_cluster_address.value());
+    if (0 != cur_height) {
+        xdbg("xtop_contract_manager::setup_chain blockchain %s height %lu not 0, exit setup_chain()", contract_cluster_address.value().c_str(), cur_height);
+        return;
+    }
+
+    // first parameter is not used
+    base::xauto_ptr<base::xvblock_t> db_block(store->get_block_by_height(contract_cluster_address.value(), (uint64_t)0));
+    if (db_block != nullptr) {
+        return;
+    }
+
+    xtransaction_ptr_t tx = make_object_ptr<xtransaction_t>();
+    data::xproperty_asset asset_out{0};
+    tx->make_tx_run_contract(asset_out, "setup", "");
+    tx->set_same_source_target_address(contract_cluster_address.value());
+    tx->set_digest();
+    tx->set_len();
+
+    xaccount_context_t ac(contract_cluster_address.value(), store);
+
+    xvm::xvm_service s;
+    xtransaction_trace_ptr trace = s.deal_transaction(tx, &ac);
+    if (trace->m_errno == enum_xvm_error_code::enum_vm_exception) {
+        xwarn("xtop_contract_manager::setup_chain deal_transaction fail, error: %d, %s", trace->m_errno, trace->m_errmsg.c_str());
+        return;
+    }
+
+    store::xtransaction_result_t result;
+    ac.get_transaction_result(result);
+
+    base::xauto_ptr<base::xvblock_t> block(data::xblocktool_t::create_genesis_lightunit(contract_cluster_address.value(), tx, result));
+    xassert(block);
+
+    base::xvaccount_t _vaddr(block->get_account());
+    // m_blockstore->delete_block(_vaddr, genesis_block.get());  // delete default genesis block
+    auto ret = m_syncstore->get_vblockstore()->store_block(_vaddr, block.get());
+    if (!ret) {
+        xerror("xtop_contract_manager::setup_chain store genesis block fail");
+        return;
+    }
+    ret = m_syncstore->get_vblockstore()->execute_block(_vaddr, block.get());
+    if (!ret) {
+        xwarn("xtop_contract_manager::setup_chain execute genesis block fail");
+        return;
+    }
+    xdbg("[xtop_contract_manager::setup_chain] setup %s, %s", contract_cluster_address.c_str(), ret ? "SUCC" : "FAIL");
+}
+
 void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address, xstore_face_t * store, xvblockstore_t * blockstore) {
     assert(contract_cluster_address.has_value());
 
     if (blockstore->exist_genesis_block(contract_cluster_address.value())) {
-        xdbg("xtop_contract_manager::setup_chain blockchain genesis block exist");
+        xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block exist", contract_cluster_address.c_str());
         return;
     }
-    xdbg("xtop_contract_manager::setup_chain blockchain genesis block not exist");
+    xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block not exist", contract_cluster_address.c_str());
 
     xtransaction_ptr_t tx = make_object_ptr<xtransaction_t>();
     data::xproperty_asset asset_out{0};
