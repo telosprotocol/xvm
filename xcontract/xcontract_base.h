@@ -387,7 +387,7 @@ public:
      * @param field  the specific map content key
      * @return std::string  the returned map property content
      */
-    virtual std::string MAP_GET(const std::string& key, const std::string& field) final;
+    virtual std::string MAP_GET(const std::string& key, const std::string& field) const final;
 
     /**
      * @brief get map type property(not throw exception)
@@ -449,7 +449,7 @@ public:
      * @return true  the specific content exist
      * @return false  the specific content not exist
      */
-    virtual bool MAP_FIELD_EXIST(const std::string& key, const std::string& field) final;
+    virtual bool MAP_FIELD_EXIST(const std::string& key, const std::string& field) const final;
 
     /**
      * @brief Get the map property object by height

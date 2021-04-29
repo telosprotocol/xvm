@@ -7,6 +7,7 @@
 #include "xbase/xmem.h"
 #include "xbase/xutl.h"
 #include "xbasic/xutility.h"
+#include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xproperty.h"
@@ -14,6 +15,7 @@
 #include "xelect_common/elect_option.h"
 #include "xmetrics/xmetrics.h"
 #include "xstore/xstore_error.h"
+
 
 using top::base::xcontext_t;
 using top::base::xstream_t;
@@ -31,6 +33,11 @@ void xtable_workload_contract::setup() {
 }
 
 void xtable_workload_contract::on_timer(const uint64_t onchain_timer_round) {
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
+        return;
+    }
+
     XMETRICS_TIME_RECORD("sysContract_tableWorkload_on_timer");
     // xinfo("[xtable_workload_contract::on_timer] pid: %d, SELF_ADDRESS: %s, onchain_timer_round: %llu, this: %p\n", getpid(), SELF_ADDRESS().c_str(), onchain_timer_round, this);
 
