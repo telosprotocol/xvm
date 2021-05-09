@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xconfig/xconfig_register.h"
 #include "xconfig/xpredefined_configurations.h"
 #include "xdata/xblock_statistics_data.h"
 #include "xdata/xnative_contract_address.h"
@@ -37,13 +38,10 @@ void xzec_workload_contract_v2::setup() {
     // accumulate validator group workload, key: xgroup_address_t, value: xvalidator_workload_info_t
     MAP_CREATE(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY);
     // key: common::xaccount_address_t(table), value: uint64(height)
-    MAP_CREATE(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT); 
-    // key: common::xaccount_address_t(table), value: uint64(time)
-    MAP_CREATE(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_TIME);
-    STRING_CREATE(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG); 
+    MAP_CREATE(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT);
+
+    STRING_CREATE(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG);
     STRING_SET(XPROPERTY_CONTRACT_WORKLOAD_DATA_MIGRATION_FLAG, xstring_utl::tostring(0));
-    // total workload
-    // STRING_CREATE(XPORPERTY_CONTRACT_TGAS_KEY);
 }
 
 bool xzec_workload_contract_v2::is_mainnet_activated() const {
@@ -55,43 +53,51 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
                     (uint8_t*)value_str.c_str(), (uint32_t)value_str.size());
         record.serialize_from(stream);
     }
-    xdbg("[xzec_workload_contract::is_mainnet_activated] activated: %d, pid:%d\n", record.activated, getpid());
-    return (record.activated == 0) ? false : true;
+    xdbg("[xzec_workload_contract::is_mainnet_activated] activated: %d", record.activated);
+    return static_cast<bool>(record.activated);
 };
 
-std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(common::xaccount_address_t const & table_owner, const uint64_t timestamp) {
+std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(common::xaccount_address_t const & table_owner, common::xlogic_time_t const timestamp) {
     // calc table address height
     uint64_t cur_read_height = 0;
     uint64_t last_read_height = get_table_height(table_owner);
     uint64_t cur_read_time = 0;
-    uint64_t last_read_time = get_table_time(table_owner);    
+
     // get block
     std::vector<xobject_ptr_t<data::xblock_t>> res;
-    auto blockchain_height = get_blockchain_height(table_owner.value());
-    auto time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{5}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
-    for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
-        xobject_ptr_t<data::xblock_t> tableblock = get_block_by_height(table_owner.value(), i);
-        uint64_t block_time = tableblock->get_timerblock_height();
+    auto const blockchain_height = get_blockchain_height(table_owner.value());
+    auto const time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{5}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
+    auto const fulltable_step = XGET_CONFIG(fulltable_interval_block_num);
+
+    for (auto i = last_read_height + fulltable_step; i <= blockchain_height; i += fulltable_step) {
+        xobject_ptr_t<data::xblock_t> fulltable_block = get_block_by_height(table_owner.value(), i);
+
+        if (fulltable_block == nullptr) {
+            xwarn("[xzec_workload_contract_v2::get_fullblock] fail to retrive fulltable block. table %s at height %" PRIu64 " at time %" PRIu64, table_owner.c_str(), i, timestamp);
+            break;
+        }
+
+        if (!fulltable_block->is_fulltable()) {
+            xwarn("[xzec_workload_contract_v2::get_fullblock] retrive fulltable block but get wrong one. class %" PRIi32 " level %" PRIi32, static_cast<int32_t>(fulltable_block->get_block_class()), static_cast<int32_t>(fulltable_block->get_block_level()));
+            break;
+        }
+
+        auto const block_time = fulltable_block->get_timerblock_height();
         xdbg("[xzec_workload_contract_v2::get_fullblock] tableblock table_owner: %s, time: %lu, height: %" PRIu64, table_owner.value().c_str(), block_time, i);
         if (block_time + time_interval > timestamp) {
             break;
         }
-        if (tableblock->is_fulltable()) {
-            res.push_back(tableblock);
-        }
+
+        res.push_back(tableblock);
         cur_read_height = i;
         cur_read_time = block_time;
     }
-    
 
     // update table address height
     if (cur_read_height > last_read_height) {
         update_table_height(table_owner, cur_read_height);
     }
-    if (cur_read_time > last_read_time) {
-        update_table_time(table_owner, cur_read_time);
-    }
-    xdbg("[xzec_workload_contract_v2::get_fullblock] table table_owner address: %s, last height: %lu, cur height: %lu\n", table_owner.c_str(), last_read_height, cur_read_height);
+    xwarn("[xzec_workload_contract_v2::get_fullblock] table table_owner address: %s, last height: %" PRIu64 ", cur height: %" PRIu64, table_owner.c_str(), last_read_height, cur_read_height);
 
     return res;
 }
@@ -99,8 +105,8 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
 void xzec_workload_contract_v2::migrate_data() {
     std::map<std::string, std::string> auditor_group_workloads;
     std::map<std::string, std::string> validator_group_workloads;
-    MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, auditor_group_workloads, sys_contract_zec_workload_addr);   
-    MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_group_workloads, sys_contract_zec_workload_addr);  
+    MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, auditor_group_workloads, sys_contract_zec_workload_addr);
+    MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_group_workloads, sys_contract_zec_workload_addr);
     for (auto const & it : auditor_group_workloads) {
         MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, it.first, it.second);
     }
@@ -112,47 +118,24 @@ void xzec_workload_contract_v2::migrate_data() {
 uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t const & table) const {
     uint64_t last_read_height = 0;
     std::string value_str;
-    
+
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "get_property_fulltableblock_height");
 
     if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, table.value())) {
         value_str = MAP_GET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, table.value());
         XCONTRACT_ENSURE(!value_str.empty(), "read full tableblock height empty");
     }
- 
+
     if (!value_str.empty()) {
         last_read_height = xstring_utl::touint64(value_str);
-    }    
-    
+    }
+
     return last_read_height;
 }
 
 void xzec_workload_contract_v2::update_table_height(common::xaccount_address_t const & table, const uint64_t cur_read_height) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "set_property_contract_fulltableblock_height");
     MAP_SET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, table.value(), xstring_utl::tostring(cur_read_height));
-}
-
-common::xlogic_time_t xzec_workload_contract_v2::get_table_time(common::xaccount_address_t const & table) const {
-    common::xlogic_time_t last_read_time = 0;
-    std::string value_str;
-    
-    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "get_property_fulltableblock_time");
-
-    if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_TIME, table.value())) {
-        value_str = MAP_GET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_TIME, table.value());
-        XCONTRACT_ENSURE(!value_str.empty(), "read full tableblock time empty");
-    }
- 
-    if (!value_str.empty()) {
-        last_read_time = static_cast<common::xlogic_time_t>(xstring_utl::touint64(value_str));
-    }    
-    
-    return last_read_time;
-}
-
-void xzec_workload_contract_v2::update_table_time(common::xaccount_address_t const & table, const common::xlogic_time_t cur_read_time) {
-    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "set_property_contract_fulltableblock_time");
-    MAP_SET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_TIME, table.value(), xstring_utl::tostring(cur_read_time));
 }
 
 void xzec_workload_contract_v2::add_group_workload(bool auditor, common::xgroup_address_t const & group_address, std::map<std::string, uint32_t> const & leader_count) {
@@ -229,10 +212,10 @@ void xzec_workload_contract_v2::update_tgas(int64_t table_pledge_balance_change_
 
 void xzec_workload_contract_v2::accumulate_auditor_workload(common::xgroup_address_t const & group_addr,
                                                             std::string const & account_str,
-                                                            const uint32_t slotid,     
-                                                            xgroup_related_statistics_data_t const & group_account_data, 
-                                                            const uint32_t workload_per_tableblock, 
-                                                            const uint32_t workload_per_tx, 
+                                                            const uint32_t slotid,
+                                                            xgroup_related_statistics_data_t const & group_account_data,
+                                                            const uint32_t workload_per_tableblock,
+                                                            const uint32_t workload_per_tx,
                                                             std::map<common::xgroup_address_t, xauditor_workload_info_t> & auditor_group_workload) {
     uint32_t block_count = group_account_data.account_statistics_data[slotid].block_data.block_count;
     uint32_t tx_count = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
@@ -266,10 +249,10 @@ void xzec_workload_contract_v2::accumulate_auditor_workload(common::xgroup_addre
 
 void xzec_workload_contract_v2::accumulate_validator_workload(common::xgroup_address_t const & group_addr,
                                                               std::string const & account_str,
-                                                              const uint32_t slotid, 
-                                                              xgroup_related_statistics_data_t const & group_account_data, 
-                                                              const uint32_t workload_per_tableblock, 
-                                                              const uint32_t workload_per_tx, 
+                                                              const uint32_t slotid,
+                                                              xgroup_related_statistics_data_t const & group_account_data,
+                                                              const uint32_t workload_per_tableblock,
+                                                              const uint32_t workload_per_tx,
                                                               std::map<common::xgroup_address_t, xvalidator_workload_info_t> & validator_group_workload) {
     uint32_t block_count = group_account_data.account_statistics_data[slotid].block_data.block_count;
     uint32_t tx_count = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
@@ -329,7 +312,7 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
                 is_auditor = true;
             } else if (common::has<common::xnode_type_t::validator>(group_addr.type())) {
                 is_auditor = false;
-            } else { 
+            } else {
                 // invalid group
                 xwarn("[xzec_workload_contract_v2::accumulate_workload] invalid group id: %d", group_addr.group_id().value());
                 continue;
@@ -340,7 +323,7 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
                     accumulate_auditor_workload(group_addr, account_str, slotid, group_account_data, workload_per_tableblock, workload_per_tx, auditor_group_workload);
                 } else {
                     accumulate_validator_workload(group_addr, account_str, slotid, group_account_data, workload_per_tableblock, workload_per_tx, validator_group_workload);
-                }    
+                }
             }
         }
     }
