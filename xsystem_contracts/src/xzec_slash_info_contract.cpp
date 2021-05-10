@@ -511,28 +511,32 @@ void xzec_slash_info_contract::print_table_height_info() {
 std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint32_t& block_num, uint64_t& last_read_height) const {
     std::vector<base::xauto_ptr<data::xblock_t>> res;
     auto time_interval = XGET_CONFIG(slash_fulltable_interval);
-    auto cur_read_height = last_read_height;
     auto blockchain_height = get_blockchain_height(owner.value());
     xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, current blockchain height: %" PRIu64 " current read height: %" PRIu64,
                                                             owner.value().c_str(), blockchain_height, last_read_height);
-    for (auto i = last_read_height + 1; i <= blockchain_height; ++i) {
-        base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), i);
+    base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), blockchain_height);
+    auto last_fullblock_height  = tableblock->get_last_full_block_height();
+    auto current_read_height = blockchain_height;
 
-        XCONTRACT_ENSURE(TIME() > tableblock->get_clock(), "[xzec_slash_info_contract][get_next_fulltableblock] time order error");
-        if (TIME() - tableblock->get_clock() < time_interval) { // less than time interval
-            break;
+    while (last_read_height < last_fullblock_height && last_fullblock_height != 0) {
+        base::xauto_ptr<data::xblock_t> last_full_tableblock = get_block_by_height(owner.value(), last_fullblock_height);
+        XCONTRACT_ENSURE(last_full_tableblock, "[xzec_slash_info_contract][get_next_fulltableblock] last full tableblock is empty");
+        XCONTRACT_ENSURE(last_full_tableblock->is_fulltable(), "[xzec_slash_info_contract][get_next_fulltableblock] last full tableblock is not full tableblock");
+        XCONTRACT_ENSURE(TIME() > last_full_tableblock->get_clock(), "[xzec_slash_info_contract][get_next_fulltableblock] time order error");
+        if (TIME() - last_full_tableblock->get_clock() < time_interval) { // less than time interval
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] clock interval not statisfy, fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), last_fullblock_height);
+            current_read_height = last_fullblock_height - 1;
+        } else {
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), last_fullblock_height);
+            res.push_back(std::move(last_full_tableblock));
         }
 
-        if (tableblock->is_fulltable()) {
-            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), i);
-            res.push_back(std::move(tableblock));
-        }
-        cur_read_height++;
-        block_num++;
+        last_fullblock_height = last_full_tableblock->get_last_full_block_height();
     }
 
     // setup cur read height for out param
-    last_read_height = cur_read_height;
+    last_read_height = current_read_height;
+    block_num += current_read_height - last_read_height;
 
 
     return res;
