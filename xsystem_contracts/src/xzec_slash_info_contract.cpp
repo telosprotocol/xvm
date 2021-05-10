@@ -171,7 +171,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         #ifdef DEBUG
             print_table_height_info();
             print_summarize_info(present_summarize_info);
-            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] present tableblock num is " PRIu64, present_tableblock_count);
+            xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] present tableblock num is %u", present_tableblock_count);
         #endif
 
 
@@ -523,20 +523,21 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
         XCONTRACT_ENSURE(last_full_tableblock, "[xzec_slash_info_contract][get_next_fulltableblock] last full tableblock is empty");
         XCONTRACT_ENSURE(last_full_tableblock->is_fulltable(), "[xzec_slash_info_contract][get_next_fulltableblock] last full tableblock is not full tableblock");
         XCONTRACT_ENSURE(TIME() > last_full_tableblock->get_clock(), "[xzec_slash_info_contract][get_next_fulltableblock] time order error");
+        last_fullblock_height = last_full_tableblock->get_last_full_block_height();
         if (TIME() - last_full_tableblock->get_clock() < time_interval) { // less than time interval
-            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] clock interval not statisfy, fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), last_fullblock_height);
-            current_read_height = last_fullblock_height - 1;
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] clock interval not statisfy, now: %" PRIu64 ", fulltableblock owner: %s, height: %" PRIu64 ", clock: %" PRIu64,
+                                                                 TIME(), owner.value().c_str(), last_full_tableblock->get_height(), last_full_tableblock->get_clock());
+            current_read_height = last_full_tableblock->get_height() - 1;
         } else {
-            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), last_fullblock_height);
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), last_full_tableblock->get_height());
             res.push_back(std::move(last_full_tableblock));
         }
 
-        last_fullblock_height = last_full_tableblock->get_last_full_block_height();
     }
 
     // setup cur read height for out param
-    last_read_height = current_read_height;
     block_num += current_read_height - last_read_height;
+    last_read_height = current_read_height;
 
 
     return res;
