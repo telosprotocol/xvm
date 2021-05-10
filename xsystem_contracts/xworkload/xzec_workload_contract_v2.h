@@ -72,13 +72,6 @@ private:
     bool is_mainnet_activated() const;
 
     /**
-     * @brief update tgas
-     *
-     * @param table_pledge_balance_change_tgas table pledge balance change tgas
-     */
-    void update_tgas(int64_t table_pledge_balance_change_tgas);
-
-    /**
      * @brief clear the workload
      */
     void clear_workload();
@@ -136,16 +129,6 @@ private:
      * @brief update_table_height
      */
     void update_table_height(common::xaccount_address_t const &account, uint64_t cur_read_height);
-
-    /**
-     * @brief get_table_time
-     */
-    uint64_t get_table_time(common::xaccount_address_t const &table) const;
-
-    /**
-     * @brief update_table_height
-     */
-    void update_table_time(common::xaccount_address_t const &account, uint64_t cur_read_time);
 };
 
 NS_END3
