@@ -94,10 +94,11 @@ private:
      * @brief get the latest tablefullblock from last read height
      *
      * @param owner the owner addr of the full tableblock
-     * @param block_num in&out the block num processed
-     * @param last_read_height in&out the height of full tableblock last time read
+     * @param time_interval  the interval to judge the latest block to processes
+     * @param last_read_height the height of full tableblock last time read
+     * @
      */
-    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint32_t& block_num, uint64_t& last_read_height) const;
+    std::vector<base::xauto_ptr<xblock_t>> get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t time_interval, uint64_t last_read_height) const;
 
 
     /**
