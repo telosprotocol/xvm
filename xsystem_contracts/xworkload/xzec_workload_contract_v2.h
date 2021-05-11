@@ -123,7 +123,7 @@ private:
     /**
      * @brief get_table_height
      */
-    uint64_t get_table_height(common::xaccount_address_t const &account) const;
+    uint64_t get_table_height(common::xaccount_address_t const &account);
 
     /**
      * @brief update_table_height

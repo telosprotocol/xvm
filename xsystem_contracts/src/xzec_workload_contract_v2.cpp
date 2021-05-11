@@ -73,7 +73,6 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
         }
     }
     auto last_full_block_height = cur_tableblock->get_last_full_block_height();
-    xdbg("#Lon_last_full_block_height %lu", last_full_block_height);
     while (last_full_block_height != 0 && last_read_height < last_full_block_height) {
         xdbg("[xzec_workload_contract_v2::get_fullblock] last_full_block_height %lu", last_full_block_height);
         // get full block, assume that all full table blocks are in time order
@@ -101,7 +100,7 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
         }
         // exit if last height equal to current height
         if (last_full_block_height == last_full_block->get_last_full_block_height()) {
-            xdbg("[xzec_workload_contract_v2::get_fullblock] table %s last block height equal current : " PRIu64, table_owner.c_str(), last_full_block_height);
+            xerror("[xzec_workload_contract_v2::get_fullblock] table %s last block height equal current : " PRIu64, table_owner.c_str(), last_full_block_height);
             break;
         } else {
             last_full_block_height = last_full_block->get_last_full_block_height();
@@ -131,13 +130,19 @@ void xzec_workload_contract_v2::migrate_data() {
     }
 }
 
-uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t const & table) const {
+uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t const & table) {
     uint64_t last_read_height = 0;
     std::string value_str;
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "get_property_fulltableblock_height");
 
-    if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, table.value())) {
-        value_str = MAP_GET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, table.value());
+    uint32_t table_id = 0;
+    if (!EXTRACT_TABLE_ID(table, table_id)) {
+        xerror("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
+        return 0;
+    }
+    std::string key = std::to_string(table_id);
+    if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key)) {
+        value_str = MAP_GET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key);
         XCONTRACT_ENSURE(!value_str.empty(), "read full tableblock height empty");
     }
     if (!value_str.empty()) {
@@ -149,7 +154,14 @@ uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t 
 
 void xzec_workload_contract_v2::update_table_height(common::xaccount_address_t const & table, const uint64_t cur_read_height) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "set_property_contract_fulltableblock_height");
-    MAP_SET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, table.value(), xstring_utl::tostring(cur_read_height));
+
+    uint32_t table_id = 0;
+    if (!EXTRACT_TABLE_ID(table, table_id)) {
+        xerror("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
+        return;
+    }
+    std::string key = std::to_string(table_id);
+    MAP_SET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key, xstring_utl::tostring(cur_read_height));
 }
 
 void xzec_workload_contract_v2::add_group_workload(bool auditor, common::xgroup_address_t const & group_address, std::map<std::string, uint32_t> const & leader_count) {
@@ -348,7 +360,7 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
 
         if (full_blocks.size() >  0) {
             xinfo(
-                "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d, timer round: %" PRIu64 ", pid: %d, total_table_block_count: " PRIu32 ", "
+                "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d, timer round: %" PRIu64 ", pid: %d, total_table_block_count: %" PRIu32 ", "
                 "this: %p\n",
                 i,
                 timestamp,
