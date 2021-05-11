@@ -223,30 +223,44 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         }
 
 
-        // for rpc and following previous flow
+
+        bool update_property = false;
         {
-            XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_unqualified_node_key");
-            base::xstream_t stream{base::xcontext_t::instance()};
-            summarize_info.serialize_to(stream);
-            MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
-        }
-        {
-            XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_tableblock_num_key");
-            base::xstream_t stream{base::xcontext_t::instance()};
-            stream << summarize_tableblock_count;
-            MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM", std::string((char *)stream.data(), stream.size()));
-        }
-        {
-            XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_height_key");
-            for (std::size_t i = 0; i < table_height.size(); ++i) {
-                // for optimize
-                if (present_table_height[i] != table_height[i]) {
-                    base::xstream_t stream{base::xcontext_t::instance()};
-                    stream << table_height[i];
-                    MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, std::to_string(i), std::string((char *)stream.data(), stream.size()));
+            {
+                XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_fulltableblock_height_key");
+                for (std::size_t i = 0; i < table_height.size(); ++i) {
+                    // for optimize
+                    if (present_table_height[i] != table_height[i]) {
+                        update_property = true;
+                        base::xstream_t stream{base::xcontext_t::instance()};
+                        stream << table_height[i];
+                        MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, std::to_string(i), std::string((char *)stream.data(), stream.size()));
+                    }
                 }
+
             }
+
+            if (update_property) {
+
+                // for rpc and following previous flow
+                {
+                    XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_unqualified_node_key");
+                    base::xstream_t stream{base::xcontext_t::instance()};
+                    summarize_info.serialize_to(stream);
+                    MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
+                }
+                {
+                    XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_tableblock_num_key");
+                    base::xstream_t stream{base::xcontext_t::instance()};
+                    stream << summarize_tableblock_count;
+                    MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM", std::string((char *)stream.data(), stream.size()));
+                }
+
+            }
+
         }
+
+
 
         #ifdef DEBUG
             print_table_height_info();
@@ -517,6 +531,7 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
     base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), blockchain_height);
     auto last_fullblock_height  = tableblock->get_last_full_block_height();
     auto current_read_height = blockchain_height;
+    bool update_read_height = false;
 
     while (last_read_height < last_fullblock_height && last_fullblock_height != 0) {
         base::xauto_ptr<data::xblock_t> last_full_tableblock = get_block_by_height(owner.value(), last_fullblock_height);
@@ -533,11 +548,15 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
             res.push_back(std::move(last_full_tableblock));
         }
 
+        update_read_height = true;
     }
 
     // setup cur read height for out param
-    block_num += current_read_height - last_read_height;
-    last_read_height = current_read_height;
+    if (update_read_height) {
+        block_num += current_read_height - last_read_height;
+        last_read_height = current_read_height;
+    }
+
 
 
     return res;
