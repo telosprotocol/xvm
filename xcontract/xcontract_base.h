@@ -244,7 +244,7 @@ public:
      * @return true  the table id extracts successfully
      * @return false  the table id extracts failed
      */
-    virtual bool EXTRACT_TABLE_ID(common::xaccount_address_t const & addr, uint32_t& table_id);
+    virtual bool EXTRACT_TABLE_ID(common::xaccount_address_t const & addr, uint32_t& table_id) const;
 
     /**
      * @brief the source address to call the contract

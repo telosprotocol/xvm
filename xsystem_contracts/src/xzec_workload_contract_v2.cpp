@@ -125,16 +125,13 @@ void xzec_workload_contract_v2::migrate_data() {
     }
 }
 
-uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t const & table) {
+uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t const & table) const {
     uint64_t last_read_height = 0;
     std::string value_str;
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "get_property_fulltableblock_height");
 
     uint32_t table_id = 0;
-    if (!EXTRACT_TABLE_ID(table, table_id)) {
-        xwarn("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
-        return 0;
-    }
+    XCONTRACT_ENSURE(EXTRACT_TABLE_ID(table, table_id), "get table id error");
     std::string key = std::to_string(table_id);
     if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key)) {
         value_str = MAP_GET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key);
@@ -151,10 +148,7 @@ void xzec_workload_contract_v2::update_table_height(common::xaccount_address_t c
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "set_property_contract_fulltableblock_height");
 
     uint32_t table_id = 0;
-    if (!EXTRACT_TABLE_ID(table, table_id)) {
-        xwarn("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
-        return;
-    }
+    XCONTRACT_ENSURE(EXTRACT_TABLE_ID(table, table_id), "get table id error");
     std::string key = std::to_string(table_id);
     MAP_SET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key, xstring_utl::tostring(cur_read_height));
 }
