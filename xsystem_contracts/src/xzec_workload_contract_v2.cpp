@@ -99,13 +99,8 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
             res.push_back(last_full_block);
         }
         // exit if last height equal to current height
-        if (last_full_block_height == last_full_block->get_last_full_block_height()) {
-            xerror("[xzec_workload_contract_v2::get_fullblock] table %s last block height equal current : " PRIu64, table_owner.c_str(), last_full_block_height);
-            break;
-        } else {
-            last_full_block_height = last_full_block->get_last_full_block_height();
-            xdbg("[xzec_workload_contract_v2::get_fullblock] table %s last block height in cycle : " PRIu64, table_owner.c_str(), last_full_block_height);
-        }
+        last_full_block_height = last_full_block->get_last_full_block_height();
+        xdbg("[xzec_workload_contract_v2::get_fullblock] table %s last block height in cycle : " PRIu64, table_owner.c_str(), last_full_block_height);
     }
 
     // update table address height
@@ -137,7 +132,7 @@ uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t 
 
     uint32_t table_id = 0;
     if (!EXTRACT_TABLE_ID(table, table_id)) {
-        xerror("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
+        xwarn("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
         return 0;
     }
     std::string key = std::to_string(table_id);
@@ -157,7 +152,7 @@ void xzec_workload_contract_v2::update_table_height(common::xaccount_address_t c
 
     uint32_t table_id = 0;
     if (!EXTRACT_TABLE_ID(table, table_id)) {
-        xerror("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
+        xwarn("[xzec_workload_contract_v2::get_table_height] account: %s get table id error\n", table.to_string().c_str());
         return;
     }
     std::string key = std::to_string(table_id);
