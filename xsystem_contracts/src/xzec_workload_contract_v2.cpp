@@ -98,7 +98,6 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
             }
             res.push_back(last_full_block);
         }
-        // exit if last height equal to current height
         last_full_block_height = last_full_block->get_last_full_block_height();
         xdbg("[xzec_workload_contract_v2::get_fullblock] table %s last block height in cycle : " PRIu64, table_owner.c_str(), last_full_block_height);
     }
@@ -204,6 +203,24 @@ void xzec_workload_contract_v2::add_group_workload(bool auditor, common::xgroup_
     } else {
         XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY_SetExecutionTime");
         MAP_SET(property, group_address_str, value);
+    }
+}
+
+void xzec_workload_contract_v2::update_tgas(int64_t table_pledge_balance_change_tgas) {
+    std::string pledge_tgas_str;
+    {
+        XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "XPORPERTY_CONTRACT_TGAS_KEY_GetExecutionTime");
+        pledge_tgas_str = STRING_GET2(XPORPERTY_CONTRACT_TGAS_KEY);
+    }
+    int64_t tgas = 0;
+    if (!pledge_tgas_str.empty()) {
+        tgas = xstring_utl::toint64(pledge_tgas_str);
+    }
+    tgas += table_pledge_balance_change_tgas;
+
+    {
+        XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "XPORPERTY_CONTRACT_TGAS_KEY_SetExecutionTime");
+        STRING_SET(XPORPERTY_CONTRACT_TGAS_KEY, xstring_utl::tostring(tgas));
     }
 }
 
@@ -332,6 +349,7 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
         xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d", i);
         std::map<common::xgroup_address_t, xauditor_workload_info_t> auditor_group_workload;
         std::map<common::xgroup_address_t, xvalidator_workload_info_t> validator_group_workload;
+        int64_t table_pledge_balance_change_tgas = 0;
         // calc table address
         auto table_owner = common::xaccount_address_t{xdatautil::serialize_owner_str(sys_contract_sharding_table_block_addr, i)};
         // get table block
@@ -343,18 +361,21 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
             assert(full_tableblock != nullptr);
             auto const & stat_data = full_tableblock->get_table_statistics();
             accumulate_workload(stat_data, auditor_group_workload, validator_group_workload);
+            // m_table_pledge_balance_change_tgas
+            table_pledge_balance_change_tgas += full_tableblock->get_pledge_balance_change_tgas();
             total_table_block_count++;
             xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] table_block_count: %u, total_table_block_count: %" PRIu32 "", block_index, total_table_block_count);
         }
 
         if (full_blocks.size() >  0) {
             xinfo(
-                "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d, timer round: %" PRIu64 ", pid: %d, total_table_block_count: %" PRIu32 ", "
+                "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d, timer round: %" PRIu64 ", pid: %d, total_table_block_count: %" PRIu32 ", table_pledge_balance_change_tgas: %lld, "
                 "this: %p\n",
                 i,
                 timestamp,
                 getpid(),
                 total_table_block_count,
+                table_pledge_balance_change_tgas,
                 this);
             XMETRICS_PACKET_INFO("sysContract_zecWorkload2", "effective report timer round", std::to_string(timestamp));
 #if defined (DEBUG)
@@ -374,11 +395,12 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
                 xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload validator group: %s, group id: %u, ends", group.to_string().c_str(), group.group_id().value());
             }
 #endif
-            //add_batch_workload2(auditor_workload_info, validator_workload_info);
+            update_tgas(table_pledge_balance_change_tgas);
+
+            // add_batch_workload2(auditor_workload_info, validator_workload_info);
             for (auto const & workload : auditor_group_workload) {
                 add_group_workload(true, workload.first, workload.second.m_leader_count);
             }
-
             for (auto const & workload : validator_group_workload) {
                 add_group_workload(false, workload.first, workload.second.m_leader_count);
             }

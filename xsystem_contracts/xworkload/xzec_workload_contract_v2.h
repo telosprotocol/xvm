@@ -72,6 +72,13 @@ private:
     bool is_mainnet_activated() const;
 
     /**
+     * @brief update tgas
+     *
+     * @param table_pledge_balance_change_tgas table pledge balance change tgas
+     */
+    void update_tgas(int64_t table_pledge_balance_change_tgas);
+
+    /**
      * @brief clear the workload
      */
     void clear_workload();
