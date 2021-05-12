@@ -141,7 +141,7 @@ std::string xcontract_base::CALC_CONTRACT_ADDRESS(const std::string& contract_na
     return contract::xcontract_address_map_t::calc_cluster_address(common::xaccount_address_t{ contract_name }, table_id).value();
 }
 
-bool xcontract_base::EXTRACT_TABLE_ID(common::xaccount_address_t const & addr, uint32_t& table_id) {
+bool xcontract_base::EXTRACT_TABLE_ID(common::xaccount_address_t const & addr, uint32_t& table_id) const {
     if ( is_beacon_contract_address(addr) ||
        is_zec_contract_address(addr)) {
         table_id = 0;
