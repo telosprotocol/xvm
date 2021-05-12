@@ -130,14 +130,21 @@ void xzec_reward_contract::update_reg_contract_read_status(const uint64_t cur_ti
 void xzec_reward_contract::calculate_reward(common::xlogic_time_t timer_round, std::string const& workload_str) {
     std::string source_address = SOURCE_ADDRESS();
     xinfo("[xzec_reward_contract::calculate_reward] called from address: %s", source_address.c_str());
-    if (sys_contract_zec_workload_addr != source_address) {
-        xwarn("[xzec_reward_contract::calculate_reward] from invalid address: %s\n", source_address.c_str());
-        return;
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, timer_round)) {
+        if (sys_contract_zec_workload_addr2 != source_address) {
+            xwarn("[xzec_reward_contract::calculate_reward] from invalid address: %s\n", source_address.c_str());
+            return;
+        }
+    } else {
+        if (sys_contract_zec_workload_addr != source_address) {
+            xwarn("[xzec_reward_contract::calculate_reward] from invalid address: %s\n", source_address.c_str());
+            return;
+        }
     }
-
+    
     uint64_t onchain_timer_round = TIME();
 
-    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
     if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.reward_fork_spark, onchain_timer_round)) {
         on_receive_workload(workload_str);
     } else {
@@ -1984,10 +1991,15 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
         static_cast<uint32_t>(governance_rewards % REWARD_PRECISION),
         all_tickets,
         total_auditor_nodes);
+    auto fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
     xissue_detail issue_detail;
     issue_detail.onchain_timer_round            = onchain_timer_round;
     issue_detail.m_zec_vote_contract_height     = get_blockchain_height(sys_contract_zec_vote_addr);
-    issue_detail.m_zec_workload_contract_height = get_blockchain_height(sys_contract_zec_workload_addr);
+    if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
+        issue_detail.m_zec_workload_contract_height = get_blockchain_height(sys_contract_zec_workload_addr2);
+    } else {
+        issue_detail.m_zec_workload_contract_height = get_blockchain_height(sys_contract_zec_workload_addr);
+    }
     issue_detail.m_zec_reward_contract_height   = get_blockchain_height(sys_contract_zec_reward_addr);
     issue_detail.m_edge_reward_ratio            = XGET_ONCHAIN_GOVERNANCE_PARAMETER(edge_reward_ratio);
     issue_detail.m_archive_reward_ratio         = XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_reward_ratio);
@@ -1999,8 +2011,7 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
     issue_detail.m_validator_group_count        = validator_group_count;
 
     bool add_issue_self_reward = false;
-    auto fork_config = chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
-    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
+    if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
         add_issue_self_reward = true;
     }
 
