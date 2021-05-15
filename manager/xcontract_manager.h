@@ -28,12 +28,6 @@
 
 NS_BEG2(top, contract)
 
-using namespace top::base;
-using namespace top::mbus;
-using namespace top::common;
-using namespace top::vnetwork;
-using namespace top::store;
-
 using xrole_map_t = std::unordered_map<xvnetwork_driver_face_t *, xrole_context_t *>;
 enum class xtop_enum_json_format : uint8_t {
     invalid,
@@ -61,20 +55,25 @@ public:
      *
      */
     void instantiate_sys_contracts();
-    void init(observer_ptr<xstore_face_t> const & store, xobject_ptr_t<store::xsyncvstore_t> const& syncstore);
+    void init(observer_ptr<store::xstore_face_t> const & store,
+              xobject_ptr_t<store::xsyncvstore_t> const & syncstore);
+
+    void init(observer_ptr<store::xstore_face_t> const & store,
+        observer_ptr<store::xsyncvstore_t> const & syncstore,
+        observer_ptr<base::xvblockstore_t> blkstore);
     /**
      * @brief Set up blockchains
      *
      * @param store
      */
-    void setup_blockchains(xstore_face_t * store);
+    void setup_blockchains();
 
     /**
      * @brief Set up blockchains
      *
      * @param store
      */
-    void setup_blockchains(xstore_face_t * store, xvblockstore_t * blockstore);
+    void setup_blockchains(store::xstore_face_t * store, xvblockstore_t * blockstore);
 
     /**
      * @brief install monitors
@@ -86,7 +85,7 @@ public:
      */
     void install_monitors(observer_ptr<xmessage_bus_face_t> const &               bus,
                           observer_ptr<vnetwork::xmessage_callback_hub_t> const & msg_callback_hub,
-                          observer_ptr<xstore_face_t> const &                     store,
+                          observer_ptr<store::xstore_face_t> const &                     store,
                           xobject_ptr_t<store::xsyncvstore_t> const&              syncstore);
 
     /**
@@ -165,6 +164,7 @@ public:
     static int32_t get_account_from_xip(const xvip2_t & target_node, std::string& target_addr);
 
     void get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, xJson::Value & json) const;
+    void get_contract_data(common::xaccount_address_t const & contract_address, std::uint64_t const height, xjson_format_t const json_format, xJson::Value & json, std::error_code & ec) const;
     void get_contract_data(common::xaccount_address_t const & contract_address, std::string const & property_name, xjson_format_t const json_format, xJson::Value & json) const;
     void get_contract_data(common::xaccount_address_t const & contract_address, std::string const & property_name, std::string const & key, xjson_format_t const json_format, xJson::Value & json) const;
 
@@ -230,7 +230,7 @@ private:
      * @param contract_cluster_address contract cluster address
      * @param store store
      */
-    void setup_chain(common::xaccount_address_t const & contract_cluster_address, xstore_face_t * store);
+    void setup_chain(common::xaccount_address_t const & contract_cluster_address);
 
     /**
      * @brief Set up contract
@@ -243,7 +243,8 @@ private:
     std::unordered_map<common::xaccount_address_t, xrole_map_t *>    m_map;
     xcontract_register_t                                             m_contract_register;
     observer_ptr<xstore_face_t>                                      m_store{};
-    xobject_ptr_t<store::xsyncvstore_t>                              m_syncstore{};
+    observer_ptr<store::xsyncvstore_t>                               m_syncstore{};
+    observer_ptr<base::xvblockstore_t>                               m_blockstore{};
     std::unordered_map<common::xaccount_address_t, xcontract_base *> m_contract_inst_map;
     base::xrwlock_t                                                  m_rwlock;
 

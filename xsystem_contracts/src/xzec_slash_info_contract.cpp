@@ -588,7 +588,8 @@ xunqualified_node_info_t xzec_slash_info_contract::process_statistic_data(top::d
 
             } else { // invalid group
                 xwarn("[xzec_slash_info_contract][do_unqualified_node_slash] invalid group id: %d", group_addr.group_id().value());
-                throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception, "[xzec_slash_info_contract][do_unqualified_node_slash] invalid group"};
+                std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+                top::error::throw_error(ec, "[xzec_slash_info_contract][do_unqualified_node_slash] invalid group");
             }
 
         }

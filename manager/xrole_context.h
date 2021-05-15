@@ -30,11 +30,11 @@ struct xtable_schedule_info_t {
 
 class xrole_context_t {
 public:
-    xrole_context_t(const observer_ptr<xstore_face_t> &                                 store,
-                    const xobject_ptr_t<store::xsyncvstore_t> &                         syncstore,
+    xrole_context_t(const observer_ptr<xstore_face_t> & store,
+                    const observer_ptr<store::xsyncvstore_t> & syncstore,
                     const std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face> & unit_service,
-                    const std::shared_ptr<xvnetwork_driver_face_t> &                    driver,
-                    xcontract_info_t *                                                  info);
+                    const std::shared_ptr<xvnetwork_driver_face_t> & driver,
+                    xcontract_info_t * info);
     virtual ~xrole_context_t();
 
     /**
@@ -125,8 +125,8 @@ protected:
 
 protected:
     observer_ptr<xstore_face_t>                                                 m_store{};
-    xobject_ptr_t<store::xsyncvstore_t>                                         m_syncstore{};
-    std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face>                 m_unit_service{};
+    observer_ptr<store::xsyncvstore_t>                                          m_syncstore{};
+    std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face>              m_unit_service{};
     std::shared_ptr<xvnetwork_driver_face_t>                                    m_driver{};
     xcontract_info_t *                                                          m_contract_info{};
     std::unordered_map<common::xaccount_address_t, uint64_t>                    m_address_round_map;  // record address and timer round

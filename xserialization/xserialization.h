@@ -34,8 +34,8 @@ struct xtop_msgpack final {
                 XMETRICS_COUNTER_INCREMENT(sys_addr_to_metrics_enum_get_property_size.at(contract.SELF_ADDRESS()), string_value.size());
                 return codec::msgpack_decode<T>({ std::begin(string_value), std::end(string_value) });
             }
-        } catch (xvm::xvm_error const & eh) {
-            xwarn("[xvm] deserialize %s failed: %s", property_name.c_str(), eh.what());
+        } catch (top::error::xtop_error_t const & eh) {
+            xwarn("[xvm] deserialize %s failed. error category: %s: msg: %s", property_name.c_str(), eh.code().category().name(), eh.what());
             throw;
         }
     }
@@ -55,8 +55,8 @@ struct xtop_msgpack final {
                 XMETRICS_COUNTER_INCREMENT(sys_addr_to_metrics_enum_get_property_size.at(contract.SELF_ADDRESS()), string_value.size());
                 return codec::msgpack_decode<T>({ std::begin(string_value), std::end(string_value) });
             }
-        } catch (xvm::xvm_error const & eh) {
-            xwarn("[xvm] deserialize %s failed: %s", property_name.c_str(), eh.what());
+        } catch (top::error::xtop_error_t const & eh) {
+            xwarn("[xvm] deserialize %s failed. category: %s; msg: %s", property_name.c_str(), eh.code().category().name(), eh.what());
             throw;
         }
     }

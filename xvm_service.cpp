@@ -28,7 +28,7 @@ xtransaction_trace_ptr xvm_service::deal_transaction(const xtransaction_ptr_t& t
     try {
         shared_ptr<xvm_context> trx_context = make_shared<xvm_context>(*this, trx, account_context, trace);
         trx_context->exec();
-    } catch(const xvm_error& e) {
+    } catch(top::error::xtop_error_t const & e) {
         xwarn_lua("%d,%s", e.code().value(), e.what());
         trace->m_errno = static_cast<top::xvm::enum_xvm_error_code>(e.code().value());
         trace->m_errmsg = e.what();

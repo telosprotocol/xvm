@@ -48,6 +48,10 @@ enum class enum_xvm_error_code
     vm_vote_update_db_error,
     vm_vote_proposal_property_error,
 
+    query_contract_data_fail_to_get_block,
+    query_contract_data_property_missing,
+    query_contract_data_property_empty,
+
     error_max,
 };
 
@@ -88,6 +92,9 @@ inline std::string xvm_error_to_string(int32_t code) {
         XVM_TO_STR(vm_vote_voter_voted_or_proxy),
         XVM_TO_STR(vm_vote_update_db_error),
         XVM_TO_STR(vm_vote_proposal_property_error),
+        XVM_TO_STR(query_contract_data_fail_to_get_block),
+        XVM_TO_STR(query_contract_data_property_missing),
+        XVM_TO_STR(query_contract_data_property_empty)
     };
     return names[code - (int32_t)enum_xvm_error_code::error_base - 1];
 }
@@ -95,6 +102,7 @@ inline std::string xvm_error_to_string(int32_t code) {
 
 
 std::error_code make_error_code(const enum_xvm_error_code errc) noexcept;
+std::error_condition make_error_condition(const enum_xvm_error_code errc) noexcept;
 
 NS_END2
 
@@ -103,6 +111,10 @@ NS_BEG1(std)
 template <>
 struct is_error_code_enum<top::xvm::enum_xvm_error_code> : std::true_type
 {
+};
+
+template <>
+struct is_error_condition_enum<top::xvm::enum_xvm_error_code> : std::true_type {
 };
 
 NS_END1

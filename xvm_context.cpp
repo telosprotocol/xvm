@@ -71,7 +71,8 @@ void xvm_context::exec()
 void xvm_context::publish_code()
 {
     if (m_contract_helper->string_exist(data::XPROPERTY_CONTRACT_CODE)) {
-        throw xvm_error{enum_xvm_error_code::enum_vm_code_is_exist, "code is exist"};
+        std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_code_is_exist };
+        top::error::throw_error(ec, "code is exist");
     }
     try {
         uint64_t tgas_limit{0};
@@ -86,12 +87,14 @@ void xvm_context::publish_code()
         m_vm_service.m_vm_cache.put(m_contract_account, engine);
         m_contract_helper->set_contract_code(code);
         m_contract_helper->string_set(XPROPERTY_CONTRACT_TGAS_LIMIT_KEY, std::to_string(tgas_limit), true);
-    } catch(const xvm_error& e) {
-        throw e;
+    } catch(top::error::xtop_error_t const &) {
+        throw;
     } catch(enum_xerror_code& e) {
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "action_param stream code is not valid"};
+        std::error_code ec{ xvm::enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "action_param stream code is not valid");
     } catch(...) {
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "unkown exception"};
+        std::error_code ec{ xvm::enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "unkown exception");
     }
 }
 
