@@ -4,30 +4,11 @@
 
 #pragma once
 #include <string>
-#include "xbase/xns_macro.h"
+#include "xbasic/xerror/xthrow_error.h"
 #include "xvm/xvm_context.h"
 #include "xvm/xerror/xvm_error.h"
 #include "xdata_stream.h"
 NS_BEG3(top, xvm, xcontract)
-
-/**
- * @brief  contract begin & end macro
- *
- */
-#define BEGIN_CONTRACT void exec(xvm_context* vm_ctx) { \
-    auto& func_name = vm_ctx->m_current_action.get_action_name();\
-    xcontract_base::set_contract_helper(vm_ctx->m_contract_helper);\
-
-
-#define END_CONTRACT throw xvm_error{enum_xvm_error_code::enum_vm_no_func_find, "no exec function find"};\
-}
-
-#define CONTRACT_FUNCTION(func)  CALL_FUNC(func_name, func)
-#define CALL_FUNC(func_name, func) \
-if(func_name == #func) {\
-    func();\
-    return;\
-}
 
 // FROM https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer
 template<size_t ...>
@@ -88,7 +69,8 @@ void do_action(T* obj, top::base::xstream_t& stream, Callable&& callable, void (
     CONTRACT_FUNCTION_PARAM(class_name, setup);\
     CONTRACT_FUNCTION_PARAM(class_name, on_event)
 
-#define END_CONTRACT_WITH_PARAM throw top::xvm::xvm_error{top::xvm::enum_xvm_error_code::enum_vm_no_func_find, "no exec function find"};\
+#define END_CONTRACT_WITH_PARAM std::error_code ec{top::xvm::enum_xvm_error_code::enum_vm_no_func_find};\
+                                top::error::throw_error(ec, "no exec function find");\
 }
 
 #define CONTRACT_FUNCTION_PARAM(class_name, func)  CALL_FUNC_PARAM(class_name, func_name, func, params)

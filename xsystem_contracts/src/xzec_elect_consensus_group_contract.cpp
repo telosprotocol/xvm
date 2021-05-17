@@ -409,7 +409,8 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
                 xerror("genesis_election failed auditor %" PRIu16 " validator %" PRIu16,
                        static_cast<std::uint16_t>(auditor_group_id.value()),
                        static_cast<std::uint16_t>(validator_group_id.value()));
-                throw xvm::xvm_error{xvm::enum_xvm_error_code::enum_vm_exception};
+                std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+                top::error::throw_error(ec);
             }
         }
         STRING_SET(data::XPROPERTY_CONTRACT_ELECTION_EXECUTED_KEY, "1");

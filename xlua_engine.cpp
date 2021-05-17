@@ -1,13 +1,15 @@
 // Copyright (c) 2017-2018 Telos Foundation & contributors
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#include "xvm/xvm_lua_api.h"
-#include "xvm/xvm_engine.h"
-#include "xvm/xvm_context.h"
+
+#include "xbase/xcontext.h"
+#include "xbase/xmem.h"
+#include "xbasic/xerror/xthrow_error.h"
 #include "xbasic/xscope_executer.h"
 #include "xerror/xvm_error.h"
-#include "xbase/xmem.h"
-#include "xbase/xcontext.h"
+#include "xvm/xvm_context.h"
+#include "xvm/xvm_engine.h"
+#include "xvm/xvm_lua_api.h"
 
 NS_BEG2(top, xvm)
 using base::xcontext_t;
@@ -31,7 +33,8 @@ void xlua_engine::register_function() {
 void xlua_engine::validate_script(const std::string &code, xvm_context &ctx) {
     try {
         if (ctx.m_contract_account.size() >= 64 ) {
-            throw xvm_error{enum_xvm_error_code::enum_lua_code_owern_error, "contract account length error"};
+            std::error_code ec{ enum_xvm_error_code::enum_lua_code_owern_error };
+            top::error::throw_error(ec, "contract account length error");
         }
 
         auto parent_addr = ctx.m_contract_helper->get_parent_account();
@@ -41,22 +44,26 @@ void xlua_engine::validate_script(const std::string &code, xvm_context &ctx) {
         if (luaL_loadstring(m_lua_mgr, code.c_str())) {
             string error_msg = lua_tostring(m_lua_mgr, -1);
             xkinfo_lua("load lua code error\n %s", code.c_str());
-            throw xvm_error{enum_xvm_error_code::enum_lua_code_parse_error, "lua load code error:" + error_msg};
+            std::error_code ec{ enum_xvm_error_code::enum_lua_code_parse_error };
+            top::error::throw_error(ec, "lua load code error:" + error_msg);
         }
 
         if (lua_pcall(m_lua_mgr, 0, 0, 0)) {
             string error_msg = lua_tostring(m_lua_mgr, -1);
             xkinfo_lua("lua_pcall validate:%s", error_msg.c_str());
-            throw xvm_error{enum_xvm_error_code::enum_lua_code_parse_error, "lua_pcall validate error:" + error_msg};
+            std::error_code ec{ enum_xvm_error_code::enum_lua_code_parse_error };
+            top::error::throw_error(ec, "lua_pcall validate error:" + error_msg);
         }
         register_function();
-    } catch(const xvm_error& e) {
-        throw e;
+    } catch(top::error::xtop_error_t &) {
+        throw;
     } catch(const std::exception& e) {
         xkinfo_lua("%s", e.what());
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "input param code_abi is not valid json"};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "input param code_abi is not valid json");
     } catch(...) {
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "unkown exception"};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "unkown exception");
     }
 }
 
@@ -88,7 +95,8 @@ void xlua_engine::call_init() {
     if (ret != 0 && lua_pcall(m_lua_mgr, 0, 0, 0)) {
         string error_msg = lua_tostring(m_lua_mgr, -1);
         xkinfo_lua("lua_pcall init:%s", error_msg.c_str());
-        throw xvm_error{enum_xvm_error_code::enum_lua_code_pcall_error, "lua_pcall init error:" + error_msg};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_code_pcall_error };
+        top::error::throw_error(ec, "lua_pcall init error:" + error_msg);
     }
 }
 
@@ -104,7 +112,8 @@ int32_t xlua_engine::arg_parse(const string& action_param) {
             bool   arg_bool;
             stream >> arg_num;
             if (arg_num > MAX_ARG_NUM) {
-                throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "arg num " + std::to_string(arg_num) + " great than max number 16"};
+                std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+                top::error::throw_error(ec, "arg num " + std::to_string(arg_num) + " great than max number 16");
             }
             argn = arg_num;
             while (arg_num--) {
@@ -117,7 +126,8 @@ int32_t xlua_engine::arg_parse(const string& action_param) {
                     case ARG_TYPE_STRING:
                         stream >> arg_str;
                         if (arg_str.size() > MAX_ARG_STRING_SIZE) {
-                            throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "arg string size " + std::to_string(arg_str.size()) + " length greater than 128"};
+                            std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+                            top::error::throw_error(ec, "arg string size " + std::to_string(arg_str.size()) + " length greater than 128");
                         }
                         lua_pushstring(m_lua_mgr, arg_str.c_str());
                         break;
@@ -126,19 +136,23 @@ int32_t xlua_engine::arg_parse(const string& action_param) {
                         lua_pushboolean(m_lua_mgr, arg_bool);
                         break;
                     default:
-                        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "param stream not valid"};
+                        std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+                        top::error::throw_error(ec, "param stream not valid");
                 }
             }
         }
-    } catch(const xvm_error& e) {
-        throw e;
-    } catch(enum_xerror_code& e) {
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "action_param stream is not valid"};
-    } catch(const std::exception& e) {
+    } catch (top::error::xtop_error_t const &) {
+        throw;
+    } catch (enum_xerror_code& e) {
+        std::error_code ec{ e };
+        top::error::throw_error(ec, "action_param stream is not valid");
+    } catch (const std::exception& e) {
         xkinfo_lua("%s", e.what());
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "param not valid"};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "param not valid");
     } catch(...) {
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "unkown exception"};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "unkown exception");
     }
     return argn;
 }
@@ -149,7 +163,8 @@ void xlua_engine::process(common::xaccount_address_t const &contract_account, co
         ctx.m_contract_helper->get_gas_and_disk_usage(ctx.m_trace_ptr->m_tgas_usage, ctx.m_trace_ptr->m_disk_usage);
     });
     if (ctx.m_exec_account.size() >= 64) {
-        throw xvm_error{enum_xvm_error_code::enum_lua_code_owern_error, "contract m_exec_account length error"};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_code_owern_error };
+        top::error::throw_error(ec, "contract m_exec_account length error");
     }
     lua_setexecaccount(m_lua_mgr, ctx.m_exec_account.data(), ctx.m_exec_account.size());
     lua_setuserdata(m_lua_mgr, reinterpret_cast<void*>(ctx.m_contract_helper.get()));
@@ -159,21 +174,25 @@ void xlua_engine::process(common::xaccount_address_t const &contract_account, co
 
     try {
         if (ctx.m_current_action.get_action_name() == "init") {
-            throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "can't call init function"};
+            std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+            top::error::throw_error(ec, "can't call init function");
         }
 
         if (lua_pcall(m_lua_mgr, arg_parse(ctx.m_current_action.get_action_param()), 0, 0)) {
             string error_msg = lua_tostring(m_lua_mgr, -1);
             xkinfo_lua("lua_pcall:%s", error_msg.c_str());
-            throw xvm_error{enum_xvm_error_code::enum_lua_code_pcall_error,  "lua_pcall error:" + error_msg};
+            std::error_code ec{ enum_xvm_error_code::enum_lua_code_pcall_error };
+            top::error::throw_error(ec, "lua_pcall error:" + error_msg);
         }
-    } catch(const xvm_error& e) {
-        throw e;
-    } catch(const std::exception& e) {
+    } catch(top::error::xtop_error_t const &) {
+        throw;
+    } catch(const std::exception & e) {
         xkinfo_lua("%s", e.what());
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "param not valid"};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "param not valid");
     } catch(...) {
-        throw xvm_error{enum_xvm_error_code::enum_lua_abi_input_error, "unkown exception"};
+        std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
+        top::error::throw_error(ec, "unkown exception");
     }
 }
 

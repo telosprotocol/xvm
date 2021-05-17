@@ -43,6 +43,12 @@
 
 #include <cinttypes>
 
+using namespace top::base;
+using namespace top::mbus;
+using namespace top::common;
+using namespace top::vnetwork;
+using namespace top::store;
+
 NS_BEG2(top, contract)
 
 #define TYPE_CONTAINS(type, types) ((((uint32_t)type) & ((uint32_t)types)) == ((uint32_t)type))
@@ -85,7 +91,7 @@ void xtop_contract_manager::instantiate_sys_contracts() {
 
 #undef XREGISTER_CONTRACT
 
-void xtop_contract_manager::setup_blockchains(xstore_face_t * store) {
+void xtop_contract_manager::setup_blockchains() {
     // setup all contracts' accounts, then no need
     // sync generation block at all
     for (auto const & pair : xcontract_deploy_t::instance().get_map()) {
@@ -93,11 +99,11 @@ void xtop_contract_manager::setup_blockchains(xstore_face_t * store) {
             for (auto i = 0; i < enum_vbucket_has_tables_count; i++) {
                 auto addr = data::make_address_by_prefix_and_subaddr(pair.first.value(), i);
                 register_contract_cluster_address(pair.first, addr);
-                setup_chain(addr, store);
+                setup_chain(addr);
             }
         } else {
             register_contract_cluster_address(pair.first, pair.first);
-            setup_chain(pair.first, store);
+            setup_chain(pair.first);
         }
     }
 }
@@ -324,27 +330,41 @@ void xtop_contract_manager::add_to_map(xrole_map_t & m, xrole_context_t * rc, xv
     m[driver] = rc;
 }
 
-void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store, xobject_ptr_t<store::xsyncvstore_t> const& syncstore) {
+void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store,
+                                 xobject_ptr_t<store::xsyncvstore_t> const& syncstore) {
     m_store = store;
-    m_syncstore = syncstore;
+    m_syncstore = make_observer(syncstore.get());
 }
 
-void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address, xstore_face_t * store) {
+void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store,
+    observer_ptr<store::xsyncvstore_t> const & syncstore,
+    observer_ptr<base::xvblockstore_t> blkstore) {
+    m_store = store;
+    m_syncstore = syncstore;
+    m_blockstore = blkstore;
+}
+
+void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address) {
+    assert(m_store != nullptr);
+    assert(m_syncstore != nullptr);
+    assert(m_blockstore != nullptr);
+
     assert(contract_cluster_address.has_value());
-    // first parameter is not used
-    base::xauto_ptr<base::xvblock_t> db_block(store->get_block_by_height(contract_cluster_address.value(), (uint64_t)0));
-    if (db_block != nullptr) {
+
+    if (m_blockstore->exist_genesis_block(contract_cluster_address.value())) {
+        xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block exist", contract_cluster_address.c_str());
         return;
     }
+    xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block not exist", contract_cluster_address.c_str());
 
     xtransaction_ptr_t tx = make_object_ptr<xtransaction_t>();
-    data::xproperty_asset asset_out{0};
+    data::xproperty_asset asset_out{ 0 };
     tx->make_tx_run_contract(asset_out, "setup", "");
     tx->set_same_source_target_address(contract_cluster_address.value());
     tx->set_digest();
     tx->set_len();
 
-    xaccount_context_t ac(contract_cluster_address.value(), store);
+    xaccount_context_t ac(contract_cluster_address.value(), m_store.get());
 
     xvm::xvm_service s;
     s.deal_transaction(tx, &ac);
@@ -359,7 +379,7 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     // m_blockstore->delete_block(_vaddr, genesis_block.get());  // delete default genesis block
     auto ret = m_syncstore->get_vblockstore()->store_block(_vaddr, block.get());
     if (!ret) {
-        xerror("xtop_contract_manager::setup_chain store genesis block fail");
+        xerror("xtop_contract_manager::setup_chain %s genesis block fail", contract_cluster_address.c_str());
         return;
     }
     ret = m_syncstore->get_vblockstore()->execute_block(_vaddr, block.get());
@@ -1094,6 +1114,114 @@ static void get_other_map(observer_ptr<store::xstore_face_t const> store,
     }
 }
 
+static void get_zec_slash_contract_property(std::string const & property_name,
+                                            uint64_t const height,
+                                            observer_ptr<store::xstore_face_t> store,
+                                            xJson::Value & json,
+                                            std::error_code & ec) {
+    assert(!ec);
+    assert(store != nullptr);
+
+    std::map<std::string, std::string> result;
+
+    if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
+        auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
+        if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_fail_to_get_block;
+            return;
+        }
+
+#if defined(DEBUG)
+        for (auto const & p : result) {
+            xdbg("get_zec_slash_contract_property: key : %s; value size %zu", p.first.c_str(), p.second.size());
+        }
+#endif
+
+        auto const it = result.find("UNQUALIFIED_NODE");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        auto const & value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        xunqualified_node_info_t data;
+        base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(value.data())), static_cast<uint32_t>(value.size()) };
+        try {
+            data.serialize_from(stream);
+        } catch (top::error::xtop_error_t const & eh) {
+            ec = eh.code();
+            return;
+        } catch (enum_xerror_code const errc) {
+            ec = errc;
+            return;
+        }
+
+        for (auto const & auditor_data : data.auditor_info) {
+            xJson::Value v;
+            auto const & unqualified_data = top::get<xnode_vote_percent_t>(auditor_data);
+
+            v["account"] = top::get<common::xaccount_address_t const>(auditor_data).value();
+            v["block_count"] = unqualified_data.block_count;
+            v["subset_count"] = unqualified_data.subset_count;
+
+            json["auditor"].append(v);
+        }
+
+        for (auto const & validator_data : data.validator_info) {
+            xJson::Value v;
+            auto const & unqualified_data = top::get<xnode_vote_percent_t>(validator_data);
+
+            v["account"] = top::get<common::xaccount_address_t const>(validator_data).value();
+            v["block_count"] = unqualified_data.block_count;
+            v["subset_count"] = unqualified_data.subset_count;
+
+            json["validator"].append(v);
+        }
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY) {
+        auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
+        if (error) {
+            return;
+        }
+
+#if defined(DEBUG)
+        for (auto const & p : result) {
+            xdbg("get_zec_slash_contract_property: key : %s; value size %zu", p.first.c_str(), p.second.size());
+        }
+#endif
+
+        auto const it = result.find("TABLEBLOCK_NUM");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        auto const & value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        uint32_t summarize_tableblock_count;
+        base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(value.data())), static_cast<uint32_t>(value.size()) };
+        try {
+            stream >> summarize_tableblock_count;
+        } catch (top::error::xtop_error_t const & eh) {
+            ec = eh.code();
+            return;
+        } catch (enum_xerror_code const errc) {
+            ec = errc;
+            return;
+        }
+
+        json["accumulated_tableblock_count"] = summarize_tableblock_count;
+    }
+}
+
 void xtop_contract_manager::get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, xJson::Value & json) const {
     if (contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
         contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
@@ -1109,6 +1237,27 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         return;
     } else if (contract_address == xaccount_address_t{sys_contract_zec_group_assoc_addr}) {
         return get_association_result_property_data(m_store, contract_address, XPROPERTY_CONTRACT_GROUP_ASSOC_KEY, json);
+    }
+}
+
+void xtop_contract_manager::get_contract_data(common::xaccount_address_t const & contract_address,
+                                              std::uint64_t const height,
+                                              xjson_format_t const json_format,
+                                              xJson::Value & json,
+                                              std::error_code & ec) const {
+    assert(!ec);
+    if (contract_address == xaccount_address_t{ sys_contract_zec_slash_info_addr }) {
+        std::error_code internal_ec;
+        get_zec_slash_contract_property(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, height, m_store, json, internal_ec);
+        if (internal_ec) {
+            xdbg("get xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+        get_zec_slash_contract_property(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, height, m_store, json, internal_ec);
+        if (internal_ec && !ec) {
+            ec = internal_ec;
+        }
     }
 }
 

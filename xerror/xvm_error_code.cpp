@@ -10,4 +10,8 @@ std::error_code make_error_code(const enum_xvm_error_code errc) noexcept
     return std::error_code(static_cast<int>(errc), xvm_get_category());
 }
 
+std::error_condition make_error_condition(const enum_xvm_error_code errc) noexcept {
+    return std::error_condition(static_cast<int>(errc), xvm_get_category());
+}
+
 NS_END2

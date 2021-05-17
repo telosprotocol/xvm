@@ -41,7 +41,7 @@ bool xrec_proposal_contract::get_proposal_info(const std::string & proposal_id, 
     std::string value;
     try {
         value = MAP_GET(PROPOSAL_MAP_ID, proposal_id);
-    } catch (xvm_error e) {
+    } catch (top::error::xtop_error_t const &) {
         xdbg("[xrec_proposal_contract::get_proposal_info] can't find proposal for id: %s", proposal_id.c_str());
         return false;  // not exist
     }
@@ -74,12 +74,14 @@ void xrec_proposal_contract::submitProposal(const std::string & target,
             std::string config_value = MAP_GET(ONCHAIN_PARAMS, target);
             if (config_value.empty()) {
                 xwarn("[xrec_proposal_contract::submitProposal] parameter: %s, not found", target.c_str());
-                throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
+                std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+                top::error::throw_error(ec);
             }
 
             if (config_value == value) {
                 xwarn("[xrec_proposal_contract::submitProposal] parameter: %s, provide onchain value: %s, new value: %s", target.c_str(), config_value.c_str(), value.c_str());
-                throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
+                std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+                top::error::throw_error(ec);
             }
         }
         break;
@@ -101,7 +103,8 @@ void xrec_proposal_contract::submitProposal(const std::string & target,
         break;
     default:
         xwarn("[xrec_proposal_contract::submitProposal] proposal type %u current not support", type);
-        throw xvm::xvm_error {xvm::enum_xvm_error_code::enum_vm_exception};
+        std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+        top::error::throw_error(ec);
         break;
     }
 
@@ -173,7 +176,8 @@ void xrec_proposal_contract::withdrawProposal(const std::string & proposal_id) {
     proposal_info proposal;
     if (!get_proposal_info(proposal_id, proposal)) {
         xdbg("[xrec_proposal_contract::withdrawProposal] can't find proposal: %s", proposal_id.c_str());
-        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
+        std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+        top::error::throw_error(ec);
     }
     XCONTRACT_ENSURE(src_account == proposal.proposal_client_address, "[xrec_proposal_contract::withdrawProposal] only proposer can cancel the proposal!");
 
@@ -202,13 +206,15 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
     // check if the voting client address exists in initial comittee
     if (!voter_in_committee(src_account)) {
         xwarn("[xrec_proposal_contract::tccVote] source addr is not a commitee voter: %s", src_account.c_str());
-        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
+        std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+        top::error::throw_error(ec);
     }
 
     proposal_info proposal;
     if (!get_proposal_info(proposal_id, proposal)) {
         xwarn("[xrec_proposal_contract::tccVote] can't find proposal: %s", proposal_id.c_str());
-        throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
+        std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+        top::error::throw_error(ec);
     }
 
     if (proposal.voting_status == status_none) {
@@ -272,7 +278,8 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
         auto it = voting_result.find(src_account);
         if (it != voting_result.end()) {
             xinfo("[xrec_proposal_contract::tccVote] client addr(%s) already voted", src_account.c_str());
-            throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception};
+            std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+            top::error::throw_error(ec);
         }
         // record the voting for this client address
         voting_result.insert({src_account, option});
@@ -368,7 +375,8 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
 
             default:
                 xwarn("[xrec_proposal_contract::tccVote] proposal type %u current not support", proposal.type);
-                throw xvm::xvm_error {xvm::enum_xvm_error_code::enum_vm_exception};
+                std::error_code ec{ xvm::enum_xvm_error_code::enum_vm_exception };
+                top::error::throw_error(ec);
                 break;
             }
 
@@ -430,7 +438,7 @@ bool xrec_proposal_contract::get_value_map(const std::string & map_key_id, const
     std::string value;
     try {
         value = READ(enum_type_t::map, map_key_id, proposal_id);
-    } catch (xvm_error e) {
+    } catch (top::error::xtop_error_t const &) {
         return false;  // not exist
     }
 
