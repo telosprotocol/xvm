@@ -14,7 +14,8 @@ NS_BEG2(top, xvm)
 #define XCONTRACT_ENSURE(condition, msg)                                                     \
     do {                                                                                     \
         if (!(condition)) {                                                                  \
-            throw xvm::xvm_error { xvm::enum_xvm_error_code::enum_vm_exception, msg };       \
+            std::error_code ec{ enum_xvm_error_code::enum_vm_exception };                    \
+            top::error::throw_error(ec, msg);                                                \
         }                                                                                    \
     } while (false)
 
