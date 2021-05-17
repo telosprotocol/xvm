@@ -2,14 +2,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "xvm/manager/xrole_context.h"
-
 #include "xchain_timer/xchain_timer_face.h"
+#include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xmbus/xevent_timer.h"
 #include "xmbus/xevent_store.h"
 #include "xvm/manager/xcontract_address_map.h"
 #include "xvm/manager/xmessage_ids.h"
+#include "xvm/manager/xrole_context.h"
 #include "xvm/xvm_service.h"
-#include "xmbus/xevent_timer.h"
+
 
 #include <cinttypes>
 #include <cmath>
@@ -113,6 +114,12 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
                     xdbg("[xrole_context_t::on_block] get timer block at %" PRIu64, block->get_height());
                     onchain_timer_round = block->get_height();
                     block_timestamp = block->get_timestamp();
+
+                    auto fork_config = chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
+                    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
+                        if (is_scheduled_table_contract(m_contract_info->address)) return;
+                    }
+
                     if (is_scheduled_table_contract(m_contract_info->address) && valid_call(onchain_timer_round)) {
 
                         int table_num = m_driver->table_ids().size();

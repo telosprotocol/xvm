@@ -141,7 +141,7 @@ std::string xcontract_base::CALC_CONTRACT_ADDRESS(const std::string& contract_na
     return contract::xcontract_address_map_t::calc_cluster_address(common::xaccount_address_t{ contract_name }, table_id).value();
 }
 
-bool xcontract_base::EXTRACT_TABLE_ID(common::xaccount_address_t const & addr, uint32_t& table_id) {
+bool xcontract_base::EXTRACT_TABLE_ID(common::xaccount_address_t const & addr, uint32_t& table_id) const {
     if ( is_beacon_contract_address(addr) ||
        is_zec_contract_address(addr)) {
         table_id = 0;
@@ -248,7 +248,7 @@ void xcontract_base::MAP_CREATE(const string& key) {
     m_contract_helper->map_create(key);
 }
 
-string xcontract_base::MAP_GET(const string& key, const string& field) {
+string xcontract_base::MAP_GET(const string& key, const string& field) const {
     return m_contract_helper->map_get(key, field);
 }
 
@@ -288,7 +288,7 @@ int32_t xcontract_base::MAP_SIZE(const string& key) {
     return m_contract_helper->map_size(key);
 }
 
-bool xcontract_base::MAP_FIELD_EXIST(const string& key, const string& field) {
+bool xcontract_base::MAP_FIELD_EXIST(const string& key, const string& field) const {
     return m_contract_helper->map_field_exist(key, field);
 }
 
