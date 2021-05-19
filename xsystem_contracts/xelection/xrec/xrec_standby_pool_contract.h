@@ -43,15 +43,10 @@ private:
 #endif
                          std::string const & program_version);
 
-    bool nodeJoinNetworkImpl1(std::string const & node_id,
-                              std::string const & program_version,
-                              xstake::xreg_node_info const & node,
-                              data::election::xstandby_result_store_t & standby_result_store);  // before fork point #TOP-3495
-
-    bool nodeJoinNetworkImpl2(std::string const & node_id,
-                              std::string const & program_version,
-                              xstake::xreg_node_info const & node,
-                              data::election::xstandby_result_store_t & standby_result_store);  // after fork point
+    bool nodeJoinNetworkImpl(std::string const & node_id,
+                             std::string const & program_version,
+                             xstake::xreg_node_info const & node,
+                             data::election::xstandby_result_store_t & standby_result_store);
 
     void on_timer(common::xlogic_time_t const current_time);
 
