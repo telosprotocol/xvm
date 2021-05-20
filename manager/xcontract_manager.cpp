@@ -1249,9 +1249,9 @@ static void get_zec_reward_contract_property(std::string const & property_name,
             return;
         }
 
-        for (auto m : result) {
+        for (auto const & m : result) {
             xJson::Value jm;
-            auto detail = m.second;
+            auto const & detail = m.second;
             base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(detail.data())), static_cast<uint32_t>(detail.size()) };
             xstake::cluster_workload_t workload;
             try {
@@ -1270,7 +1270,7 @@ static void get_zec_reward_contract_property(std::string const & property_name,
                 common::xcluster_address_t cluster;
                 base::xstream_t key_stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(key_str.data())), static_cast<uint32_t>(key_str.size()) };
                 key_stream >> cluster;
-                for (auto node : workload.m_leader_count) {
+                for (auto const & node : workload.m_leader_count) {
                     jn[node.first] = node.second;
                 }
                 jm[cluster.group_id().to_string()] = jn;
@@ -1294,9 +1294,9 @@ static void get_zec_reward_contract_property(std::string const & property_name,
             return;
         }
 
-        for (auto m : result) {
+        for (auto const & m : result) {
             xJson::Value jm;
-            auto detail = m.second;
+            auto const & detail = m.second;
             base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(detail.data())), static_cast<uint32_t>(detail.size()) };
             xstake::cluster_workload_t workload;
             try {
@@ -1315,7 +1315,7 @@ static void get_zec_reward_contract_property(std::string const & property_name,
                 common::xcluster_address_t cluster;
                 base::xstream_t key_stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(key_str.data())), static_cast<uint32_t>(key_str.size()) };
                 key_stream >> cluster;
-                for (auto node : workload.m_leader_count) {
+                for (auto const & node : workload.m_leader_count) {
                     jn[node.first] = node.second;
                 }
                 jm[cluster.group_id().to_string()] = jn;
