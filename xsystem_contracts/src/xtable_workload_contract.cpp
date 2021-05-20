@@ -33,11 +33,6 @@ void xtable_workload_contract::setup() {
 }
 
 void xtable_workload_contract::on_timer(const uint64_t onchain_timer_round) {
-    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
-    if (chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
-        return;
-    }
-
     XMETRICS_TIME_RECORD("sysContract_tableWorkload_on_timer");
     // xinfo("[xtable_workload_contract::on_timer] pid: %d, SELF_ADDRESS: %s, onchain_timer_round: %llu, this: %p\n", getpid(), SELF_ADDRESS().c_str(), onchain_timer_round, this);
 

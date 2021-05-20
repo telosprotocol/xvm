@@ -115,11 +115,6 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
                     onchain_timer_round = block->get_height();
                     block_timestamp = block->get_timestamp();
 
-                    auto fork_config = chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
-                    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.slash_workload_contract_upgrade, onchain_timer_round)) {
-                        if (is_scheduled_table_contract(m_contract_info->address)) return;
-                    }
-
                     if (is_scheduled_table_contract(m_contract_info->address) && valid_call(onchain_timer_round)) {
 
                         int table_num = m_driver->table_ids().size();
