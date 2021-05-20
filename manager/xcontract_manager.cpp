@@ -1222,6 +1222,109 @@ static void get_zec_slash_contract_property(std::string const & property_name,
     }
 }
 
+static void get_zec_reward_contract_property(std::string const & property_name,
+                                            uint64_t const height,
+                                            observer_ptr<store::xstore_face_t> store,
+                                            xJson::Value & json,
+                                            std::error_code & ec) {
+    assert(!ec);
+    assert(store != nullptr);
+
+    std::map<std::string, std::string> result;
+
+    if (property_name == xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY) {
+        auto error = store->get_map_property(sys_contract_zec_reward_addr, height, property_name, result);
+        if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_fail_to_get_block;
+            return;
+        }
+
+#if defined(DEBUG)
+        for (auto const & p : result) {
+            xdbg("sys_contract_zec_reward_addr: key : %s; value size %zu", p.first.c_str(), p.second.size());
+        }
+#endif
+        if (result.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        for (auto const & m : result) {
+            xJson::Value jm;
+            auto const & detail = m.second;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(detail.data())), static_cast<uint32_t>(detail.size()) };
+            xstake::cluster_workload_t workload;
+            try {
+                workload.serialize_from(stream);
+            } catch (top::error::xtop_error_t const & eh) {
+                ec = eh.code();
+                return;
+            } catch (enum_xerror_code const errc) {
+                ec = errc;
+                return;
+            }
+            {
+                xJson::Value jn;
+                jn["cluster_total_workload"] = workload.cluster_total_workload;
+                auto const & key_str = workload.cluster_id;
+                common::xcluster_address_t cluster;
+                base::xstream_t key_stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(key_str.data())), static_cast<uint32_t>(key_str.size()) };
+                key_stream >> cluster;
+                for (auto const & node : workload.m_leader_count) {
+                    jn[node.first] = node.second;
+                }
+                jm[cluster.group_id().to_string()] = jn;
+            }
+            json["auditor_workload"].append(jm);
+        }
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY) {
+        auto error = store->get_map_property(sys_contract_zec_reward_addr, height, property_name, result);
+        if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_fail_to_get_block;
+            return;
+        }
+
+#if defined(DEBUG)
+        for (auto const & p : result) {
+            xdbg("sys_contract_zec_reward_addr: key : %s; value size %zu", p.first.c_str(), p.second.size());
+        }
+#endif
+        if (result.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        for (auto const & m : result) {
+            xJson::Value jm;
+            auto const & detail = m.second;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(detail.data())), static_cast<uint32_t>(detail.size()) };
+            xstake::cluster_workload_t workload;
+            try {
+                workload.serialize_from(stream);
+            } catch (top::error::xtop_error_t const & eh) {
+                ec = eh.code();
+                return;
+            } catch (enum_xerror_code const errc) {
+                ec = errc;
+                return;
+            }
+            {
+                xJson::Value jn;
+                jn["cluster_total_workload"] = workload.cluster_total_workload;
+                auto const & key_str = workload.cluster_id;
+                common::xcluster_address_t cluster;
+                base::xstream_t key_stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(key_str.data())), static_cast<uint32_t>(key_str.size()) };
+                key_stream >> cluster;
+                for (auto const & node : workload.m_leader_count) {
+                    jn[node.first] = node.second;
+                }
+                jm[cluster.group_id().to_string()] = jn;
+            }
+            json["validator_workload"].append(jm);
+        }
+    }
+}
+
 void xtop_contract_manager::get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, xJson::Value & json) const {
     if (contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
         contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
@@ -1256,6 +1359,19 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         }
         get_zec_slash_contract_property(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, height, m_store, json, internal_ec);
         if (internal_ec && !ec) {
+            ec = internal_ec;
+        }
+    } else if (contract_address == xaccount_address_t{ sys_contract_zec_reward_addr }) {
+        std::error_code internal_ec;
+        get_zec_reward_contract_property(xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, height, m_store, json, internal_ec);
+        if (internal_ec) {
+            xdbg("get xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+        get_zec_reward_contract_property(xstake::XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, height, m_store, json, internal_ec);
+        if (internal_ec && !ec) {
+            xdbg("get xstake::XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY failed");
             ec = internal_ec;
         }
     }
