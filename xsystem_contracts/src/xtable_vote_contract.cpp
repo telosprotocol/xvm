@@ -90,18 +90,9 @@ void xtable_vote_contract::commit_stake() {
         throw;
     }
 
-    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
-    auto fork_config = fork_config_center.chain_fork_config();
     uint64_t timer = TIME();
-    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.vote_contract_trx_split, timer)) {
-        xinfo("[xtable_vote_contract::commit_stake] split table vote trx %" PRIu64, timer);
-        split_and_report(sys_contract_rec_registration_addr, "update_batch_stake_v2", adv_votes);
-
-    } else {
-        base::xstream_t stream(base::xcontext_t::instance());
-        stream << adv_votes;
-        CALL(common::xaccount_address_t{sys_contract_rec_registration_addr}, "update_batch_stake", std::string((char *)stream.data(), stream.size()));
-    }
+    xinfo("[xtable_vote_contract::commit_stake] split table vote trx %" PRIu64, timer);
+    split_and_report(sys_contract_rec_registration_addr, "update_batch_stake_v2", adv_votes);
 }
 
 int32_t xtable_vote_contract::get_node_info(const std::string & account, xreg_node_info & reg_node_info) {
@@ -261,19 +252,9 @@ void xtable_vote_contract::commit_total_votes_num() {
         throw;
     }
 
-    chain_upgrade::xtop_chain_fork_config_center fork_config_center;
-    auto fork_config = fork_config_center.chain_fork_config();
     uint64_t timer = TIME();
-    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.vote_contract_trx_split, timer)) {
-        xinfo("[xtable_vote_contract::commit_total_votes_num] split table vote trx %" PRIu64, timer);
-        split_and_report(sys_contract_zec_vote_addr, "on_receive_shard_votes_v2", pollables);
-
-    } else {
-        base::xstream_t stream(base::xcontext_t::instance());
-        stream << pollables;
-        CALL(common::xaccount_address_t{sys_contract_zec_vote_addr}, "on_receive_shard_votes", std::string((char *)stream.data(), stream.size()));
-    }
-
+    xinfo("[xtable_vote_contract::commit_total_votes_num] split table vote trx %" PRIu64, timer);
+    split_and_report(sys_contract_zec_vote_addr, "on_receive_shard_votes_v2", pollables);
 }
 
 void xtable_vote_contract::split_and_report(std::string const& report_contract, std::string const& report_func, std::map<std::string, std::string> const& report_content) {

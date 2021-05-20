@@ -409,11 +409,6 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
 }
 
 void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) {
-    // check fork
-    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
-    if (!chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.slash_workload_contract_upgrade, timestamp)) {
-        return;
-    }
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_timer");
     // check address
     auto const & self_account = SELF_ADDRESS();
