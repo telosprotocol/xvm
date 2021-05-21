@@ -1123,7 +1123,6 @@ static void get_zec_slash_contract_property(std::string const & property_name,
     assert(store != nullptr);
 
     std::map<std::string, std::string> result;
-    xJson::Value json_prop;
     if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
         auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
         if (error) {
@@ -1170,7 +1169,7 @@ static void get_zec_slash_contract_property(std::string const & property_name,
             v["block_count"] = unqualified_data.block_count;
             v["subset_count"] = unqualified_data.subset_count;
 
-            json_prop[property_name]["auditor"].append(v);
+            json[property_name]["auditor"].append(v);
         }
 
         for (auto const & validator_data : data.validator_info) {
@@ -1181,7 +1180,7 @@ static void get_zec_slash_contract_property(std::string const & property_name,
             v["block_count"] = unqualified_data.block_count;
             v["subset_count"] = unqualified_data.subset_count;
 
-            json_prop[property_name]["validator"].append(v);
+            json[property_name]["validator"].append(v);
         }
     } else if (property_name == xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY) {
         auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
@@ -1220,10 +1219,8 @@ static void get_zec_slash_contract_property(std::string const & property_name,
             return;
         }
 
-        json_prop[property_name]["accumulated_tableblock_count"] = summarize_tableblock_count;
+        json[property_name]["accumulated_tableblock_count"] = summarize_tableblock_count;
     }
-
-    json["property_info"].append(json_prop);
 }
 
 static void get_zec_reward_contract_property(std::string const & property_name,

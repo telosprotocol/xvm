@@ -14,6 +14,7 @@ using namespace top::data;
 
 NS_BEG3(top, xvm, xcontract)
 
+#define SLASH_DELETE_PROPERTY  "SLASH_DELETE_PROPERTY"
 
 xzec_slash_info_contract::xzec_slash_info_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
