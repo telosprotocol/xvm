@@ -1123,7 +1123,6 @@ static void get_zec_slash_contract_property(std::string const & property_name,
     assert(store != nullptr);
 
     std::map<std::string, std::string> result;
-
     if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
         auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
         if (error) {
@@ -1132,8 +1131,9 @@ static void get_zec_slash_contract_property(std::string const & property_name,
         }
 
 #if defined(DEBUG)
+        xdbg("get_zec_slash_contract_property #131, height: %" PRIu64 ", map size: %zu", height, result.size());
         for (auto const & p : result) {
-            xdbg("get_zec_slash_contract_property: key : %s; value size %zu", p.first.c_str(), p.second.size());
+            xdbg("get_zec_slash_contract_property, key: %s; value: %s", p.first.c_str(), p.second.c_str());
         }
 #endif
 
@@ -1169,7 +1169,7 @@ static void get_zec_slash_contract_property(std::string const & property_name,
             v["block_count"] = unqualified_data.block_count;
             v["subset_count"] = unqualified_data.subset_count;
 
-            json["auditor"].append(v);
+            json[property_name]["auditor"].append(v);
         }
 
         for (auto const & validator_data : data.validator_info) {
@@ -1180,7 +1180,7 @@ static void get_zec_slash_contract_property(std::string const & property_name,
             v["block_count"] = unqualified_data.block_count;
             v["subset_count"] = unqualified_data.subset_count;
 
-            json["validator"].append(v);
+            json[property_name]["validator"].append(v);
         }
     } else if (property_name == xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY) {
         auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
@@ -1189,8 +1189,9 @@ static void get_zec_slash_contract_property(std::string const & property_name,
         }
 
 #if defined(DEBUG)
+        xdbg("get_zec_slash_contract_property #133, height: %" PRIu64 ", map size: %zu", height, result.size());
         for (auto const & p : result) {
-            xdbg("get_zec_slash_contract_property: key : %s; value size %zu", p.first.c_str(), p.second.size());
+            xdbg("get_zec_slash_contract_property, key: %s; value: %s", p.first.c_str(), p.second.c_str());
         }
 #endif
 
@@ -1218,7 +1219,7 @@ static void get_zec_slash_contract_property(std::string const & property_name,
             return;
         }
 
-        json["accumulated_tableblock_count"] = summarize_tableblock_count;
+        json[property_name]["accumulated_tableblock_count"] = summarize_tableblock_count;
     }
 }
 
