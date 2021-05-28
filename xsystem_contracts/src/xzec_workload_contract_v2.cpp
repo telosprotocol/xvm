@@ -273,6 +273,7 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
 void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp,
                                                                    std::map<common::xgroup_address_t, xauditor_workload_info_t> & auditor_group_workload,
                                                                    std::map<common::xgroup_address_t, xvalidator_workload_info_t> & validator_group_workload) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "accumulate_total_time");
     xinfo("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] enum_vbucket_has_tables_count %d, timestamp: %llu", enum_vledger_const::enum_vbucket_has_tables_count, timestamp);
     int64_t table_pledge_balance_change_tgas = 0;
     for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; i++) {
@@ -290,7 +291,7 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
             // m_table_pledge_balance_change_tgas
             table_pledge_balance_change_tgas += full_tableblock->get_pledge_balance_change_tgas();
             total_table_block_count++;
-            xinfo("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] table_block_count: %u, total_table_block_count: %" PRIu32 "", block_index, total_table_block_count);
+            xinfo("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] block_index: %u, total_table_block_count: %" PRIu32 "", block_index, total_table_block_count);
         }
 
         if (full_blocks.size() >  0) {
@@ -343,6 +344,7 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
     std::map<common::xgroup_address_t, xvalidator_workload_info_t> validator_clusters_workloads;
     accumulate_workload_with_fullblock(timestamp, auditor_clusters_workloads, validator_clusters_workloads);
 
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "call_reward_contract");
     std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
     std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_clusters_workloads2;
     int count = 0;
