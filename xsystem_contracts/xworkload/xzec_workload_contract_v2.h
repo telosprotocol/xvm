@@ -120,7 +120,9 @@ private:
     /**
      * @brief add_workload_with_fullblock
      */
-    void accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp);
+    void accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp,
+                                            std::map<common::xgroup_address_t, xauditor_workload_info_t> & auditor_group_workload,
+                                            std::map<common::xgroup_address_t, xvalidator_workload_info_t> & validator_group_workload);
 
     /**
      * @brief migrate_data
