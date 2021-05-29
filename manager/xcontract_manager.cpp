@@ -345,6 +345,7 @@ void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store,
 }
 
 void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address) {
+    xassert(false);  // TODO(jimmy) delete this function
     assert(m_store != nullptr);
     assert(m_syncstore != nullptr);
     assert(m_blockstore != nullptr);
@@ -364,7 +365,9 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     tx->set_digest();
     tx->set_len();
 
-    xaccount_context_t ac(contract_cluster_address.value(), m_store.get());
+    xobject_ptr_t<base::xvbstate_t> bstate = make_object_ptr<base::xvbstate_t>(contract_cluster_address.value(), (uint64_t)0, (uint64_t)0, std::string(), std::string(), (uint64_t)0, (uint32_t)0, (uint16_t)0);
+    xaccount_ptr_t unitstate = std::make_shared<xunit_bstate_t>(bstate.get());
+    xaccount_context_t ac(unitstate, m_store.get());
 
     xvm::xvm_service s;
     s.deal_transaction(tx, &ac);
@@ -406,7 +409,9 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     tx->set_digest();
     tx->set_len();
 
-    xaccount_context_t ac(contract_cluster_address.value(), store);
+    xobject_ptr_t<base::xvbstate_t> bstate = make_object_ptr<base::xvbstate_t>(contract_cluster_address.value(), (uint64_t)0, (uint64_t)0, std::string(), std::string(), (uint64_t)0, (uint32_t)0, (uint16_t)0);
+    xaccount_ptr_t unitstate = std::make_shared<xunit_bstate_t>(bstate.get());
+    xaccount_context_t ac(unitstate, m_store.get());
 
     xvm::xvm_service s;
     s.deal_transaction(tx, &ac);
@@ -419,12 +424,12 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
 
     base::xvaccount_t _vaddr(block->get_account());
     // m_blockstore->delete_block(_vaddr, genesis_block.get());  // delete default genesis block
-    auto ret = m_syncstore->get_vblockstore()->store_block(_vaddr, block.get());
+    auto ret = blockstore->store_block(_vaddr, block.get());
     if (!ret) {
         xerror("xtop_contract_manager::setup_chain %s genesis block fail", contract_cluster_address.c_str());
         return;
     }
-    ret = m_syncstore->get_vblockstore()->execute_block(_vaddr, block.get());
+    ret = blockstore->execute_block(_vaddr, block.get());
     if (!ret) {
         xerror("xtop_contract_manager::setup_chain execute genesis block fail");
         return;
