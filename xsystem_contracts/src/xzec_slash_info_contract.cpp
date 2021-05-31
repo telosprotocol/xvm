@@ -505,9 +505,9 @@ xunqualified_node_info_t xzec_slash_info_contract::process_statistic_data(top::d
     xunqualified_node_info_t res_node_info;
 
     // process one full tableblock statistic data
-    for (auto const static_item: block_statistic_data.detail) {
+    for (auto const & static_item: block_statistic_data.detail) {
         auto elect_statistic = static_item.second;
-        for (auto const group_item: elect_statistic.group_statistics_data) {
+        for (auto const & group_item: elect_statistic.group_statistics_data) {
             xgroup_related_statistics_data_t const& group_account_data = group_item.second;
             common::xgroup_address_t const& group_addr = group_item.first;
             xvip2_t const& group_xvip2 = top::common::xip2_t{

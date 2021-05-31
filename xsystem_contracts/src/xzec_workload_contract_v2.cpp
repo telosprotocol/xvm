@@ -232,9 +232,9 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
     auto node_service = contract::xcontract_manager_t::instance().get_node_service();
     auto workload_per_tableblock = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tableblock);
     auto workload_per_tx = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tx);
-    for (auto const static_item: stat_data.detail) {
+    for (auto const & static_item: stat_data.detail) {
         auto elect_statistic = static_item.second;
-        for (auto const group_item: elect_statistic.group_statistics_data) {
+        for (auto const & group_item: elect_statistic.group_statistics_data) {
             common::xgroup_address_t const & group_addr = group_item.first;
             xgroup_related_statistics_data_t const & group_account_data = group_item.second;
             xvip2_t const &group_xvip2 = top::common::xip2_t{
