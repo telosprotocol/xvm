@@ -10,8 +10,6 @@
 NS_BEG2(top, xvm)
 using base::xstream_t;
 using base::xcontext_t;
-using data::XPROPERTY_ASSET_TOP;
-using data::XPORPERTY_CONTRACT_NATIVE_TOKEN_KEY;
 
 
 xvm_native_func::xvm_native_func()
