@@ -124,7 +124,13 @@ void xtop_rec_elect_edge_contract::on_timer(const uint64_t current_time) {
         if (!executed_edge) {
             elect_config_nodes(current_time);
         }
+#ifdef ELECT_WHEREAFTER
+    if (current_gmt_time - node_start_time < (set_waste_time + 40) * 10000) {
         return;
+    }
+#else
+    return;
+#endif
     }
 #endif
 

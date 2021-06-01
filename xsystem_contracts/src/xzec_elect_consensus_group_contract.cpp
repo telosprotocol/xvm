@@ -222,7 +222,13 @@ void xtop_zec_elect_consensus_group_contract::on_timer(common::xlogic_time_t con
     if (!executed_consensus) {
         elect_config_nodes(current_time);
     }
+#ifdef ELECT_WHEREAFTER
+    if (current_gmt_time - node_start_time < (set_waste_time + 40) * 10000) {
+        return;
+    }
+#else
     return;
+#endif
 #endif
     XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), u8"xzec_elect_consensus_group_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_zec_elect_consensus_addr,
