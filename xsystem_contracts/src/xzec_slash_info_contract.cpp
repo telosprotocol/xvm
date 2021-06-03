@@ -204,7 +204,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     #ifdef DEBUG
         print_table_height_info();
         print_summarize_info(present_summarize_info);
-        xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] present tableblock num is %u", present_tableblock_count);
+        xdbg_info("[xzec_slash_info_contract][do_unqualified_node_slash] present tableblock num is %u", present_tableblock_count);
     #endif
 
 
@@ -300,7 +300,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     #ifdef DEBUG
         print_table_height_info();
         print_summarize_info(summarize_info);
-        xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count current, time round: %" PRIu64
+        xdbg_info("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count current, time round: %" PRIu64
             ": SOURCE_ADDRESS: %s, pid:%d, tableblock_count:%u",
             timestamp,
             SOURCE_ADDRESS().c_str(),
@@ -309,7 +309,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     #endif
 
     if (summarize_tableblock_count < XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_table_block)) {
-        xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count not enought, time round: %" PRIu64
+        xinfo("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count not enought, time round: %" PRIu64
             ": SOURCE_ADDRESS: %s, pid:%d, tableblock_count:%u",
             timestamp,
             SOURCE_ADDRESS().c_str(),
