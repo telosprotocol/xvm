@@ -120,7 +120,13 @@ void xtop_rec_elect_zec_contract::on_timer(common::xlogic_time_t const current_t
     if (!executed_zec) {
         elect_config_nodes(current_time);
     }
+#ifdef ELECT_WHEREAFTER
+    if (current_gmt_time - node_start_time < (set_waste_time + 40) * 10000) {
+        return;
+    }
+#else
     return;
+#endif
 #endif
     XMETRICS_TIME_RECORD(XZEC_ELECT "on_timer_all_time");
     XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), u8"xrec_elect_zec_contract_t instance is triggled by others");

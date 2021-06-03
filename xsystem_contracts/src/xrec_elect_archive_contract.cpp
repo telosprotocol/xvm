@@ -121,7 +121,13 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
     if (!executed_archive) {
         elect_config_nodes(current_time);
     }
+#ifdef ELECT_WHEREAFTER
+    if (current_gmt_time - node_start_time < (set_waste_time + 40) * 10000) {
+        return;
+    }
+#else
     return;
+#endif
 #endif
 
     XMETRICS_TIME_RECORD(XARCHIVE_ELECT "on_timer_all_time");
