@@ -100,12 +100,12 @@ void xrec_registration_contract::setup() {
     }
 }
 
-void xrec_registration_contract::registerNode(const std::string & node_types,
-                                                  const std::string & nickname,
-                                                  const std::string & signing_key,
-                                                  const uint32_t dividend_rate
+void xrec_registration_contract::registerNode(const std::string & role_type_name,
+                                              const std::string & nickname,
+                                              const std::string & signing_key,
+                                              const uint32_t dividend_rate
 #if defined XENABLE_MOCK_ZEC_STAKE
-                                                  , std::string const & registration_account
+                                            , common::xaccount_address_t const & registration_account
 #endif
 ) {
     std::set<uint32_t> network_ids;
@@ -113,41 +113,41 @@ void xrec_registration_contract::registerNode(const std::string & node_types,
     network_ids.insert(nid.value());
 
 #if defined XENABLE_MOCK_ZEC_STAKE
-    registerNode2(node_types, nickname, signing_key, dividend_rate, network_ids, registration_account);
+    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
 #else
-    registerNode2(node_types, nickname, signing_key, dividend_rate, network_ids);
+    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids);
 #endif
 }
 
-void xrec_registration_contract::registerNode2(const std::string & node_types,
-                                                   const std::string & nickname,
-                                                   const std::string & signing_key,
-                                                   const uint32_t dividend_rate,
-                                                   const std::set<uint32_t> & network_ids
+void xrec_registration_contract::registerNode2(const std::string & role_type_name,
+                                               const std::string & nickname,
+                                               const std::string & signing_key,
+                                               const uint32_t dividend_rate,
+                                               const std::set<uint32_t> & network_ids
 #if defined XENABLE_MOCK_ZEC_STAKE
-                                                   , std::string const & registration_account
+                                             , common::xaccount_address_t const & registration_account
 #endif
 ) {
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registerNode_Called", 1);
     XMETRICS_TIME_RECORD(XREG_CONTRACT "registerNode_ExecutionTime");
 
 #if defined XENABLE_MOCK_ZEC_STAKE
-    std::string const & account = registration_account;
+    auto const & account = registration_account;
 #else
-    std::string const & account = SOURCE_ADDRESS();
+    auto const & account = common::xaccount_address_t{ SOURCE_ADDRESS() };
 #endif
     xdbg("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, balance: %lld, account: %s, node_types: %s, signing_key: %s, dividend_rate: %u\n",
          getpid(),
          GET_BALANCE(),
          account.c_str(),
-         node_types.c_str(),
+         role_type_name.c_str(),
          signing_key.c_str(),
          dividend_rate);
 
     xreg_node_info node_info;
-    auto ret = get_node_info(account, node_info);
+    auto ret = get_node_info(account.value(), node_info);
     XCONTRACT_ENSURE(ret != 0, "xrec_registration_contract::registerNode2: node exist!");
-    common::xrole_type_t role_type = common::to_role_type(node_types);
+    common::xrole_type_t role_type = common::to_role_type(role_type_name);
     XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::registerNode: invalid nickname");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
@@ -162,7 +162,7 @@ void xrec_registration_contract::registerNode2(const std::string & node_types,
     stream >> asset_out.m_token_name;
     stream >> asset_out.m_amount;
 
-    node_info.m_account = common::xaccount_address_t{ account };
+    node_info.m_account = account;
     node_info.m_registered_role = role_type;
 #if defined XENABLE_MOCK_ZEC_STAKE
     node_info.m_account_mortgage = 100000000000000;

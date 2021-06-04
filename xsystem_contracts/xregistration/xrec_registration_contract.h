@@ -42,11 +42,11 @@ public:
      * @param signing_key
      */
     void registerNode(const std::string & node_types,
-                       const std::string & nickname,
-                       const std::string & signing_key,
-                       const uint32_t dividend_rate
+                      const std::string & nickname,
+                      const std::string & signing_key,
+                      const uint32_t dividend_rate
 #if defined XENABLE_MOCK_ZEC_STAKE
-                       , std::string const & registration_account
+                   , common::xaccount_address_t const & registration_account
 #endif
     );
 
@@ -149,12 +149,12 @@ private:
      * @param network_ids
      */
     void registerNode2(const std::string & node_types,
-                        const std::string & nickname,
-                        const std::string & signing_key,
-                        const uint32_t dividend_rate,
-                        const std::set<uint32_t> & network_ids
+                       const std::string & nickname,
+                       const std::string & signing_key,
+                       const uint32_t dividend_rate,
+                       const std::set<uint32_t> & network_ids
 #if defined XENABLE_MOCK_ZEC_STAKE
-                        , std::string const & registration_account
+                     , common::xaccount_address_t const & registration_account
 #endif
     );
 
