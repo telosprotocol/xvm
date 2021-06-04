@@ -77,7 +77,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
     MAP_COPY_GET(top::xstake::XPORPERTY_CONTRACT_REG_KEY, map_nodes, sys_contract_rec_registration_addr);
     XCONTRACT_ENSURE(map_nodes.size() != 0, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: did not get the MAP");
 
-    auto iter = map_nodes.find(node_id);
+    auto iter = map_nodes.find(node_id.value());
     XCONTRACT_ENSURE(iter != map_nodes.end(), "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: did not find the node in contract map");
 
     auto const & value_str = iter->second;
