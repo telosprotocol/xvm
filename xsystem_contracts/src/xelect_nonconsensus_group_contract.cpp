@@ -40,7 +40,7 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
     assert(zid.has_value() && cid.has_value() && gid.has_value());
     assert(gid == common::xdefault_group_id);
 
-    auto const log_prefix = "[elect group contract] zone " + zid.to_string() + " cluster " + cid.to_string() + " group " + gid.to_string() + ":";
+    auto const log_prefix = "[elect non-consensus group contract] zone " + zid.to_string() + " cluster " + cid.to_string() + " group " + gid.to_string() + ":";
 
     common::xnode_type_t node_type{common::xnode_type_t::invalid};
 
@@ -97,6 +97,11 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
             XMETRICS_PACKET_INFO(
                 XNONCONSENSUS_ELECTION "elect_in", "zone_id", zid.to_string(), "cluster_id", cid.to_string(), "group_id", gid.to_string(), "node_id", node_id.value());
         }
+#if defined(DEBUG)
+        for (auto const & node_info : new_group_result) {
+            xdbg("%s elected in %s", log_prefix.c_str(), top::get<xelection_info_bundle_t>(node_info).node_id().c_str());
+        }
+#endif
         new_group_result.election_committee_version(common::xversion_t{0});
         new_group_result.timestamp(election_timestamp);
         new_group_result.start_time(start_time);

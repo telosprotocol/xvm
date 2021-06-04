@@ -35,7 +35,7 @@ public:
     END_CONTRACT_WITH_PARAM
 
 private:
-    void nodeJoinNetwork(std::string const & node_id,
+    void nodeJoinNetwork(common::xaccount_address_t const & node_id,
 #if defined XENABLE_MOCK_ZEC_STAKE
                          common::xrole_type_t role_type,
                          std::string const & pubkey,
@@ -43,7 +43,7 @@ private:
 #endif
                          std::string const & program_version);
 
-    bool nodeJoinNetworkImpl(std::string const & node_id,
+    bool nodeJoinNetworkImpl(common::xaccount_address_t const & node_id,
                              std::string const & program_version,
                              xstake::xreg_node_info const & node,
                              data::election::xstandby_result_store_t & standby_result_store);
