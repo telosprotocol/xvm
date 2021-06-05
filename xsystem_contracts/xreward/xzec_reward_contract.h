@@ -92,34 +92,6 @@ private:
     void        reward(const common::xlogic_time_t onchain_timer_round, std::string const& workload_str);
 
     /**
-     * @brief calculate nodes rewards
-     *
-     * @param nodes_rewards nodes rewards
-     * @param contract_rewards contract rewards
-     * @param contract_auditor_vote_rewards contract auditor vote rewards
-     * @param onchain_timer_round chian timer round
-     */
-    void        calc_nodes_rewards_v4(std::map<std::string, std::map<std::string, top::xstake::uint128_t >> & table_nodes_rewards,
-                                              std::map<std::string, top::xstake::uint128_t> & contract_rewards,
-                                              std::map<std::string, std::map<std::string, top::xstake::uint128_t >> & contract_auditor_vote_rewards,
-                                              const uint64_t onchain_timer_round);
-
-    /**
-     * @brief
-     *
-     * @param nodes_rewards nodes rewards
-     * @param contract_total_vote_awards contract total vote rewards
-     * @param contract_auditor_vote_rewards contract auditor vote rewards
-     * @param onchain_timer_round chian timer round
-     * @return true
-     * @return false
-     */
-    void dispatch_all_reward_v2(std::map<std::string, std::map<std::string, top::xstake::uint128_t>> const & table_nodes_rewards,
-                                std::map<std::string, top::xstake::uint128_t> const & contract_rewards,
-                                std::map<std::string, std::map<std::string, top::xstake::uint128_t>> const & contract_auditor_vote_rewards,
-                                uint64_t onchain_timer_round);
-
-    /**
      * @brief Get the task id
      *
      * @return uint32_t
