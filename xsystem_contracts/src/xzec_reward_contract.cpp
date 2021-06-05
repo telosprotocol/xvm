@@ -283,11 +283,11 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
         uint32_t zero_workload_val = 0;
         if (validator) {
             zero_workload_val = XGET_ONCHAIN_GOVERNANCE_PARAMETER(shard_zero_workload);
-            cluster_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_count);
+            cluster_size = XGET_CONFIG(validator_group_count);
             group_id_begin = common::xvalidator_group_id_begin.value();
         } else {
             zero_workload_val = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_zero_workload);
-            cluster_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_count);
+            cluster_size = XGET_CONFIG(auditor_group_count);
             group_id_begin = common::xauditor_group_id_begin.value();
         }
         if (cluster_size == 0) {
@@ -467,10 +467,10 @@ void xzec_reward_contract::calc_nodes_rewards_v4(std::map<std::string, std::map<
     auto archive_total_rewards      = get_reward(issuance, xreward_type::archive_reward);
     auto total_vote_rewards         = get_reward(issuance, xreward_type::vote_reward);
     auto governance_rewards         = get_reward(issuance, xreward_type::governance_reward);
-    std::size_t auditor_group_count = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_count);
+    std::size_t auditor_group_count = XGET_CONFIG(auditor_group_count);
     XCONTRACT_ENSURE(auditor_group_count > 0, "auditor group count equals zero");
     top::xstake::uint128_t auditor_group_rewards = auditor_total_rewards / auditor_group_count;
-    std::size_t validator_group_count = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_count);
+    std::size_t validator_group_count = XGET_CONFIG(validator_group_count);
     XCONTRACT_ENSURE(validator_group_count > 0, "validator group count equals zero");
     top::xstake::uint128_t validator_group_rewards = validator_total_rewards / validator_group_count;
     top::xstake::uint128_t zero_workload_rewards = 0;

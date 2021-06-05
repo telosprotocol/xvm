@@ -91,7 +91,7 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
     auto group_infos_iter = group_string_value.begin();
     auto group_index = 0;
 
-    auto cluster_group_num = 1 + XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_count) / XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_count);
+    auto cluster_group_num = 1 + XGET_CONFIG(validator_group_count) / XGET_CONFIG(auditor_group_count);
     uint8_t auditor_group_id_start = common::xauditor_group_id_begin.value();
     uint8_t validator_group_id_start = common::xvalidator_group_id_begin.value();
 
@@ -170,7 +170,7 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
         }
 
         // set associate_relationship
-        auto const pre_associate = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_count) / XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_count);
+        auto const pre_associate = XGET_CONFIG(validator_group_count) / XGET_CONFIG(auditor_group_count);
 
         auto const & auditor_group = election_result_store.result_of(m_network_id)
                                          .result_of(common::xnode_type_t::consensus_auditor)
@@ -316,8 +316,8 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
 
 #endif
 
-    auto const validator_group_count = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_count);
-    auto const auditor_group_count = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_count);
+    auto const validator_group_count = XGET_CONFIG(validator_group_count);
+    auto const auditor_group_count = XGET_CONFIG(auditor_group_count);
 
     auto cluster_election_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_election_interval);
     XATTRIBUTE_MAYBE_UNUSED auto zone_election_trigger_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(zone_election_trigger_interval);
@@ -477,7 +477,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
         }
     }
 
-    std::vector<common::xgroup_id_t> all_auditor_group_id(XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_count));
+    std::vector<common::xgroup_id_t> all_auditor_group_id(XGET_CONFIG(auditor_group_count));
     std::iota(all_auditor_group_id.begin(), all_auditor_group_id.end(), common::xauditor_group_id_begin);
     xdbg("all_auditor_group_id.size():%zu begin:%s end:%s",
          all_auditor_group_id.size(),
@@ -524,7 +524,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
         election_result_log += "auditor_group " + to_string(auditor_group_id) + " changed,";
     }
 
-    std::vector<common::xgroup_id_t> all_validator_group_id(XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_count));
+    std::vector<common::xgroup_id_t> all_validator_group_id(XGET_CONFIG(validator_group_count));
     std::iota(all_validator_group_id.begin(), all_validator_group_id.end(), common::xvalidator_group_id_begin);
     xdbg("all_validator_group_id.size():%zu begin:%s end:%s",
          all_validator_group_id.size(),
