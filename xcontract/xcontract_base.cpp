@@ -228,7 +228,7 @@ string xcontract_base::MAP_GET(const string& key, const string& field) const {
     return m_contract_helper->map_get(key, field);
 }
 
-int32_t xcontract_base::MAP_GET2(const string& key, const string& field, string& value, const std::string& addr) {
+int32_t xcontract_base::MAP_GET2(const string& key, const string& field, string& value, const std::string& addr) const {
     return m_contract_helper->map_get2(key, field, value, addr);
 }
 
