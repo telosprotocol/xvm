@@ -115,43 +115,6 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
                     onchain_timer_round = block->get_height();
                     block_timestamp = block->get_timestamp();
 
-                    if (is_scheduled_table_contract(m_contract_info->address) && valid_call(onchain_timer_round)) {
-
-                        int table_num = m_driver->table_ids().size();
-                        if (table_num == 0) {
-                            xwarn("xrole_context_t::on_block: table_ids empty\n");
-                            return;
-                        }
-
-                        int clock_interval = 1;
-                        if (m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_workload_addr}) {
-                            clock_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tableworkload_report_schedule_interval);
-                        } else if (m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_slash_info_addr}) {
-                            clock_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tableslash_report_schedule_interval);
-                        }
-
-                        if (m_table_contract_schedule.find(m_contract_info->address) != m_table_contract_schedule.end()) {
-                            auto& schedule_info = m_table_contract_schedule[m_contract_info->address];
-                            schedule_info.target_interval = clock_interval;
-                            schedule_info.cur_interval++;
-                            if (schedule_info.cur_interval == schedule_info.target_interval) {
-                                schedule_info.cur_table = m_driver->table_ids().at(0) +  static_cast<uint16_t>((onchain_timer_round / clock_interval) % table_num);
-                                xinfo("xrole_context_t::on_block: table contract schedule, contract address %s, timer %" PRIu64 ", schedule info:[%hu, %hu, %hu %hu]",
-                                    m_contract_info->address.value().c_str(), onchain_timer_round, schedule_info.cur_interval, schedule_info.target_interval, schedule_info.clock_or_table, schedule_info.cur_table);
-                                call_contract(onchain_timer_round, info, block_timestamp, schedule_info.cur_table);
-                                schedule_info.cur_interval = 0;
-                            }
-                        } else { // have not schedule yet
-                            xtable_schedule_info_t schedule_info(clock_interval, m_driver->table_ids().at(0) + static_cast<uint16_t>((onchain_timer_round / clock_interval) % table_num));
-                            xinfo("xrole_context_t::on_block: table contract schedule initial, contract address %s, timer %" PRIu64 ", schedule info:[%hu, %hu, %hu %hu]",
-                                    m_contract_info->address.value().c_str(), onchain_timer_round, schedule_info.cur_interval, schedule_info.target_interval, schedule_info.clock_or_table, schedule_info.cur_table);
-                            call_contract(onchain_timer_round, info, block_timestamp, schedule_info.cur_table);
-                            m_table_contract_schedule[m_contract_info->address] = schedule_info;
-                        }
-
-                        return;
-                    }
-
                     bool first_blk = runtime_stand_alone(onchain_timer_round, m_contract_info->address);
                     if (time_interval != 0 && onchain_timer_round != 0 && ((first_blk && (onchain_timer_round % 3) == 0) || (!first_blk && (onchain_timer_round % time_interval) == 0))) {
                         do_call = true;
@@ -199,11 +162,6 @@ bool xrole_context_t::valid_call(const uint64_t onchain_timer_round) {
         xinfo("not valid call %llu", onchain_timer_round);
         return false;
     }
-}
-
-bool xrole_context_t::is_scheduled_table_contract(common::xaccount_address_t const& addr) const {
-    return addr == common::xaccount_address_t{sys_contract_sharding_workload_addr} ||
-        addr == common::xaccount_address_t{sys_contract_sharding_slash_info_addr};
 }
 
 void xrole_context_t::call_contract(const uint64_t onchain_timer_round, xblock_monitor_info_t * info, const uint64_t block_timestamp) {
