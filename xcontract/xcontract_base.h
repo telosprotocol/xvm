@@ -385,7 +385,7 @@ public:
      * @param addr  the addr the map property belong to
      * @return int32_t
      */
-    virtual int32_t MAP_GET2(const string& key, const string& field, string& value, const std::string& addr="") final;
+    virtual int32_t MAP_GET2(const string& key, const string& field, string& value, const std::string& addr="") const final;
 
     /**
      * @brief set map type property
