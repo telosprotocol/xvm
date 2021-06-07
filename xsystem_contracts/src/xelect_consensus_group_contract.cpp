@@ -307,7 +307,7 @@ void xtop_elect_consensus_group_contract::handle_elected_in_data(std::vector<com
         });
         assert(elect_in_pos != std::end(effective_standby_data));
 
-        xwarn("%s see elected in %s node %s with stake %" PRIu64 " comprehensive stake",
+        xwarn("%s see elected in %s node %s with stake %" PRIu64 " comprehensive stake %" PRIu64,
               log_prefix.c_str(),
               common::to_string(node_type).c_str(),
               node_id.value().c_str(),
