@@ -164,11 +164,6 @@ bool xrole_context_t::valid_call(const uint64_t onchain_timer_round) {
     }
 }
 
-bool xrole_context_t::is_scheduled_table_contract(common::xaccount_address_t const& addr) const {
-    return addr == common::xaccount_address_t{sys_contract_sharding_workload_addr} ||
-        addr == common::xaccount_address_t{sys_contract_sharding_slash_info_addr};
-}
-
 void xrole_context_t::call_contract(const uint64_t onchain_timer_round, xblock_monitor_info_t * info, const uint64_t block_timestamp) {
     base::xstream_t stream(base::xcontext_t::instance());
     stream << onchain_timer_round;
