@@ -55,6 +55,7 @@ void xzec_reward_contract::setup() {
     std::string last_read_rec_reg_contract_logic_time{"0"};
     STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME, last_read_rec_reg_contract_logic_time);
 
+    STRING_CREATE(XPROPERTY_REWARD_DETAIL);
     MAP_CREATE(XPORPERTY_CONTRACT_WORKLOAD_KEY);
     MAP_CREATE(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY);
 }
@@ -750,9 +751,6 @@ void xzec_reward_contract::update_issuance_detail(xissue_detail const & issue_de
             issue_detail.m_vote_reward_ratio,
             issue_detail.m_governance_reward_ratio);
     auto issue_detail_str = issue_detail.to_string();
-    if (!STRING_EXIST(XPROPERTY_REWARD_DETAIL)) {
-        STRING_CREATE(XPROPERTY_REWARD_DETAIL);
-    }
     try {
         STRING_SET(XPROPERTY_REWARD_DETAIL, issue_detail_str);
     } catch (std::runtime_error & e) {
