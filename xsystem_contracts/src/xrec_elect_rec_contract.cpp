@@ -44,7 +44,7 @@ void xtop_rec_elect_rec_contract::setup() {
     current_group_nodes.start_time(0);
     current_group_nodes.group_version(group_version);
 
-    auto const max_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_election_committee_size);
+    auto const max_election_committee_size = config::xmax_election_committee_size_onchain_goverance_parameter_t::value;
 
     const std::vector<node_info_t> & seeds = data::xrootblock_t::get_seed_nodes();
     for (auto i = 0u; i < seeds.size() && i < max_election_committee_size; ++i) {
