@@ -5,9 +5,9 @@
 #pragma once
 
 #include "json/json.h"
-#include "xapplication/xapplication.h"
 #include "xbase/xlock.h"
 #include "xvledger/xvaccount.h"
+#include "xvledger/xvcnode.h"
 #include "xbasic/xmemory.hpp"
 #include "xblockstore/xsyncvstore_face.h"
 #include "xcommon/xaddress.h"
