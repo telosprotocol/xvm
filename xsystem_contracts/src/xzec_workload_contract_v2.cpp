@@ -52,15 +52,28 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
 };
 
 std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(const uint32_t table_id, common::xlogic_time_t const timestamp) {
-    // calc table address height
+    static int64_t read_height_time = 0;
+    static int64_t make_address_time = 0;
+    static int64_t get_latest_block_time = 0;
+    static int64_t get_full_block_time = 0;
+    static int64_t write_height_time = 0;
+    int64_t t1 = 0;
+    int64_t t2 = 0;
+    int64_t t3 = 0;
+    int64_t t4 = 0;
+    int64_t t5 = 0;
+    int64_t t6 = 0;
+    t1 = xtime_utl::time_now_ms();
     uint64_t cur_read_height = 0;
     uint64_t last_read_height = get_table_height(table_id);
+    t2 = xtime_utl::time_now_ms();
     // calc table address
     auto const & table_owner = common::xaccount_address_t{xdatautil::serialize_owner_str(sys_contract_sharding_table_block_addr, table_id)};
+    t3 = xtime_utl::time_now_ms();
     // get block
     std::vector<xobject_ptr_t<data::xblock_t>> res;
     auto cur_height = get_blockchain_height(table_owner.value());
-    auto time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{5}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
+    auto time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{10}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
     xobject_ptr_t<data::xblock_t> cur_tableblock = get_block_by_height(table_owner.value(), cur_height);
     while (cur_tableblock == nullptr) {
         if (cur_height > 0) {
@@ -70,6 +83,7 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
             return res;
         }
     }
+    t4 = xtime_utl::time_now_ms();
     auto last_full_block_height = cur_tableblock->get_last_full_block_height();
     while (last_full_block_height != 0 && last_read_height < last_full_block_height) {
         xdbg("[xzec_workload_contract_v2::get_fullblock] last_full_block_height %lu", last_full_block_height);
@@ -81,9 +95,7 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
         }
         XCONTRACT_ENSURE(last_full_block->is_fulltable(), "[xzec_workload_contract_v2::get_fullblock] full block check error");
         // check time interval
-        xdbg("#####Lon_jump get_clock: %u, time_interval: %u, time", last_full_block->get_clock(), time_interval, timestamp);
         if (last_full_block->get_clock() + time_interval > timestamp) {
-            xdbg("#####Lon_continue, %u, %u, %u", last_full_block->get_clock(), time_interval, timestamp);
             if (cur_read_height != 0) {
                 xwarn("[xzec_workload_contract_v2::get_fullblock] full table block may not in order. table %s at time %, " PRIu64 "front height %lu, rear height %lu",
                       table_owner.c_str(),
@@ -102,9 +114,44 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
         xdbg("[xzec_workload_contract_v2::get_fullblock] table %s last block height in cycle : " PRIu64, table_owner.c_str(), last_full_block_height);
     }
 
+    t5 = xtime_utl::time_now_ms();
+
     // update table address height
     if (cur_read_height > last_read_height) {
         update_table_height(table_id, cur_read_height);
+    }
+    t6 = xtime_utl::time_now_ms();
+    read_height_time += t2 - t1;
+    make_address_time += t3 - t2;
+    get_latest_block_time += t4 - t3;
+    get_full_block_time += t5 - t4;
+    write_height_time += t6 - t5;
+
+    xinfo(
+        "[xzec_workload_contract_v2::get_fullblock] singletimepoint: %lu, read_height_time: %ld, make_address_time: %ld, get_latest_block_time: %ld, get_full_block_time: %ld, "
+        "write_height_time: %ld",
+        timestamp,
+        t2 - t1,
+        t3 - t2,
+        t4 - t3,
+        t5 - t4,
+        t6 - t5);
+
+    if ((table_id+1) % 64 == 0) {
+        xinfo(
+            "[xzec_workload_contract_v2::get_fullblock] totaltimepoint: %lu, read_height_time: %ld, make_address_time: %ld, get_latest_block_time: %ld, get_full_block_time: %ld, "
+            "write_height_time: %ld",
+            timestamp,
+            read_height_time,
+            make_address_time,
+            get_latest_block_time,
+            get_full_block_time,
+            write_height_time);
+        read_height_time = 0;
+        make_address_time = 0;
+        get_latest_block_time = 0;
+        get_full_block_time = 0;
+        write_height_time = 0;
     }
     xinfo("[xzec_workload_contract_v2::get_fullblock] table table_owner address: %s, last height: %lu, cur height: %lu\n", table_owner.c_str(), last_read_height, cur_read_height);
 
@@ -279,7 +326,42 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
     int64_t total_table_fullblock_num = 0;
     int64_t total_get_fullblock_time = 0;
     int64_t total_accumulate_workload_time = 0;
-    for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; i++) {
+    // split tables
+    xinterval_t workload_collection_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_collection_interval);
+#if 0
+    xinterval_t one_hour = 360;
+    uint32_t split_num = one_hour / workload_collection_interval;
+    if (split_num == 0) {
+        split_num = 1;
+    }
+    xinterval_t split_interval = one_hour / split_num;
+    uint32_t total_tables = enum_vledger_const::enum_vbucket_has_tables_count;
+    uint32_t table_per_split = total_tables / split_num;
+    uint32_t round = timestamp % one_hour / split_interval;
+    uint32_t strat_table = round * table_per_split;
+    uint32_t end_table = (round + 1 == split_num) ? (total_tables - 1) : ((round + 1) * table_per_split - 1);
+#else
+    uint32_t split_num = 4;
+    xinterval_t split_interval = workload_collection_interval * split_num;
+    uint32_t total_tables = enum_vledger_const::enum_vbucket_has_tables_count;
+    uint32_t table_per_split = total_tables / split_num;
+    uint32_t round = timestamp % split_interval / workload_collection_interval;
+    uint32_t strat_table = round * table_per_split;
+    uint32_t end_table = (round + 1 == split_num) ? (total_tables - 1) : ((round + 1) * table_per_split - 1);
+#endif
+    xinfo(
+        "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] timstamp: %lu, workload_collection_interval: %u, split_num: %u, split_interval: %u, table_per_split: %u, "
+        "round: %u, strat_table: %u, end_table: %u",
+        timestamp,
+        workload_collection_interval,
+        split_num,
+        split_interval,
+        table_per_split,
+        round,
+        strat_table,
+        end_table);
+
+    for (auto i = strat_table; i <= end_table; i++) {
         int64_t t1 = 0;
         int64_t t2 = 0;
         int64_t t3 = 0;
