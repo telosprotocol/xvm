@@ -5,20 +5,19 @@
 #pragma once
 
 #include "json/json.h"
-#include "xapplication/xapplication.h"
 #include "xbase/xlock.h"
-#include "xvledger/xvaccount.h"
 #include "xbasic/xmemory.hpp"
 #include "xblockstore/xsyncvstore_face.h"
 #include "xcommon/xaddress.h"
 #include "xmbus/xbase_sync_event_monitor.hpp"
 #include "xmbus/xevent_vnode.h"
 #include "xstore/xstore_face.h"
+#include "xvledger/xvaccount.h"
+#include "xvledger/xvcnode.h"
 #include "xvm/manager/xcontract_register.h"
 #include "xvm/manager/xrole_context.h"
 #include "xvnetwork/xmessage_callback_hub.h"
 #include "xvnetwork/xvhost_face.h"
-#include "xblockstore/xsyncvstore_face.h"
 
 #include <cstdint>
 #include <list>
