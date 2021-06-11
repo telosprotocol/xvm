@@ -118,7 +118,7 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
             } else if (group_type_and_nodes_infos[0] == "validator") {
                 node_type = common::xnode_type_t::consensus_validator;
                 group_id = common::xgroup_id_t{validator_group_start_count++};
-                // role_type = common::xrole_type_t::consensus;
+                // role_type = common::xrole_type_t::validator;
             }
             xinfo("[consensus_start_nodes] type :%s", to_string(node_type).c_str());
 
@@ -230,11 +230,11 @@ void xtop_zec_elect_consensus_group_contract::on_timer(common::xlogic_time_t con
     return;
 #endif
 #endif
-    XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), u8"xzec_elect_consensus_group_contract_t instance is triggled by others");
+    XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), "xzec_elect_consensus_group_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_zec_elect_consensus_addr,
-                     u8"xzec_elect_consensus_group_contract_t instance is not triggled by sys_contract_zec_elect_consensus_addr");
-    XCONTRACT_ENSURE(current_time <= TIME(), u8"xzec_elect_consensus_group_contract_t::on_timer current_time > consensus leader's time");
-    XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_election_interval) / 2 > TIME(), u8"xzec_elect_consensus_group_contract_t::on_timer retried too many times");
+                     "xzec_elect_consensus_group_contract_t instance is not triggled by sys_contract_zec_elect_consensus_addr");
+    XCONTRACT_ENSURE(current_time <= TIME(), "xzec_elect_consensus_group_contract_t::on_timer current_time > consensus leader's time");
+    XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_election_interval) / 2 > TIME(), "xzec_elect_consensus_group_contract_t::on_timer retried too many times");
 
     std::uint64_t random_seed;
     try {
@@ -306,9 +306,9 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
 
     std::string log;
     for (auto const & standby_result : standby_network_result.results()) {
-        log += u8" " + common::to_string(standby_result.first) + u8": ";
+        log += " " + common::to_string(standby_result.first) + ": ";
         for (auto const & result : standby_result.second.results()) {
-            log += result.first.to_string() + u8"|";
+            log += result.first.to_string() + "|";
         }
     }
 
@@ -440,7 +440,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
                                                                       data::election::xelection_association_result_store_t const & association_result_store,
                                                                       data::election::xstandby_network_result_t const & standby_network_result,
                                                                       std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> & all_cluster_election_result_store) {
-    std::string log_prefix = u8"[zec contract][elect_auditor_validator] zone " + zone_id.to_string() + u8" cluster " + cluster_id.to_string() + " group " + auditor_group_id.to_string();
+    std::string log_prefix = "[zec contract][elect_auditor_validator] zone " + zone_id.to_string() + u8" cluster " + cluster_id.to_string() + " group " + auditor_group_id.to_string();
     bool election_success{false};
     std::string election_result_log;
 

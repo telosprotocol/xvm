@@ -38,28 +38,17 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
                                                          data::election::xstandby_network_result_t & standby_network_result,
                                                          data::election::xelection_network_result_t & election_network_result) {
     assert(zid.has_value() && cid.has_value() && gid.has_value());
-    assert(gid == common::xdefault_group_id);
-
     auto const log_prefix = "[elect non-consensus group contract] zone " + zid.to_string() + " cluster " + cid.to_string() + " group " + gid.to_string() + ":";
-
-    common::xnode_type_t node_type{common::xnode_type_t::invalid};
 
     auto const min_elect_group_size = group_size_range.begin;
     auto const max_elect_group_size = group_size_range.end;
-    if (zid == common::xedge_zone_id) {
-        node_type = common::xnode_type_t::edge;
-    } else if (zid == common::xarchive_zone_id) {
-        node_type = common::xnode_type_t::archive;
-    } else {
-        assert(false);
-        return false;
-    }
 
+    common::xnode_type_t const node_type = standby_type(zid, cid, gid);
     assert(node_type != common::xnode_type_t::invalid);
     assert(max_elect_group_size);
 
     auto & standby_result = standby_network_result.result_of(node_type);
-    if (standby_result.size() <= min_elect_group_size) {
+    if (standby_result.size() < min_elect_group_size) {
         xwarn("%s start electing but no enough standby nodes available", log_prefix.c_str());
         return false;
     }
@@ -72,11 +61,11 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
 
     for (auto & new_node_info : standby_result) {
         auto const & node_id = top::get<xnode_id_t const>(new_node_info);
-        auto const & new_node_standby_info = top::get<xstandby_node_info_t>(new_node_info);
+        auto const & node_standby_info = top::get<xstandby_node_info_t>(new_node_info);
 
         xelection_info_t new_election_info{};
-        new_election_info.consensus_public_key = new_node_standby_info.consensus_public_key;
-        new_election_info.stake = new_node_standby_info.stake(node_type);
+        new_election_info.consensus_public_key = node_standby_info.consensus_public_key;
+        new_election_info.stake = node_standby_info.stake(node_type);
 
         xelection_info_bundle_t election_info_bundle{};
         election_info_bundle.node_id(node_id);

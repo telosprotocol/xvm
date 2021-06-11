@@ -531,12 +531,16 @@ static void get_election_result_property_data(observer_ptr<store::xstore_face_t 
         }
     }
 }
-std::unordered_map<common::xnode_type_t, string> node_type_map = {{common::xnode_type_t::consensus_auditor, "auditor"},
-                                                                  {common::xnode_type_t::consensus_validator, "validator"},
-                                                                  {common::xnode_type_t::edge, "edge"},
-                                                                  {common::xnode_type_t::archive, "archive"},
-                                                                  {common::xnode_type_t::rec, "root_beacon"},
-                                                                  {common::xnode_type_t::zec, "sub_beacon"}};
+
+std::unordered_map<common::xnode_type_t, string> node_type_map = {
+    {common::xnode_type_t::consensus_auditor, "auditor"},
+    {common::xnode_type_t::consensus_validator, "validator"},
+    {common::xnode_type_t::edge, "light_edge"},
+    {common::xnode_type_t::full_archive, "archive"},
+    {common::xnode_type_t::rec, "root_beacon"},
+    {common::xnode_type_t::zec, "sub_beacon"},
+    {common::xnode_type_t::light_archive, "full_edge"}
+};
 
 static void get_election_result_property_data(observer_ptr<store::xstore_face_t const> store,
                                               common::xaccount_address_t const & contract_address,
@@ -1387,12 +1391,10 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         contract_address == xaccount_address_t{sys_contract_rec_elect_archive_addr} ||  // NOLINT
         contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr}) {
         if (contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr} && property_name == XPROPERTY_CONTRACT_ELECTION_EXECUTED_KEY) {
-            if (contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr} && property_name == XPROPERTY_CONTRACT_ELECTION_EXECUTED_KEY) {
-                std::string res;
-                m_store->string_get(contract_address.value(), property_name, res);
-                json[property_name] = res;
-                return;
-            }
+            std::string res;
+            m_store->string_get(contract_address.value(), property_name, res);
+            json[property_name] = res;
+            return;
         }
         return get_election_result_property_data(m_store, contract_address, property_name, json_format, json);
     } else if (contract_address == xaccount_address_t{sys_contract_rec_standby_pool_addr}) {
