@@ -66,7 +66,7 @@ xtop_contract_manager::~xtop_contract_manager() {
 void xtop_contract_manager::instantiate_sys_contracts() {
     common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
     XREGISTER_CONTRACT(top::xstake::xrec_registration_contract, sys_contract_rec_registration_addr, network_id);
-    XREGISTER_CONTRACT(top::xvm::system_contracts::xzec_workload_contract_v2, sys_contract_zec_workload_addr2, network_id);
+    XREGISTER_CONTRACT(top::xvm::system_contracts::xzec_workload_contract_v2, sys_contract_zec_workload_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xzec_vote_contract, sys_contract_zec_vote_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xzec_reward_contract, sys_contract_zec_reward_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xtable_vote_contract, sys_contract_sharding_vote_addr, network_id);
