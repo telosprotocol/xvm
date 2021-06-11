@@ -45,7 +45,7 @@ void xtop_rec_standby_pool_contract::setup() {
         seed_node_info.consensus_public_key = xpublic_key_t{node_data.m_publickey};
         seed_node_info.stake_container.insert({common::xnode_type_t::rec, 0});
         seed_node_info.stake_container.insert({common::xnode_type_t::zec, 0});
-        seed_node_info.stake_container.insert({common::xnode_type_t::full_archive, 0});
+        seed_node_info.stake_container.insert({common::xnode_type_t::storage_archive, 0});
         seed_node_info.stake_container.insert({common::xnode_type_t::consensus_auditor, 0});
         seed_node_info.stake_container.insert({common::xnode_type_t::consensus_validator, 0});
         seed_node_info.stake_container.insert({common::xnode_type_t::edge, 0});
@@ -111,7 +111,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
     bool validator = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::validator>(role_type);
     bool edge = common::has<common::xrole_type_t::edge>(role_type);
     bool archive = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::archive>(role_type);
-    bool edge_archive = common::has<common::xrole_type_t::edge_archive>(role_type);
+    bool edge_archive = common::has<common::xrole_type_t::full_node>(role_type);
 
     std::string role_type_string = common::to_string(role_type);
     assert(role_type_string == common::XNODE_TYPE_EDGE      ||
@@ -277,12 +277,12 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
         }
 
         if (archive) {
-            new_node_info.stake_container[common::xnode_type_t::full_archive] = archive_stake;
+            new_node_info.stake_container[common::xnode_type_t::storage_archive] = archive_stake;
             xdbg("archive standby: %s", node.m_account.c_str());
         }
 
         if (edge_archvie) {
-            new_node_info.stake_container[common::xnode_type_t::light_archive] = edge_archive_stake;
+            new_node_info.stake_container[common::xnode_type_t::storage_full_node] = edge_archive_stake;
         }
 
         new_node |= standby_result_store.result_of(chain_network_id).insert2({node.m_account, new_node_info}).second;
@@ -304,7 +304,7 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
         new_node_info.stake_container.insert({ common::xnode_type_t::zec, reg_node.zec_stake() });
     }
     if (reg_node.archive()) {
-        new_node_info.stake_container.insert({ common::xnode_type_t::full_archive, reg_node.archive_stake() });
+        new_node_info.stake_container.insert({ common::xnode_type_t::storage_archive, reg_node.archive_stake() });
     }
     if (reg_node.auditor()) {
         new_node_info.stake_container.insert({ common::xnode_type_t::consensus_auditor, reg_node.auditor_stake() });
@@ -316,7 +316,7 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
         new_node_info.stake_container.insert({ common::xnode_type_t::edge, reg_node.edge_stake() });
     }
     if (reg_node.edge_archive()) {
-        new_node_info.stake_container.insert({ common::xnode_type_t::light_archive, reg_node.edge_archive_stake() });
+        new_node_info.stake_container.insert({ common::xnode_type_t::storage_full_node, reg_node.edge_archive_stake() });
     }
     new_node_info.consensus_public_key = reg_node.consensus_public_key;
     new_node_info.program_version = standby_node_info.program_version;

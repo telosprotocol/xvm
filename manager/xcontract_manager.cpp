@@ -518,11 +518,11 @@ static void get_election_result_property_data(observer_ptr<store::xstore_face_t 
 std::unordered_map<common::xnode_type_t, string> node_type_map = {
     {common::xnode_type_t::consensus_auditor, "auditor"},
     {common::xnode_type_t::consensus_validator, "validator"},
-    {common::xnode_type_t::edge, "light_edge"},
-    {common::xnode_type_t::full_archive, "archive"},
+    {common::xnode_type_t::edge, "edge"},
+    {common::xnode_type_t::storage_archive, "archive"},
     {common::xnode_type_t::rec, "root_beacon"},
     {common::xnode_type_t::zec, "sub_beacon"},
-    {common::xnode_type_t::light_archive, "full_edge"}
+    {common::xnode_type_t::storage_full_node, "full_node"}
 };
 
 static void get_election_result_property_data(observer_ptr<store::xstore_face_t const> store,

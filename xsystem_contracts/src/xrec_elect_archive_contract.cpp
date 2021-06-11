@@ -187,11 +187,11 @@ common::xnode_type_t xtop_rec_elect_archive_contract::standby_type(common::xzone
     assert(gid == common::xarchive_group_id || gid == common::xedge_archive_group_id);
 
     if (gid == common::xarchive_group_id) {
-        return common::xnode_type_t::full_archive;
+        return common::xnode_type_t::storage_archive;
     }
 
     if (gid == common::xedge_archive_group_id) {
-        return common::xnode_type_t::light_archive;
+        return common::xnode_type_t::storage_full_node;
     }
 
     assert(false);
