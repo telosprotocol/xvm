@@ -15,6 +15,7 @@
 using top::base::xstream_t;
 using top::base::xcontext_t;
 using top::base::xstring_utl;
+using top::base::xtime_utl;
 using namespace top::xstake;
 using namespace top::config;
 
@@ -34,7 +35,7 @@ xzec_workload_contract_v2::xzec_workload_contract_v2(common::xnetwork_id_t const
 
 void xzec_workload_contract_v2::setup() {
     // key: common::xaccount_address_t(table), value: uint64(height)
-    MAP_CREATE(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT); 
+    MAP_CREATE(XPORPERTY_CONTRACT_TABLEBLOCK_HEIGHT_KEY); 
 }
 
 bool xzec_workload_contract_v2::is_mainnet_activated() const {
@@ -50,14 +51,29 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
     return static_cast<bool>(record.activated);
 };
 
-std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(common::xaccount_address_t const & table_owner, common::xlogic_time_t const timestamp) {
-    // calc table address height
+std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(const uint32_t table_id, common::xlogic_time_t const timestamp) {
+    static int64_t read_height_time = 0;
+    static int64_t make_address_time = 0;
+    static int64_t get_latest_block_time = 0;
+    static int64_t get_full_block_time = 0;
+    static int64_t write_height_time = 0;
+    int64_t t1 = 0;
+    int64_t t2 = 0;
+    int64_t t3 = 0;
+    int64_t t4 = 0;
+    int64_t t5 = 0;
+    int64_t t6 = 0;
+    t1 = xtime_utl::time_now_ms();
     uint64_t cur_read_height = 0;
-    uint64_t last_read_height = get_table_height(table_owner);
+    uint64_t last_read_height = get_table_height(table_id);
+    t2 = xtime_utl::time_now_ms();
+    // calc table address
+    auto const & table_owner = common::xaccount_address_t{xdatautil::serialize_owner_str(sys_contract_sharding_table_block_addr, table_id)};
+    t3 = xtime_utl::time_now_ms();
     // get block
     std::vector<xobject_ptr_t<data::xblock_t>> res;
     auto cur_height = get_blockchain_height(table_owner.value());
-    auto time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{5}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
+    auto time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{10}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
     xobject_ptr_t<data::xblock_t> cur_tableblock = get_block_by_height(table_owner.value(), cur_height);
     while (cur_tableblock == nullptr) {
         if (cur_height > 0) {
@@ -67,6 +83,7 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
             return res;
         }
     }
+    t4 = xtime_utl::time_now_ms();
     auto last_full_block_height = cur_tableblock->get_last_full_block_height();
     while (last_full_block_height != 0 && last_read_height < last_full_block_height) {
         xdbg("[xzec_workload_contract_v2::get_fullblock] last_full_block_height %lu", last_full_block_height);
@@ -78,7 +95,7 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
         }
         XCONTRACT_ENSURE(last_full_block->is_fulltable(), "[xzec_workload_contract_v2::get_fullblock] full block check error");
         // check time interval
-        if (last_full_block_height + time_interval > timestamp) {
+        if (last_full_block->get_clock() + time_interval > timestamp) {
             if (cur_read_height != 0) {
                 xwarn("[xzec_workload_contract_v2::get_fullblock] full table block may not in order. table %s at time %, " PRIu64 "front height %lu, rear height %lu",
                       table_owner.c_str(),
@@ -97,25 +114,58 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
         xdbg("[xzec_workload_contract_v2::get_fullblock] table %s last block height in cycle : " PRIu64, table_owner.c_str(), last_full_block_height);
     }
 
+    t5 = xtime_utl::time_now_ms();
+
     // update table address height
     if (cur_read_height > last_read_height) {
-        update_table_height(table_owner, cur_read_height);
+        update_table_height(table_id, cur_read_height);
+    }
+    t6 = xtime_utl::time_now_ms();
+    read_height_time += t2 - t1;
+    make_address_time += t3 - t2;
+    get_latest_block_time += t4 - t3;
+    get_full_block_time += t5 - t4;
+    write_height_time += t6 - t5;
+
+    xinfo(
+        "[xzec_workload_contract_v2::get_fullblock] singletimepoint: %lu, read_height_time: %ld, make_address_time: %ld, get_latest_block_time: %ld, get_full_block_time: %ld, "
+        "write_height_time: %ld",
+        timestamp,
+        t2 - t1,
+        t3 - t2,
+        t4 - t3,
+        t5 - t4,
+        t6 - t5);
+
+    if ((table_id+1) % 64 == 0) {
+        xinfo(
+            "[xzec_workload_contract_v2::get_fullblock] totaltimepoint: %lu, read_height_time: %ld, make_address_time: %ld, get_latest_block_time: %ld, get_full_block_time: %ld, "
+            "write_height_time: %ld",
+            timestamp,
+            read_height_time,
+            make_address_time,
+            get_latest_block_time,
+            get_full_block_time,
+            write_height_time);
+        read_height_time = 0;
+        make_address_time = 0;
+        get_latest_block_time = 0;
+        get_full_block_time = 0;
+        write_height_time = 0;
     }
     xinfo("[xzec_workload_contract_v2::get_fullblock] table table_owner address: %s, last height: %lu, cur height: %lu\n", table_owner.c_str(), last_read_height, cur_read_height);
 
     return res;
 }
 
-uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t const & table) const {
+uint64_t xzec_workload_contract_v2::get_table_height(const uint32_t table_id) const {
     uint64_t last_read_height = 0;
     std::string value_str;
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "get_property_fulltableblock_height");
 
-    uint32_t table_id = 0;
-    XCONTRACT_ENSURE(EXTRACT_TABLE_ID(table, table_id), "get table id error");
     std::string key = std::to_string(table_id);
-    if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key)) {
-        value_str = MAP_GET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key);
+    if (MAP_FIELD_EXIST(XPORPERTY_CONTRACT_TABLEBLOCK_HEIGHT_KEY, key)) {
+        value_str = MAP_GET(XPORPERTY_CONTRACT_TABLEBLOCK_HEIGHT_KEY, key);
         XCONTRACT_ENSURE(!value_str.empty(), "read full tableblock height empty");
     }
     if (!value_str.empty()) {
@@ -125,13 +175,9 @@ uint64_t xzec_workload_contract_v2::get_table_height(common::xaccount_address_t 
     return last_read_height;
 }
 
-void xzec_workload_contract_v2::update_table_height(common::xaccount_address_t const & table, const uint64_t cur_read_height) {
+void xzec_workload_contract_v2::update_table_height(const uint32_t table_id, const uint64_t cur_read_height) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "set_property_contract_fulltableblock_height");
-
-    uint32_t table_id = 0;
-    XCONTRACT_ENSURE(EXTRACT_TABLE_ID(table, table_id), "get table id error");
-    std::string key = std::to_string(table_id);
-    MAP_SET(XPROPERTY_CONTRACT_LAST_READ_TABLE_BLOCK_HEIGHT, key, xstring_utl::tostring(cur_read_height));
+    MAP_SET(XPORPERTY_CONTRACT_TABLEBLOCK_HEIGHT_KEY, std::to_string(table_id), xstring_utl::tostring(cur_read_height));
 }
 
 void xzec_workload_contract_v2::update_tgas(int64_t table_pledge_balance_change_tgas) {
@@ -277,53 +323,98 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "accumulate_total_time");
     xinfo("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] enum_vbucket_has_tables_count %d, timestamp: %llu", enum_vledger_const::enum_vbucket_has_tables_count, timestamp);
     int64_t table_pledge_balance_change_tgas = 0;
-    for (auto i = 0; i < enum_vledger_const::enum_vbucket_has_tables_count; i++) {
-        // calc table address
-        auto table_owner = common::xaccount_address_t{xdatautil::serialize_owner_str(sys_contract_sharding_table_block_addr, i)};
+    int64_t total_table_fullblock_num = 0;
+    int64_t total_get_fullblock_time = 0;
+    int64_t total_accumulate_workload_time = 0;
+    // split tables
+    xinterval_t workload_collection_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_collection_interval);
+#if 0
+    xinterval_t one_hour = 360;
+    uint32_t split_num = one_hour / workload_collection_interval;
+    if (split_num == 0) {
+        split_num = 1;
+    }
+    xinterval_t split_interval = one_hour / split_num;
+    uint32_t total_tables = enum_vledger_const::enum_vbucket_has_tables_count;
+    uint32_t table_per_split = total_tables / split_num;
+    uint32_t round = timestamp % one_hour / split_interval;
+    uint32_t strat_table = round * table_per_split;
+    uint32_t end_table = (round + 1 == split_num) ? (total_tables - 1) : ((round + 1) * table_per_split - 1);
+#else
+    uint32_t split_num = 4;
+    xinterval_t split_interval = workload_collection_interval * split_num;
+    uint32_t total_tables = enum_vledger_const::enum_vbucket_has_tables_count;
+    uint32_t table_per_split = total_tables / split_num;
+    uint32_t round = timestamp % split_interval / workload_collection_interval;
+    uint32_t strat_table = round * table_per_split;
+    uint32_t end_table = (round + 1 == split_num) ? (total_tables - 1) : ((round + 1) * table_per_split - 1);
+#endif
+    xinfo(
+        "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] timstamp: %lu, workload_collection_interval: %u, split_num: %u, split_interval: %u, table_per_split: %u, "
+        "round: %u, strat_table: %u, end_table: %u",
+        timestamp,
+        workload_collection_interval,
+        split_num,
+        split_interval,
+        table_per_split,
+        round,
+        strat_table,
+        end_table);
+
+    for (auto i = strat_table; i <= end_table; i++) {
+        int64_t t1 = 0;
+        int64_t t2 = 0;
+        int64_t t3 = 0;
+        t1 = xtime_utl::time_now_ms();
         // get table block
-        auto full_blocks = get_fullblock(table_owner, timestamp);
-        uint32_t total_table_block_count = 0;
+        auto const & full_blocks = get_fullblock(i, timestamp);
+        t2 = xtime_utl::time_now_ms();
         // accumulate workload
         for (std::size_t block_index = 0; block_index < full_blocks.size(); block_index++) {
+            xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] block_index: %u", block_index);
             xfull_tableblock_t *full_tableblock = dynamic_cast<xfull_tableblock_t *>(full_blocks[block_index].get());
             assert(full_tableblock != nullptr);
             auto const & stat_data = full_tableblock->get_table_statistics();
             accumulate_workload(stat_data, auditor_group_workload, validator_group_workload);
             // m_table_pledge_balance_change_tgas
             table_pledge_balance_change_tgas += full_tableblock->get_pledge_balance_change_tgas();
-            total_table_block_count++;
-            xinfo("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] block_index: %u, total_table_block_count: %" PRIu32 "", block_index, total_table_block_count);
         }
-
+        t3 = xtime_utl::time_now_ms();
+        total_get_fullblock_time += t2 - t1;
+        total_accumulate_workload_time += t3 - t2;
+        total_table_fullblock_num += full_blocks.size();
         if (full_blocks.size() >  0) {
-            xinfo(
-                "[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d, timer round: %" PRIu64 ", pid: %d, total_table_block_count: %" PRIu32 ", table_pledge_balance_change_tgas: %lld, "
-                "this: %p\n",
+            xinfo("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] bucket index: %d, timer round: %" PRIu64 ", pid: %d, total_table_block_count: %" PRIu32 ", table_pledge_balance_change_tgas: %lld, this: %p\n",
                 i,
                 timestamp,
                 getpid(),
-                total_table_block_count,
+                full_blocks.size(),
                 table_pledge_balance_change_tgas,
                 this);
-#if defined (DEBUG)
-            for (auto & entity : auditor_group_workload) {
-                auto const & group = entity.first;
-                for (auto const & wl : entity.second.m_leader_count) {
-                    xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload auditor group: %s, leader: %s, workload: %u", group.to_string().c_str(), wl.first.c_str(), wl.second);
-                }
-                xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload auditor group: %s, group id: %u, ends", group.to_string().c_str(), group.group_id().value());
-            }
-
-            for (auto & entity : validator_group_workload) {
-                auto const & group = entity.first;
-                for (auto const & wl : entity.second.m_leader_count) {
-                    xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload validator group: %s, leader: %s, workload: %u", group.to_string().c_str(), wl.first.c_str(), wl.second);
-                }
-                xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload validator group: %s, group id: %u, ends", group.to_string().c_str(), group.group_id().value());
-            }
-#endif
         }
     }
+    xinfo("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] total_block_nums: %u, total_time: %ums, get_fullblock_time: %ums, accumulate_workload_time: %ums",
+          total_table_fullblock_num,
+          total_get_fullblock_time + total_accumulate_workload_time,
+          total_get_fullblock_time,
+          total_accumulate_workload_time);
+#if defined DEBUG
+    for (auto & entity : auditor_group_workload) {
+        auto const & group = entity.first;
+        for (auto const & wl : entity.second.m_leader_count) {
+            xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload auditor group: %s, leader: %s, workload: %u", group.to_string().c_str(), wl.first.c_str(), wl.second);
+        }
+        xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload auditor group: %s, group id: %u, ends", group.to_string().c_str(), group.group_id().value());
+    }
+
+    for (auto & entity : validator_group_workload) {
+        auto const & group = entity.first;
+        for (auto const & wl : entity.second.m_leader_count) {
+            xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload validator group: %s, leader: %s, workload: %u", group.to_string().c_str(), wl.first.c_str(), wl.second);
+        }
+        xdbg("[xzec_workload_contract_v2::accumulate_workload_with_fullblock] workload validator group: %s, group id: %u, ends", group.to_string().c_str(), group.group_id().value());
+    }
+#endif
     update_tgas(table_pledge_balance_change_tgas);
 }
 
@@ -336,6 +427,7 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
         xwarn("[xzec_workload_contract_v2::on_timer] invalid call from %s", source_address.c_str());
         return;
     }
+    xinfo("[xzec_workload_contract_v2::on_timer] timestamp: %lu, self: %s, src: %s", timestamp, self_account.value().c_str(), source_address.c_str());
     // check mainnet
     if (!is_mainnet_activated()) {
         return;

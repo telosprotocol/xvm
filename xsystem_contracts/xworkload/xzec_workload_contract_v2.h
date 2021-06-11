@@ -47,24 +47,6 @@ public:
 
 private:
     /**
-     * @brief add group workload
-     *
-     * @param auditor true - auditor, false - validator
-     * @param group_id cluster id
-     * @param leader_count nodes workload
-     */
-    void add_group_workload(bool auditor, common::xgroup_address_t const &group_id, std::map<std::string, uint32_t> const &leader_count);
-
-    /**
-     * @brief Get the node info
-     *
-     * @param account node account
-     * @param reg_node_info node registration object
-     * @return int32_t 0 - success, other - failure
-     */
-    int32_t get_node_info(const std::string &account, xstake::xreg_node_info &reg_node_info);
-
-    /**
      * @brief check if mainnet is activated
      *
      * @return int 0 - not activated, other - activated
@@ -79,14 +61,9 @@ private:
     void update_tgas(int64_t table_pledge_balance_change_tgas);
 
     /**
-     * @brief clear the workload
-     */
-    void clear_workload();
-
-    /**
      * @brief get_fullblock
      */
-    std::vector<xobject_ptr_t<data::xblock_t>> get_fullblock(common::xaccount_address_t const &owner, const uint64_t timestamp);
+    std::vector<xobject_ptr_t<data::xblock_t>> get_fullblock(const uint32_t table_id, const uint64_t timestamp);
 
     /**
      * @brief add_workload_with_fullblock
@@ -125,19 +102,14 @@ private:
                                             std::map<common::xgroup_address_t, xvalidator_workload_info_t> & validator_group_workload);
 
     /**
-     * @brief migrate_data
-     */
-    void migrate_data();
-
-    /**
      * @brief get_table_height
      */
-    uint64_t get_table_height(common::xaccount_address_t const &account) const;
+    uint64_t get_table_height(const uint32_t table_id) const;
 
     /**
      * @brief update_table_height
      */
-    void update_table_height(common::xaccount_address_t const &account, uint64_t cur_read_height);
+    void update_table_height(const uint32_t table_id, uint64_t cur_read_height);
 };
 
 NS_END3
