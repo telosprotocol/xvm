@@ -29,7 +29,7 @@ void xtop_contract_deploy::deploy_sys_contracts() {
            enum_broadcast_policy_t::normal,
            std::string{sys_contract_beacon_timer_addr} + u8",on_timer,C," + config::xrec_standby_pool_update_interval_onchain_goverance_parameter_t::name);
 
-    deploy(common::xaccount_address_t{sys_contract_zec_workload_addr2},
+    deploy(common::xaccount_address_t{sys_contract_zec_workload_addr},
            xnode_type_t::zec,
            "",
            enum_broadcast_policy_t::normal,

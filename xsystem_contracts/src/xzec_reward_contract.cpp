@@ -144,7 +144,7 @@ void xzec_reward_contract::update_reg_contract_read_status(const uint64_t cur_ti
 void xzec_reward_contract::calculate_reward(common::xlogic_time_t current_time, std::string const& workload_str) {
     std::string source_address = SOURCE_ADDRESS();
     xinfo("[xzec_reward_contract::calculate_reward] called from address: %s", source_address.c_str());
-    if (sys_contract_zec_workload_addr2 != source_address) {
+    if (sys_contract_zec_workload_addr != source_address) {
         xwarn("[xzec_reward_contract::calculate_reward] from invalid address: %s\n", source_address.c_str());
         return;
     }

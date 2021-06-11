@@ -36,6 +36,8 @@ xzec_workload_contract_v2::xzec_workload_contract_v2(common::xnetwork_id_t const
 void xzec_workload_contract_v2::setup() {
     // key: common::xaccount_address_t(table), value: uint64(height)
     MAP_CREATE(XPORPERTY_CONTRACT_TABLEBLOCK_HEIGHT_KEY); 
+    MAP_CREATE(XPORPERTY_CONTRACT_WORKLOAD_KEY); 
+    MAP_CREATE(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY); 
 }
 
 bool xzec_workload_contract_v2::is_mainnet_activated() const {
