@@ -48,8 +48,6 @@ using namespace top::store;
 
 NS_BEG2(top, contract)
 
-#define TYPE_CONTAINS(type, types) ((((uint32_t)type) & ((uint32_t)types)) == ((uint32_t)type))
-
 xtop_contract_manager & xtop_contract_manager::instance() {
     static xtop_contract_manager * inst = new xtop_contract_manager();
     return *inst;
@@ -84,23 +82,6 @@ void xtop_contract_manager::instantiate_sys_contracts() {
 }
 
 #undef XREGISTER_CONTRACT
-
-void xtop_contract_manager::setup_blockchains() {
-    // setup all contracts' accounts, then no need
-    // sync generation block at all
-    for (auto const & pair : xcontract_deploy_t::instance().get_map()) {
-        if (data::is_sys_sharding_contract_address(pair.first)) {
-            for (auto i = 0; i < enum_vbucket_has_tables_count; i++) {
-                auto addr = data::make_address_by_prefix_and_subaddr(pair.first.value(), i);
-                register_contract_cluster_address(pair.first, addr);
-                setup_chain(addr);
-            }
-        } else {
-            register_contract_cluster_address(pair.first, pair.first);
-            setup_chain(pair.first);
-        }
-    }
-}
 
 void xtop_contract_manager::setup_blockchains(xstore_face_t * store, xvblockstore_t * blockstore) {
     // setup all contracts' accounts, then no need
@@ -171,6 +152,8 @@ void xtop_contract_manager::install_monitors(observer_ptr<xmessage_bus_face_t> c
 
                 base::xcall_t asyn_call(store_block, (base::xobject_t*)block.get());
                 get_thread()->send_call(asyn_call);
+            } else {
+                xerror("contract_manager xmessage_block_broadcast_id: recv invalid data");
             }
         }
     });
@@ -288,7 +271,7 @@ void xtop_contract_manager::add_role_contexts_by_type(const xevent_vnode_ptr_t &
     for (auto & pair : xcontract_deploy_t::instance().get_map()) {  // pair : std::pair<common::xaccount_address_t const, xcontract_info_t *>
         auto * contract_info_ptr = top::get<xcontract_info_t *>(pair);
 
-        if (TYPE_CONTAINS(type, contract_info_ptr->roles)) {
+        if (common::has(type, contract_info_ptr->roles)) {
             xrole_map_t * m{};
             auto it = m_map.find(contract_info_ptr->address);
             if (it != m_map.end()) {
