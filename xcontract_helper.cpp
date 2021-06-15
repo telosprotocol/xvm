@@ -38,10 +38,9 @@ string xcontract_helper::get_source_account() const {
 
 std::string xcontract_helper::get_parent_account() const {
     std::string parent{""};
-    if (store::xaccount_property_parent_account_exist != m_account_context->get_parent_account(parent)) {
-        std::error_code ec{enum_xvm_error_code::enum_vm_exception};
-        top::error::throw_error(ec, "get contract parent account error");
-    }
+    // TODO(jimmy) not support lua
+    std::error_code ec{enum_xvm_error_code::enum_vm_exception};
+    top::error::throw_error(ec, "get contract parent account error");
 
     return parent;
 }
@@ -63,17 +62,15 @@ const data::xaction_asset_out& xcontract_helper::get_pay_fee() const {
 }
 
 void xcontract_helper::set_contract_code(const string& code) {
-    if (m_account_context->set_contract_code(code)) {
-        std::error_code ec{ enum_xvm_error_code::enum_vm_exception };
-        top::error::throw_error(ec, "set_contract_code error");
-    }
+    // TODO(jimy) not support lua
+    std::error_code ec{ enum_xvm_error_code::enum_vm_exception };
+    top::error::throw_error(ec, "set_contract_code error");
 }
 
 void xcontract_helper::get_contract_code(string &code)  const{
-    if (m_account_context->get_contract_code(code)) {
-        std::error_code ec{ enum_xvm_error_code::enum_vm_exception };
-        top::error::throw_error(ec, "get_contract_code error");
-    }
+    // TODO(jimy) not support lua
+    std::error_code ec{ enum_xvm_error_code::enum_vm_exception };
+    top::error::throw_error(ec, "get_contract_code error");
 }
 
 void xcontract_helper::create_transfer_tx(const string& grant_account, const uint64_t amount) {

@@ -34,6 +34,9 @@ xcontract::xcontract_base * xtop_zec_standby_pool_contract::clone() {
 }
 
 void xtop_zec_standby_pool_contract::setup() {
+    STRING_CREATE(data::XPROPERTY_LAST_READ_REC_STANDBY_POOL_CONTRACT_BLOCK_HEIGHT);
+    STRING_CREATE(data::XPROPERTY_LAST_READ_REC_STANDBY_POOL_CONTRACT_LOGIC_TIME);
+
     std::string last_read_rec_standby_pool_contract_height{"0"};
     STRING_SET(data::XPROPERTY_LAST_READ_REC_STANDBY_POOL_CONTRACT_BLOCK_HEIGHT, last_read_rec_standby_pool_contract_height);
 

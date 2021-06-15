@@ -27,11 +27,6 @@ xvm_context::xvm_context(xvm_service& vm_service, const xtransaction_ptr_t& trx,
 
 void xvm_context::exec()
 {
-    if (m_current_action.get_action_type() == data::enum_xaction_type::xaction_type_create_contract_account) {
-        publish_code();
-        return;
-    }
-
     //todo check white and black contract and action list
     auto native_contract = contract::xcontract_manager_t::instance().get_contract(m_contract_account);
     if (native_contract) {
@@ -67,7 +62,7 @@ void xvm_context::exec()
     engine->process(m_contract_account, code, *this);
     m_trace_ptr->m_duration_us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - start).count();
 }
-
+#if 0  // not support lua deploy
 void xvm_context::publish_code()
 {
     if (m_contract_helper->string_exist(data::XPROPERTY_CONTRACT_CODE)) {
@@ -97,5 +92,5 @@ void xvm_context::publish_code()
         top::error::throw_error(ec, "unkown exception");
     }
 }
-
+#endif
 NS_END2

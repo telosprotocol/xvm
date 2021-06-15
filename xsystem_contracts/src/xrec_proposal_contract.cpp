@@ -33,8 +33,9 @@ void xrec_proposal_contract::setup() {
     STRING_SET(SYSTEM_GENERATED_ID, "0");
 
     MAP_CREATE(PROPOSAL_MAP_ID);
-    MAP_CREATE(COSIGN_MAP_ID);
+    // MAP_CREATE(COSIGN_MAP_ID);
     MAP_CREATE(VOTE_MAP_ID);
+    STRING_CREATE(CURRENT_VOTED_PROPOSAL);
 }
 
 bool xrec_proposal_contract::get_proposal_info(const std::string & proposal_id, proposal_info & proposal) {
