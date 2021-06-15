@@ -131,11 +131,11 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
 #endif
 
     XMETRICS_TIME_RECORD(XARCHIVE_ELECT "on_timer_all_time");
-    XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), u8"xrec_elect_archive_contract_t instance is triggled by others");
+    XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), "xrec_elect_archive_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_rec_elect_archive_addr,
                      "xrec_elect_archive_contract_t instance is not triggled by sys_contract_rec_elect_archive_addr");
     XCONTRACT_ENSURE(current_time <= TIME(), "xrec_elect_archive_contract_t::on_timer current_time > consensus leader's time");
-    XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval) / 2 > TIME(), u8"xrec_elect_archive_contract_t::on_timer retried too many times");
+    XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval) / 2 > TIME(), "xrec_elect_archive_contract_t::on_timer retried too many times");
     xinfo("xrec_elect_archive_contract_t::archive_elect %" PRIu64, current_time);
 
     xrange_t<config::xgroup_size_t> range{1, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size)};
@@ -144,21 +144,58 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
         xvm::serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, sys_contract_rec_standby_pool_addr, data::XPROPERTY_CONTRACT_STANDBYS_KEY);
     auto standby_network_result = standby_result_store.result_of(network_id()).network_result();
 
-    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
-    for (auto const & property : property_names) {
-        auto election_result_store = xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, property);
+#if defined(DEBUG)
+    for (auto const & r : standby_network_result) {
+        auto const node_type = top::get<common::xnode_type_t const>(r);
+        xdbg("xrec_elect_archive_contract_t::archive_elect seeing %s", common::to_string(node_type).c_str());
+    }
+#endif
+
+    std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> all_archive_election_result_store;
+    for (auto index = 0; index < XGET_CONFIG(archive_group_count); ++index) {
+        top::common::xgroup_id_t archive_gid{ static_cast<top::common::xgroup_id_t::value_type>(common::xarchive_group_id_value_begin + index) };
+        xkinfo("[xrec_elect_archive_contract_t] index: %d, archive_gid: %s, insert %s",
+               index,
+               archive_gid.to_string().c_str(),
+               data::election::get_property_by_group_id(archive_gid).c_str());
+        auto election_result_store =
+            serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(archive_gid));
+
         auto & election_network_result = election_result_store.result_of(network_id());
         if (elect_group(common::xarchive_zone_id,
                         common::xdefault_cluster_id,
-                        common::xdefault_group_id,
+                        archive_gid,
                         current_time,
                         current_time,
                         range,
                         standby_network_result,
                         election_network_result)) {
-            xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, property, election_result_store);
+            xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, data::election::get_property_by_group_id(archive_gid), election_result_store);
         }
     }
+}
+
+common::xnode_type_t xtop_rec_elect_archive_contract::standby_type(common::xzone_id_t const & zid,
+                                                                   common::xcluster_id_t const & cid,
+                                                                   common::xgroup_id_t const & gid) const {
+    assert(!zid.empty());
+    assert(!cid.empty());
+    assert(!gid.empty());
+
+    assert(zid == common::xarchive_zone_id);
+    assert(cid == common::xdefault_cluster_id);
+    assert(gid == common::xarchive_group_id || gid == common::xedge_archive_group_id);
+
+    if (gid == common::xarchive_group_id) {
+        return common::xnode_type_t::storage_archive;
+    }
+
+    if (gid == common::xedge_archive_group_id) {
+        return common::xnode_type_t::storage_full_node;
+    }
+
+    assert(false);
+    return common::xnode_type_t::invalid;
 }
 
 NS_END4

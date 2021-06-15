@@ -181,7 +181,7 @@ common::xnode_type_t xtop_contract_deploy::str_to_broadcast_types(const std::str
         } else if (s == "zec") {
             types |= common::xnode_type_t::zec;
         } else if (s == "arc") {
-            types |= common::xnode_type_t::archive;
+            types |= common::xnode_type_t::storage;
         } else if (s == "all") {
             types |= common::xnode_type_t::all;
         }

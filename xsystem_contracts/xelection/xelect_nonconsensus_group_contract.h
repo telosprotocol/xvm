@@ -20,7 +20,7 @@ protected:
 public:
     /**
      * @brief elect consensus group
-     * 
+     *
      * @param zid Zone id
      * @param cid Cluster id
      * @param gid Group id
@@ -40,6 +40,9 @@ public:
                      xrange_t<config::xgroup_size_t> const & group_size_range,
                      data::election::xstandby_network_result_t & standby_network_result,
                      data::election::xelection_network_result_t & election_network_result) override;
+
+protected:
+    virtual common::xnode_type_t standby_type(common::xzone_id_t const & zid, common::xcluster_id_t const & cid, common::xgroup_id_t const & gid) const = 0;
 };
 using xelect_nonconsensus_group_contract_t = xtop_elect_nonconsensus_group_contract;
 

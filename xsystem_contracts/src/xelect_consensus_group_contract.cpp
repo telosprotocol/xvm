@@ -139,7 +139,7 @@ static void normalize_stake(common::xrole_type_t const role, std::vector<xelecti
         break;
     }
 
-    case common::xrole_type_t::consensus: {
+    case common::xrole_type_t::validator: {
         for (auto & standby_node : result) {
             standby_node.comprehensive_stake(std::max(standby_node.stake(), minimum_comprehensive_stake));
         }
@@ -196,7 +196,7 @@ bool xtop_elect_consensus_group_contract::elect_group(common::xzone_id_t const &
             role_type = common::xrole_type_t::advance;
         } else {
             node_type = common::xnode_type_t::consensus_validator;
-            role_type = common::xrole_type_t::consensus;
+            role_type = common::xrole_type_t::validator;
         }
         break;
     }

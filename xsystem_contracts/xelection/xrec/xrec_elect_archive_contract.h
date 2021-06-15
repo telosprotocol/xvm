@@ -25,12 +25,18 @@ public:
     void setup() override;
 
     void on_timer(const uint64_t current_time);
-#ifdef STATIC_CONSENSUS
-    void elect_config_nodes(common::xlogic_time_t const current_time);
-#endif
+
     BEGIN_CONTRACT_WITH_PARAM(xtop_rec_elect_archive_contract)
     CONTRACT_FUNCTION_PARAM(xtop_rec_elect_archive_contract, on_timer);
     END_CONTRACT_WITH_PARAM
+
+protected:
+    common::xnode_type_t standby_type(common::xzone_id_t const & zid, common::xcluster_id_t const &, common::xgroup_id_t const & gid) const override;
+
+private:
+#ifdef STATIC_CONSENSUS
+    void elect_config_nodes(common::xlogic_time_t const current_time);
+#endif
 };
 using xrec_elect_archive_contract_t = xtop_rec_elect_archive_contract;
 

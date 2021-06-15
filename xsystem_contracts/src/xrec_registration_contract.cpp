@@ -72,7 +72,7 @@ void xrec_registration_contract::setup() {
             node_info.m_account             = node_data.m_account;
             node_info.m_account_mortgage    = 0;
             node_info.m_genesis_node        = true;
-            node_info.m_registered_role     = common::xenum_role_type::edge | common::xenum_role_type::advance | common::xenum_role_type::consensus;
+            node_info.m_registered_role     = common::xrole_type_t::edge | common::xrole_type_t::advance | common::xrole_type_t::validator;
             node_info.m_network_ids.insert(network_id.value());
             node_info.nickname              = std::string("bootnode") + std::to_string(i + 1);
             node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
@@ -88,7 +88,7 @@ void xrec_registration_contract::setup() {
                 node_info.m_account             = key;
                 node_info.m_account_mortgage    = 1000000000000;
                 node_info.m_genesis_node        = false;
-                node_info.m_registered_role     = common::xenum_role_type::advance;
+                node_info.m_registered_role     = common::xrole_type_t::advance;
                 node_info.m_network_ids.insert(network_id.value());
                 node_info.nickname              = std::string("testnode") + std::to_string(i + 1);
                 node_info.m_vote_amount         = 1000000;

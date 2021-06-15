@@ -60,12 +60,6 @@ public:
     void init(observer_ptr<store::xstore_face_t> const & store,
         observer_ptr<store::xsyncvstore_t> const & syncstore,
         observer_ptr<base::xvblockstore_t> blkstore);
-    /**
-     * @brief Set up blockchains
-     *
-     * @param store
-     */
-    void setup_blockchains();
 
     /**
      * @brief Set up blockchains
