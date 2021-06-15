@@ -111,13 +111,13 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
     bool validator = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::validator>(role_type);
     bool edge = common::has<common::xrole_type_t::edge>(role_type);
     bool archive = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::archive>(role_type);
-    bool edge_archive = common::has<common::xrole_type_t::full_node>(role_type);
+    bool full_node = common::has<common::xrole_type_t::full_node>(role_type);
 
     std::string role_type_string = common::to_string(role_type);
     assert(role_type_string == common::XNODE_TYPE_EDGE      ||
            role_type_string == common::XNODE_TYPE_ADVANCE   ||
            role_type_string == common::XNODE_TYPE_VALIDATOR ||
-           role_type_string == common::XNODE_TYPE_EDGE_ARCHIVE);
+           role_type_string == common::XNODE_TYPE_FULL_NODE);
 
     top::base::xstream_t param_stream(base::xcontext_t::instance());
     std::string nickname{"nickname"};
@@ -184,8 +184,8 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
             new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
         }
 
-        if (edge_archive) {
-            new_node_info.stake_container[common::xnode_type_t::edge_archive] = stake;
+        if (full_node) {
+            new_node_info.stake_container[common::xnode_type_t::full_node] = stake;
             new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
         }
     }
@@ -207,8 +207,8 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
     }
 
     auto consensus_public_key = node.consensus_public_key;
-    uint64_t rec_stake{ 0 }, zec_stake{ 0 }, auditor_stake{ 0 }, validator_stake{ 0 }, edge_stake{ 0 }, archive_stake{ 0 }, edge_archive_stake{ 0 };
-    bool rec{ node.rec() }, zec{ node.zec() }, auditor{ node.auditor() }, validator{ node.validator() }, edge{ node.edge() }, archive{ node.archive() }, edge_archvie{ node.edge_archive() };
+    uint64_t rec_stake{ 0 }, zec_stake{ 0 }, auditor_stake{ 0 }, validator_stake{ 0 }, edge_stake{ 0 }, archive_stake{ 0 }, full_node_stake{ 0 };
+    bool rec{ node.rec() }, zec{ node.zec() }, auditor{ node.auditor() }, validator{ node.validator() }, edge{ node.edge() }, archive{ node.archive() }, full_node{ node.full_node() };
     if (rec) {
         rec_stake = node.rec_stake();
     }
@@ -233,8 +233,8 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
         archive_stake = node.archive_stake();
     }
 
-    if (edge_archvie) {
-        edge_archive_stake = node.edge_archive_stake();
+    if (full_node) {
+        full_node_stake = node.full_node_stake();
     }
 
     auto role_type = node.get_role_type();
@@ -281,8 +281,8 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
             xdbg("archive standby: %s", node.m_account.c_str());
         }
 
-        if (edge_archvie) {
-            new_node_info.stake_container[common::xnode_type_t::storage_full_node] = edge_archive_stake;
+        if (full_node) {
+            new_node_info.stake_container[common::xnode_type_t::storage_full_node] = full_node_stake;
         }
 
         new_node |= standby_result_store.result_of(chain_network_id).insert2({node.m_account, new_node_info}).second;
@@ -315,8 +315,8 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
     if (reg_node.edge()) {
         new_node_info.stake_container.insert({ common::xnode_type_t::edge, reg_node.edge_stake() });
     }
-    if (reg_node.edge_archive()) {
-        new_node_info.stake_container.insert({ common::xnode_type_t::storage_full_node, reg_node.edge_archive_stake() });
+    if (reg_node.full_node()) {
+        new_node_info.stake_container.insert({ common::xnode_type_t::storage_full_node, reg_node.full_node_stake() });
     }
     new_node_info.consensus_public_key = reg_node.consensus_public_key;
     new_node_info.program_version = standby_node_info.program_version;
