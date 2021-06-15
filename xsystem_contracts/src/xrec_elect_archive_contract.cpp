@@ -184,13 +184,13 @@ common::xnode_type_t xtop_rec_elect_archive_contract::standby_type(common::xzone
 
     assert(zid == common::xarchive_zone_id);
     assert(cid == common::xdefault_cluster_id);
-    assert(gid == common::xarchive_group_id || gid == common::xedge_archive_group_id);
+    assert(gid == common::xarchive_group_id || gid == common::xfull_node_group_id);
 
     if (gid == common::xarchive_group_id) {
         return common::xnode_type_t::storage_archive;
     }
 
-    if (gid == common::xedge_archive_group_id) {
+    if (gid == common::xfull_node_group_id) {
         return common::xnode_type_t::storage_full_node;
     }
 
