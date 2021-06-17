@@ -462,27 +462,6 @@ public:
     virtual void GENERATE_TX(common::xaccount_address_t const & target_addr, const std::string& func_name, const std::string& func_param) final;
 
     /**
-     * @brief clear the block map property
-     *
-     */
-    virtual void BLOCK_CLEAR();
-
-    /**
-     * @brief set the block map property
-     *
-     * @param data  the data to set to
-     * @param key  the block map property key
-     * @param clear whether clear the block map property
-     */
-    virtual void BLOCK_SET_VALUE(const std::string& data, const std::string& key = BLOCK_DEFUALT_KEY, bool clear = true);
-
-    /**
-     * @brief create  _haskpt_key map property
-     *
-     */
-    virtual void ENABLE_CONTINUEABLE_ITER();
-
-    /**
      * @brief Get the block by height object
      *
      * @param owner the block owner

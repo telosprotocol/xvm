@@ -22,7 +22,6 @@ class xvm_context {
 public:
     xvm_context(xvm_service& vm_service, const data::xtransaction_ptr_t& trx, xaccount_context_t* account_context, xtransaction_trace_ptr trace_ptr);
     void exec();
-    void publish_code();
 public:
     xvm_service&                m_vm_service;
     const xaction_t&            m_current_action;

@@ -272,24 +272,6 @@ void xcontract_base::GENERATE_TX(common::xaccount_address_t const & target_addr,
     m_contract_helper->generate_tx(target_addr, func_name, func_param);
 }
 
-void xcontract_base::BLOCK_CLEAR() {
-    if(m_contract_helper->map_key_exist(data::XPORPERTY_CONTRACT_BLOCK_CONTENT_KEY)) {
-        m_contract_helper->map_clear(data::XPORPERTY_CONTRACT_BLOCK_CONTENT_KEY, true);
-    }
-}
-
-void xcontract_base::BLOCK_SET_VALUE(const std::string& data, const std::string& key, bool clear) {
-    if (clear) {
-        BLOCK_CLEAR();
-    }
-
-    m_contract_helper->map_set(data::XPORPERTY_CONTRACT_BLOCK_CONTENT_KEY, key, data, true);
-}
-
-void xcontract_base::ENABLE_CONTINUEABLE_ITER() {
-    MAP_CREATE(HASH_POINTERS_KEY);
-}
-
 base::xauto_ptr<xblock_t>
 xcontract_base::get_block_by_height(const std::string & owner, uint64_t height) const {
     assert(m_contract_helper);

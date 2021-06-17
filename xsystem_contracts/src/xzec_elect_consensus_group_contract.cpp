@@ -205,6 +205,7 @@ void xtop_zec_elect_consensus_group_contract::setup() {
         serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, property, election_result_store);
     }
 
+    STRING_CREATE(data::XPROPERTY_CONTRACT_ELECTION_EXECUTED_KEY);
     std::string election_executed;
     STRING_SET(data::XPROPERTY_CONTRACT_ELECTION_EXECUTED_KEY, election_executed);
 }
