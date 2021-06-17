@@ -68,7 +68,7 @@ void xtop_rec_elect_archive_contract::elect_config_nodes(common::xlogic_time_t c
     auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
     auto election_result_store =
         xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(common::xdefault_group_id));
-    auto node_type = common::xnode_type_t::archive;
+    auto node_type = common::xnode_type_t::storage_archive;
     auto & election_group_result = election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(common::xdefault_group_id);
 
     for (auto nodes : nodes_info) {

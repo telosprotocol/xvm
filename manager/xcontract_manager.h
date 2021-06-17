@@ -66,7 +66,7 @@ public:
      *
      * @param store
      */
-    void setup_blockchains(store::xstore_face_t * store, xvblockstore_t * blockstore);
+    void setup_blockchains(xvblockstore_t * blockstore);
 
     /**
      * @brief install monitors
@@ -217,13 +217,6 @@ private:
      * @param disable_broadcasts if disabling broadcasts
      */
     void add_role_contexts_by_type(const xevent_vnode_ptr_t & e, common::xnode_type_t type, bool disable_broadcasts);
-    /**
-     * @brief Set up contract
-     *
-     * @param contract_cluster_address contract cluster address
-     * @param store store
-     */
-    void setup_chain(common::xaccount_address_t const & contract_cluster_address);
 
     /**
      * @brief Set up contract
@@ -231,7 +224,7 @@ private:
      * @param contract_cluster_address contract cluster address
      * @param store store
      */
-    void setup_chain(common::xaccount_address_t const & contract_cluster_address, xstore_face_t * store, xvblockstore_t * blockstore);
+    void setup_chain(common::xaccount_address_t const & contract_cluster_address, xvblockstore_t * blockstore);
 
     std::unordered_map<common::xaccount_address_t, xrole_map_t *>    m_map;
     xcontract_register_t                                             m_contract_register;

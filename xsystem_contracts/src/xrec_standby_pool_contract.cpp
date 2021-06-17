@@ -180,12 +180,12 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
         }
 
         if (archive) {
-            new_node_info.stake_container[common::xnode_type_t::archive] = stake;
+            new_node_info.stake_container[common::xnode_type_t::storage_archive] = stake;
             new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
         }
 
         if (full_node) {
-            new_node_info.stake_container[common::xnode_type_t::full_node] = stake;
+            new_node_info.stake_container[common::xnode_type_t::storage_full_node] = stake;
             new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
         }
     }
