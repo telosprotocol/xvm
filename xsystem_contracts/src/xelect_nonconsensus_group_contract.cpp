@@ -80,7 +80,6 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
     }
     node_change = (new_group_result != current_group);
     if (node_change) {
-        xinfo("%s new election success", log_prefix.c_str());
         for (auto & node_info : new_group_result) {
             auto const node_id = top::get<xelection_info_bundle_t>(node_info).node_id();
             XMETRICS_PACKET_INFO(
@@ -106,6 +105,7 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
               new_group_result.start_time());
 
         current_group = new_group_result;
+        xinfo("%s new election success", log_prefix.c_str());
     } else {
         xinfo("%s new election failed. no elect in or out.", log_prefix.c_str());
     }

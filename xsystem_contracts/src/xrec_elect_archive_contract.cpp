@@ -138,7 +138,8 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
     XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval) / 2 > TIME(), "xrec_elect_archive_contract_t::on_timer retried too many times");
     xinfo("xrec_elect_archive_contract_t::archive_elect %" PRIu64, current_time);
 
-    xrange_t<config::xgroup_size_t> range{1, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size)};
+    xrange_t<config::xgroup_size_t> archive_group_range{ 1, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size) };
+    xrange_t<config::xgroup_size_t> full_node_group_range{ 0, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size) };
 
     auto standby_result_store =
         xvm::serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, sys_contract_rec_standby_pool_addr, data::XPROPERTY_CONTRACT_STANDBYS_KEY);
@@ -162,6 +163,12 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
             serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(archive_gid));
 
         auto & election_network_result = election_result_store.result_of(network_id());
+
+        auto range = archive_group_range;
+        if (archive_gid == common::xfull_node_group_id) {
+            range = full_node_group_range;
+        }
+
         if (elect_group(common::xarchive_zone_id,
                         common::xdefault_cluster_id,
                         archive_gid,
