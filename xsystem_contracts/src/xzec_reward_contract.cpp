@@ -853,8 +853,6 @@ void xzec_reward_contract::get_reward_param(const common::xlogic_time_t current_
     issue_detail.m_validator_group_count = property_param.validator_workloads_detail.size();
     xdbg("[xzec_reward_contract::get_reward_param] auditor_group_count: %d", issue_detail.m_auditor_group_count);
     xdbg("[xzec_reward_contract::get_reward_param] validator_group_count: %d", issue_detail.m_validator_group_count);
-    XCONTRACT_ENSURE(issue_detail.m_auditor_group_count > 0, "auditor group (workload) 0");
-    XCONTRACT_ENSURE(issue_detail.m_validator_group_count > 0, "validator group (workload) 0");
     // get vote
     std::map<std::string, std::string> contract_auditor_votes;
     MAP_COPY_GET(XPORPERTY_CONTRACT_TICKETS_KEY, contract_auditor_votes, sys_contract_zec_vote_addr);
