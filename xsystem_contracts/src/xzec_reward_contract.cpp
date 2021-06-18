@@ -1366,8 +1366,14 @@ void xzec_reward_contract::calc_nodes_rewards_v5(const common::xlogic_time_t iss
     community_reward = governance_rewards;
     auto auditor_group_count = property_param.auditor_workloads_detail.size();
     auto validator_group_count = property_param.validator_workloads_detail.size();
-    auto auditor_group_workload_rewards = auditor_total_workload_rewards / auditor_group_count;
-    auto validator_group_workload_rewards = validator_total_workload_rewards / validator_group_count;
+    top::xstake::uint128_t auditor_group_workload_rewards = 0;
+    top::xstake::uint128_t validator_group_workload_rewards = 0;
+    if (auditor_group_count != 0) {
+        auditor_group_workload_rewards = auditor_total_workload_rewards / auditor_group_count;
+    }
+    if (validator_group_count != 0) {
+        validator_group_workload_rewards = validator_total_workload_rewards / validator_group_count;
+    }
 
     // step 2: calculate different votes and role nums
     std::map<common::xaccount_address_t, uint64_t> account_votes;
@@ -1425,12 +1431,16 @@ void xzec_reward_contract::calc_nodes_rewards_v5(const common::xlogic_time_t iss
     // 3.1 zero workload
     std::vector<string> zero_workload_account;
     // node which deposit = 0 whose rewards do not given to community yet
-    community_reward += calc_invalid_workload_group_reward(true, property_param.map_nodes, auditor_group_workload_rewards, property_param.auditor_workloads_detail);
-    community_reward += calc_invalid_workload_group_reward(false, property_param.map_nodes, validator_group_workload_rewards, property_param.validator_workloads_detail);
-    community_reward +=
-        calc_zero_workload_reward(true, property_param.auditor_workloads_detail, onchain_param.cluster_zero_workload, auditor_group_workload_rewards, zero_workload_account);
-    community_reward +=
-        calc_zero_workload_reward(false, property_param.validator_workloads_detail, onchain_param.shard_zero_workload, validator_group_workload_rewards, zero_workload_account);
+    if (auditor_group_workload_rewards != 0) {
+        community_reward += calc_invalid_workload_group_reward(true, property_param.map_nodes, auditor_group_workload_rewards, property_param.auditor_workloads_detail);
+        community_reward +=
+            calc_zero_workload_reward(true, property_param.auditor_workloads_detail, onchain_param.cluster_zero_workload, auditor_group_workload_rewards, zero_workload_account);
+    }
+    if (validator_group_workload_rewards != 0) {
+        community_reward += calc_invalid_workload_group_reward(false, property_param.map_nodes, validator_group_workload_rewards, property_param.validator_workloads_detail);
+        community_reward +=
+            calc_zero_workload_reward(false, property_param.validator_workloads_detail, onchain_param.shard_zero_workload, validator_group_workload_rewards, zero_workload_account);
+    }
 
     // TODO: voter to zero workload account has no workload reward
     for (auto const & entity : property_param.map_nodes) {
@@ -1443,45 +1453,37 @@ void xzec_reward_contract::calc_nodes_rewards_v5(const common::xlogic_time_t iss
         // 3.2 workload reward
         if (node.is_edge_node()) {
             top::xstake::uint128_t reward_to_self = 0;
-            top::xstake::uint128_t reward_to_community = 0;
             calc_edge_workload_rewards(node, role_nums[edger_idx], edge_workload_rewards, reward_to_self);
             if (reward_to_self != 0) {
                 issue_detail.m_node_rewards[account.to_string()].m_edge_reward = reward_to_self;
                 self_reward += reward_to_self;
             }
-            community_reward += reward_to_community;
         }
         if (node.is_archive_node()) {
             top::xstake::uint128_t reward_to_self = 0;
-            top::xstake::uint128_t reward_to_community = 0;
             calc_archive_workload_rewards(node, role_nums[archiver_idx], archive_workload_rewards, reward_to_self);
             if (reward_to_self != 0) {
                 issue_detail.m_node_rewards[account.to_string()].m_archive_reward = reward_to_self;
                 self_reward += reward_to_self;
             }
-            community_reward += reward_to_community;
         }
         if (node.is_auditor_node()) {
             top::xstake::uint128_t reward_to_self = 0;
-            top::xstake::uint128_t reward_to_community = 0;
             calc_auditor_workload_rewards(
                 node, role_nums[auditor_idx], property_param.auditor_workloads_detail, auditor_group_workload_rewards, reward_to_self);
             if (reward_to_self != 0) {
                 issue_detail.m_node_rewards[account.to_string()].m_auditor_reward = reward_to_self;
                 self_reward += reward_to_self;
             }
-            community_reward += reward_to_community;
         }
         if (node.is_validator_node()) {
             top::xstake::uint128_t reward_to_self = 0;
-            top::xstake::uint128_t reward_to_community = 0;
             calc_validator_workload_rewards(
                 node, role_nums[validator_idx], property_param.validator_workloads_detail, validator_group_workload_rewards, reward_to_self);
             if (reward_to_self != 0) {
                 issue_detail.m_node_rewards[account.to_string()].m_validator_reward = reward_to_self;
                 self_reward += reward_to_self;
             }
-            community_reward += reward_to_community;
         }
         // 3.3 vote reward
         if (node.is_valid_auditor_node() && node.get_deposit() > 0 && auditor_total_votes > 0) {
