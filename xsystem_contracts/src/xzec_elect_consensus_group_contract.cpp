@@ -234,7 +234,7 @@ void xtop_zec_elect_consensus_group_contract::on_timer(common::xlogic_time_t con
     XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), "xzec_elect_consensus_group_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_zec_elect_consensus_addr,
                      "xzec_elect_consensus_group_contract_t instance is not triggled by sys_contract_zec_elect_consensus_addr");
-    XCONTRACT_ENSURE(current_time <= TIME(), "xzec_elect_consensus_group_contract_t::on_timer current_time > consensus leader's time");
+    // XCONTRACT_ENSURE(current_time <= TIME(), "xzec_elect_consensus_group_contract_t::on_timer current_time > consensus leader's time");
     XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_election_interval) / 2 > TIME(), "xzec_elect_consensus_group_contract_t::on_timer retried too many times");
 
     std::uint64_t random_seed;
