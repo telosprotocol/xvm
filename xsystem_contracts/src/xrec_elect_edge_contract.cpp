@@ -138,7 +138,7 @@ void xtop_rec_elect_edge_contract::on_timer(const uint64_t current_time) {
     XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), "xrec_elect_edge_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_rec_elect_edge_addr,
                      "xrec_elect_edge_contract_t instance is not triggled by sys_contract_rec_elect_edge_addr");
-    XCONTRACT_ENSURE(current_time <= TIME(), u8"xrec_elect_edge_contract_t::on_timer current_time > consensus leader's time");
+    // XCONTRACT_ENSURE(current_time <= TIME(), u8"xrec_elect_edge_contract_t::on_timer current_time > consensus leader's time");
     XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(edge_election_interval) / 2 > TIME(),
                      "xrec_elect_edge_contract_t::on_timer retried too many times. current_time=" + std::to_string(current_time) +
                          ";edge_election_interval=" + std::to_string(XGET_ONCHAIN_GOVERNANCE_PARAMETER(edge_election_interval)) + ";TIME=" + std::to_string(TIME()));
