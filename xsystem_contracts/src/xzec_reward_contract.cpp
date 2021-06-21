@@ -9,7 +9,6 @@
 #include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xdata/xgenesis_data.h"
 #include "xstake/xstake_algorithm.h"
-#include "xdata/xworkload_info.h"
 #include "xstore/xstore_error.h"
 
 #include <iomanip>
@@ -634,29 +633,25 @@ void xzec_reward_contract::on_receive_workload(std::string const& workload_str) 
     auto const& source_address = SOURCE_ADDRESS();
 
     xstream_t stream(xcontext_t::instance(), (uint8_t*)workload_str.data(), workload_str.size());
-    std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_workload_info;
-    std::map<common::xcluster_address_t, xvalidator_workload_info_t> validator_workload_info;
+    std::map<common::xcluster_address_t, xgroup_workload_t> workload_info;
 
-    MAP_OBJECT_DESERIALZE2(stream, auditor_workload_info);
-    MAP_OBJECT_DESERIALZE2(stream, validator_workload_info);
-    xdbg("[xzec_reward_contract::on_receive_workload] pid:%d, SOURCE_ADDRESS: %s, auditor_workload_info size: %zu, validator_workload_info size: %zu\n",
-        getpid(), source_address.c_str(), auditor_workload_info.size(), validator_workload_info.size());
+    MAP_OBJECT_DESERIALZE2(stream, workload_info);
+    xdbg("[xzec_reward_contract::on_receive_workload] pid:%d, SOURCE_ADDRESS: %s, workload_info size: %zu\n", getpid(), source_address.c_str(), workload_info.size());
 
-    //add_batch_workload2(auditor_workload_info, validator_workload_info);
-    for (auto const& workload : auditor_workload_info) {
+    for (auto const & workload : workload_info) {
         xstream_t stream(xcontext_t::instance());
         stream << workload.first;
-        auto const& cluster_id      = std::string((const char*)stream.data(), stream.size());
-        auto const& workload_info   = workload.second;
-        add_cluster_workload(true, cluster_id, workload_info.m_leader_count);
-    }
-
-    for (auto const& workload : validator_workload_info) {
-        xstream_t stream(xcontext_t::instance());
-        stream << workload.first;
-        auto const& cluster_id      = std::string((const char*)stream.data(), stream.size());
-        auto const& workload_info   = workload.second;
-        add_cluster_workload(false, cluster_id, workload_info.m_leader_count);
+        auto const & cluster_id = std::string((const char *)stream.data(), stream.size());
+        auto const & workload_info = workload.second;
+        if (common::has<common::xnode_type_t::auditor>(workload.first.type())) {
+            add_cluster_workload(true, cluster_id, workload_info.m_leader_count);
+        } else if (common::has<common::xnode_type_t::validator>(workload.first.type())) {
+            add_cluster_workload(false, cluster_id, workload_info.m_leader_count);
+        } else {
+            // invalid group
+            xwarn("[xzec_workload_contract_v2::accumulate_workload] invalid group id: %d", workload.first.group_id().value());
+            continue;
+        }
     }
 
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "on_receive_workload_Executed", 1);
@@ -706,8 +701,12 @@ void xzec_reward_contract::add_cluster_workload(bool auditor, std::string const&
 
         workload.m_leader_count[leader] += work;
         workload.cluster_total_workload += work;
-        xdbg("[xzec_reward_contract::add_cluster_workload] auditor: %d, cluster_id: %s, leader: %s, work: %u, total_workload: %d\n",
-            auditor, cluster_id2.to_string().c_str(), leader_count_info.first.c_str(), workload.m_leader_count[leader], workload.cluster_total_workload);
+        xdbg("[xzec_reward_contract::add_cluster_workload] cluster_id: %s, leader: %s, work: %u, leader total workload: %u, group total workload: %d\n",
+             cluster_id2.to_string().c_str(),
+             leader_count_info.first.c_str(),
+             work,
+             workload.m_leader_count[leader],
+             workload.cluster_total_workload);
     }
 
     xstream_t stream(xcontext_t::instance());
