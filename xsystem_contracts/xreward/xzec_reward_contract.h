@@ -31,8 +31,8 @@ struct xreward_onchain_param_t {
 };
 
 struct xreward_property_param_t {
-    std::map<common::xaccount_address_t, cluster_workload_t> auditor_workloads_detail;
-    std::map<common::xaccount_address_t, cluster_workload_t> validator_workloads_detail;
+    std::map<common::xcluster_address_t, cluster_workload_t> auditor_workloads_detail;
+    std::map<common::xcluster_address_t, cluster_workload_t> validator_workloads_detail;
     std::map<common::xaccount_address_t, std::map<common::xaccount_address_t, uint64_t>> votes_detail;
     xaccumulated_reward_record accumulated_reward_record;
     std::map<common::xaccount_address_t, xreg_node_info> map_nodes;
@@ -392,7 +392,7 @@ private:
      * @return total zero workload reward
      */
     top::xstake::uint128_t calc_zero_workload_reward(bool is_auditor,
-                                                     std::map<common::xaccount_address_t, cluster_workload_t> & workloads_detail,
+                                                     std::map<common::xcluster_address_t, cluster_workload_t> & workloads_detail,
                                                      const uint32_t zero_workload,
                                                      const top::xstake::uint128_t group_reward,
                                                      std::vector<string> & zero_workload_account);
@@ -409,7 +409,7 @@ private:
     top::xstake::uint128_t calc_invalid_workload_group_reward(bool is_auditor,
                                                               std::map<common::xaccount_address_t, xreg_node_info> const & map_nodes,
                                                               const top::xstake::uint128_t group_reward,
-                                                              std::map<common::xaccount_address_t, cluster_workload_t> & workloads_detail);
+                                                              std::map<common::xcluster_address_t, cluster_workload_t> & workloads_detail);
 
     /**
      * @brief calculate calc edger worklaod rewards
@@ -448,7 +448,7 @@ private:
      */
     void calc_validator_workload_rewards(xreg_node_info const & node,
                                          std::vector<uint32_t> const & validator_num,
-                                         std::map<common::xaccount_address_t, cluster_workload_t> const & validator_workloads_detail,
+                                         std::map<common::xcluster_address_t, cluster_workload_t> const & validator_workloads_detail,
                                          const top::xstake::uint128_t validator_group_workload_rewards,
                                          top::xstake::uint128_t & reward_to_self);
 
@@ -463,7 +463,7 @@ private:
      */
     void calc_auditor_workload_rewards(xreg_node_info const & node,
                                        std::vector<uint32_t> const & auditor_num,
-                                       std::map<common::xaccount_address_t, cluster_workload_t> const & auditor_workloads_detail,
+                                       std::map<common::xcluster_address_t, cluster_workload_t> const & auditor_workloads_detail,
                                        const top::xstake::uint128_t auditor_group_workload_rewards,
                                        top::xstake::uint128_t & reward_to_self);
 
