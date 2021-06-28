@@ -233,8 +233,6 @@ void xtop_contract_manager::do_destory_vnode(const xevent_vnode_ptr_t & e) {
 }
 
 void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
-    xdbg("[xtop_contract_manager::do_on_block] map size %d", m_map.size());
-
     if (e->major_type == xevent_major_type_chain_timer) {
         assert(dynamic_xobject_ptr_cast<xevent_chain_timer_t>(e) != nullptr);
         auto const event = dynamic_xobject_ptr_cast<xevent_chain_timer_t>(e);
@@ -245,13 +243,32 @@ void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
         }
 
         m_latest_timer = height;  // record
-    }
+        xdbg("[xtop_contract_manager::do_on_block] on timer block=%s, map size %d", event->time_block->dump().c_str(), m_map.size());
+        for (auto & pair : m_map) { // m_map : std::unordered_map<common::xaccount_address_t, xrole_map_t *>
+            // auto const & account_address = top::get<common::xaccount_address_t const>(pair);
+            for (auto & pr : *(pair.second)) {  // using xrole_map_t = std::unordered_map<xvnetwork_driver_face_t *, xrole_context_t *>;
+                pr.second->on_block_timer(e);
+            }
+        }
+    } else if (e->major_type == xevent_major_type_store && e->minor_type == xevent_store_t::type_block_to_db) {
+        // TODO(jimmy) check if need process firstly
+        xevent_store_block_to_db_ptr_t store_event = dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e);
+        if (store_event->blk_level != base::enum_xvblock_level_table) {  // only broadcast table
+            return;
+        }
 
-    bool event_broadcasted{false};
-    for (auto & pair : m_map) { // m_map : std::unordered_map<common::xaccount_address_t, xrole_map_t *>
-        // auto const & account_address = top::get<common::xaccount_address_t const>(pair);
-        for (auto & pr : *(pair.second)) {  // using xrole_map_t = std::unordered_map<xvnetwork_driver_face_t *, xrole_context_t *>;
-            pr.second->on_block(e, event_broadcasted);
+        auto block = mbus::extract_block_from(store_event); // load mini-block firstly
+        if (block == nullptr) {  // should not happen
+            assert(false);
+            return;
+        }
+        xdbg("[xtop_contract_manager::do_on_block] on block to db, block=%s, map size %d", block->dump().c_str(), m_map.size());
+        bool event_broadcasted{false};
+        for (auto & pair : m_map) { // m_map : std::unordered_map<common::xaccount_address_t, xrole_map_t *>
+            // auto const & account_address = top::get<common::xaccount_address_t const>(pair);
+            for (auto & pr : *(pair.second)) {  // using xrole_map_t = std::unordered_map<xvnetwork_driver_face_t *, xrole_context_t *>;
+                pr.second->on_block_to_db(block, event_broadcasted);
+            }
         }
     }
 }

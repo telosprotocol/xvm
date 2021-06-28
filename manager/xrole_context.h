@@ -36,13 +36,20 @@ public:
                     const std::shared_ptr<xvnetwork_driver_face_t> & driver,
                     xcontract_info_t * info);
     virtual ~xrole_context_t();
+    /**
+     * @brief process store event
+     *
+     * @param block
+     * @param event_broadcasted
+     */
+    void on_block_to_db(const xblock_ptr_t & block, bool & event_broadcasted);
 
     /**
-     * @brief process store and chain timer event
+     * @brief process chain timer event
      *
      * @param e Event ojbect.
      */
-    void on_block(const xevent_ptr_t & e, bool & event_broadcasted);
+    void on_block_timer(const xevent_ptr_t & e);
 
     /**
      * @brief check if this timer round is valid

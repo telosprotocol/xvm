@@ -10,6 +10,7 @@
 #include "xvm/manager/xmessage_ids.h"
 #include "xvm/manager/xrole_context.h"
 #include "xvm/xvm_service.h"
+#include "xvledger/xvledger.h"
 
 
 #include <cinttypes>
@@ -33,53 +34,46 @@ xrole_context_t::~xrole_context_t() {
     }
 }
 
-void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted) {
-    xdbg("xrole_context_t::on_block");
+void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_broadcasted) {
     if (!m_contract_info->has_monitors()) {
         return;
     }
+    if (m_contract_info->has_broadcasts()) {
+        if (event_broadcasted) {  // only select one node to broadcast
+            return;
+        }
 
-    xblock_ptr_t block{};
-    bool new_block{false};
-    if(e->major_type == xevent_major_type_chain_timer) {
-        auto event = (const mbus::xevent_chain_timer_ptr_t&) e;
-        event->time_block->add_ref();
-        block.attach((xblock_t*) event->time_block);
-    } else if(e->major_type == xevent_major_type_store && e->minor_type == xevent_store_t::type_block_to_db) {
-        block = mbus::extract_block_from(dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e));
-        // block = ((xevent_store_block_to_db_t *)e.get())->block;
-        new_block = ((xevent_store_block_to_db_t *)e.get())->new_block;
-    }
+        xassert(block->get_block_level() == base::enum_xvblock_level_table);
 
-    if(block == nullptr) {
-        return;
-    }
-
-    xdbg("[xrole_context_t::on_block] %s, %" PRIu64, block->get_account().c_str(), block->get_height());
-    // if (block->get_height() < 1)
-    //    return;
-
-    auto address = common::xaccount_address_t{block->get_block_owner()};
-
-    // broadcast
-    if (new_block && m_contract_info->has_broadcasts()) {
+        auto address = common::xaccount_address_t{block->get_block_owner()};
         if (common::xaccount_address_t{data::account_address_to_block_address(m_contract_info->address)} == address) {
+            xdbg("xrole_context_t::on_block_to_db block=%s", block->dump().c_str());
+
             // check leader
             common::xip_t validator_xip{block->get_cert()->get_validator().low_addr};  // TODO (payton)
-            if (validator_xip.slot_id() == m_driver->address().slot_id() && !event_broadcasted) {
+            if (validator_xip.slot_id() == m_driver->address().slot_id()) {
                 event_broadcasted = true;
+
+                // load full block input and output
+                base::xvaccount_t _vaccount(block->get_account());
+                if (false == base::xvchain_t::instance().get_xblockstore()->load_block_input(_vaccount, block.get())
+                    || false == base::xvchain_t::instance().get_xblockstore()->load_block_output(_vaccount, block.get())) {
+                    xerror("xrole_context_t::on_block_to_db fail-load block input output, block=%s", block->dump().c_str());
+                    return;
+                }
+
                 switch (m_contract_info->broadcast_policy) {
                 case enum_broadcast_policy_t::normal:
-                    xdbg("xrole_context_t::on_block::broadcast, normal, block=%s", block->dump().c_str());
+                    xinfo("xrole_context_t::on_block::broadcast, normal, block=%s", block->dump().c_str());
                     // broadcast(((xevent_store_block_to_db_t *)e.get())->block, m_contract_info->broadcast_types);
-                    broadcast(mbus::extract_block_from(dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e)), m_contract_info->broadcast_types);
+                    broadcast(block, m_contract_info->broadcast_types);
                     break;
                 case enum_broadcast_policy_t::fullunit:
-                    xdbg("xrole_context_t::on_block::broadcast, fullunit, block addr %s", address.to_string().c_str());
+                    xinfo("xrole_context_t::on_block::broadcast, fullunit, block=%s", block->dump().c_str());
                     if (block->is_fullunit()) {
                         assert(false);
                         // broadcast(((xevent_store_block_to_db_t *)e.get())->block, m_contract_info->broadcast_types);
-                        broadcast(mbus::extract_block_from(dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e)), m_contract_info->broadcast_types);
+                        broadcast(block, m_contract_info->broadcast_types);
                     }
                     break;
                 default:
@@ -89,8 +83,21 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
             }
         }
     }
+}
 
+void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
+    if (!m_contract_info->has_monitors()) {
+        return;
+    }
     if (m_contract_info->has_block_monitors()) {
+        auto event = (const mbus::xevent_chain_timer_ptr_t&) e;
+        event->time_block->add_ref();
+        xblock_ptr_t block{};
+        block.attach((xblock_t*) event->time_block);
+        xdbg("[xrole_context_t::on_block_timer] %s, %" PRIu64, block->get_account().c_str(), block->get_height());
+
+        auto address = common::xaccount_address_t{block->get_account()};
+
         xblock_monitor_info_t * info = m_contract_info->find(address);
         if (info == nullptr) {
             for (auto & pair : m_contract_info->monitor_map) {
@@ -106,7 +113,7 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
             uint64_t block_timestamp{0};
             uint64_t onchain_timer_round{0};
             if (info->type == enum_monitor_type_t::timer) {
-                xinfo("==== timer monitor");
+                xdbg("==== timer monitor");
                 xtimer_block_monitor_info_t * timer_info = dynamic_cast<xtimer_block_monitor_info_t *>(info);
                 assert(timer_info);
                 auto time_interval = timer_info->get_interval();
@@ -124,13 +131,13 @@ void xrole_context_t::on_block(const xevent_ptr_t & e, bool & event_broadcasted)
                     //     ((round % time_interval) != 0 && !runtime_stand_alone(onchain_timer_round, m_contract_info->address))) {
                     //     do_call = false;
                     // }
-                    xinfo("==== get timer2 transaction %s, %llu, %u, %d", m_contract_info->address.value().c_str(), onchain_timer_round, time_interval, do_call);
+                    xdbg("==== get timer2 transaction %s, %llu, %u, %d", m_contract_info->address.value().c_str(), onchain_timer_round, time_interval, do_call);
                 } else {
                     assert(0);
                 }
             }
             if (do_call && valid_call(onchain_timer_round)) {
-                xinfo("call_contract : %s , %llu ,%d", m_contract_info->address.value().c_str(), onchain_timer_round, static_cast<int32_t>(info->type));
+                xinfo("xrole_context_t::on_block_timer call_contract : %s , %llu ,%d", m_contract_info->address.value().c_str(), onchain_timer_round, static_cast<int32_t>(info->type));
                 call_contract(onchain_timer_round, info, block_timestamp);
             }
         }
