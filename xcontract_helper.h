@@ -77,6 +77,9 @@ public:
     base::xauto_ptr<xblock_t>
     get_block_by_height(const std::string & owner, uint64_t height) const;
 
+    base::xauto_ptr<xblock_t>
+    get_next_fullblock(std::string const & owner, uint64_t const cur_full_height) const;
+
     std::uint64_t
     get_blockchain_height(const std::string & owner) const;
 

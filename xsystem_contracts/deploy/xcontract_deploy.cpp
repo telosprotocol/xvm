@@ -87,7 +87,7 @@ void xtop_contract_deploy::deploy_sys_contracts() {
            xnode_type_t::zec,
            "",
            enum_broadcast_policy_t::normal,
-           std::string(sys_contract_beacon_timer_addr) + ",do_unqualified_node_slash,C," + config::xpunish_interval_time_block_onchain_goverance_parameter_t::name);
+           std::string(sys_contract_beacon_timer_addr) + ",do_unqualified_node_slash,C," + config::xpunish_collection_interval_onchain_goverance_parameter_t::name);
 
     deploy(common::xaccount_address_t{sys_contract_sharding_reward_claiming_addr}, xnode_type_t::consensus_validator, "", enum_broadcast_policy_t::normal);
 }

@@ -278,6 +278,12 @@ xcontract_base::get_block_by_height(const std::string & owner, uint64_t height) 
     return m_contract_helper->get_block_by_height(owner, height);
 }
 
+base::xauto_ptr<xblock_t>
+xcontract_base::get_next_fullblock(std::string const & owner, uint64_t const cur_full_height) const {
+    assert(m_contract_helper);
+    return m_contract_helper->get_next_fullblock(owner, cur_full_height);
+}
+
 std::uint64_t
 xcontract_base::get_blockchain_height(const std::string & owner) const {
     assert(m_contract_helper);
