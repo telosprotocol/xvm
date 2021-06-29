@@ -47,13 +47,6 @@ public:
 
 private:
     /**
-     * @brief check if mainnet is activated
-     *
-     * @return int 0 - not activated, other - activated
-     */
-    bool is_mainnet_activated() const;
-
-    /**
      * @brief update tgas
      *
      * @param table_pledge_balance_change_tgas table pledge balance change tgas
