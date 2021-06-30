@@ -41,6 +41,19 @@ void xzec_workload_contract_v2::setup() {
     STRING_CREATE(XPORPERTY_CONTRACT_TGAS_KEY);
 }
 
+bool xzec_workload_contract_v2::is_mainnet_activated() const {
+    xactivation_record record;
+
+    std::string value_str = STRING_GET2(xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
+    if (!value_str.empty()) {
+        base::xstream_t stream(base::xcontext_t::instance(),
+                    (uint8_t*)value_str.c_str(), (uint32_t)value_str.size());
+        record.serialize_from(stream);
+    }
+    xdbg("[xzec_workload_contract_v2::is_mainnet_activated] activated: %d\n", record.activated);
+    return static_cast<bool>(record.activated);
+};
+
 std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(const uint32_t table_id, common::xlogic_time_t const timestamp) {
     uint64_t last_read_height = get_table_height(table_id);
     uint64_t cur_read_height = last_read_height;
@@ -352,6 +365,11 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
     std::map<common::xgroup_address_t, xauditor_workload_info_t> auditor_clusters_workloads;
     std::map<common::xgroup_address_t, xvalidator_workload_info_t> validator_clusters_workloads;
     accumulate_workload_with_fullblock(timestamp, auditor_clusters_workloads, validator_clusters_workloads);
+
+    // check mainnet
+    if (!is_mainnet_activated()) {
+        return;
+    }
 
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "call_reward_contract");
     std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
