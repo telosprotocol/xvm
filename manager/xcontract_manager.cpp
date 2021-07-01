@@ -1484,6 +1484,44 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
             return;
         }
         return get_election_result_property_data(unitstate, contract_address, property_name, json_format, json);
+    } else if (contract_address == xaccount_address_t{sys_contract_rec_standby_pool_addr}) {
+        return get_rec_standby_pool_property_data(m_store, contract_address, property_name, json_format, json);
+    } else if (contract_address == xaccount_address_t{sys_contract_zec_standby_pool_addr}) {
+        return get_zec_standby_pool_property_data(m_store, contract_address, property_name, json);
+    } else if (contract_address == xaccount_address_t{sys_contract_zec_group_assoc_addr}) {
+        return get_association_result_property_data(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY) {
+        return get_genesis_stage(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_REG_KEY) {
+        return get_rec_nodes_map(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY || property_name == xstake::XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY) {
+        return get_zec_workload_map(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_TASK_KEY) {
+        return get_zec_tasks_map(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_TICKETS_KEY) {
+        return get_zec_votes(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY1 || property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY2 || property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY3 ||
+        property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY4) {
+        return get_table_votes(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY1 || property_name == xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY2 ||
+        property_name == xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY3 || property_name == xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY4) {
+        return get_voter_dividend(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_REFUND_KEY) {
+        return get_refunds(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE) {
+        return get_accumulated_issuance_map(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
+        return get_unqualified_node_map(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY) {
+        return get_accumulated_issuance_yearly_map(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_SLASH_INFO_KEY) {
+        return get_unqualified_slash_info_map(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_NODE_REWARD_KEY) {
+        return get_node_reward(m_store, contract_address, property_name, json);
+    } else if (property_name == PROPOSAL_MAP_ID) {
+        return get_proposal_map(m_store, contract_address, property_name, json);
+    } else if (property_name == VOTE_MAP_ID) {
+        return get_proposal_voting_map(m_store, contract_address, property_name, json);
     }
 }
 
