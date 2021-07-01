@@ -159,6 +159,7 @@ public:
     void get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, xJson::Value & json) const;
     void get_contract_data(common::xaccount_address_t const & contract_address, std::uint64_t const height, xjson_format_t const json_format, xJson::Value & json, std::error_code & ec) const;
     void get_contract_data(common::xaccount_address_t const & contract_address, std::string const & property_name, xjson_format_t const json_format, xJson::Value & json) const;
+    void get_contract_data(common::xaccount_address_t const & contract_address, const xaccount_ptr_t unitstate, std::string const & property_name, xjson_format_t const json_format, xJson::Value & json) const;
     void get_contract_data(common::xaccount_address_t const & contract_address, std::string const & property_name, std::string const & key, xjson_format_t const json_format, xJson::Value & json) const;
 
 private:

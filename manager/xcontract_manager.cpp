@@ -571,6 +571,84 @@ static void get_election_result_property_data(observer_ptr<store::xstore_face_t 
     }
 }
 
+static void get_election_result_property_data(const xaccount_ptr_t unitstate,
+                                              common::xaccount_address_t const & contract_address,
+                                              std::string const & property_name,
+                                              xjson_format_t const json_format,
+                                              xJson::Value & json) {
+    assert(contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
+           contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
+           contract_address == xaccount_address_t{sys_contract_rec_elect_edge_addr} ||     // NOLINT
+           contract_address == xaccount_address_t{sys_contract_rec_elect_archive_addr} ||  // NOLINT
+           contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr});
+
+    std::string serialized_value{};
+    if (unitstate->string_get(property_name, serialized_value) && !serialized_value.empty()) {
+        auto election_result_store = codec::msgpack_decode<data::election::xelection_result_store_t>({std::begin(serialized_value), std::end(serialized_value)});
+        for (auto const & election_network_result_info : election_result_store) {
+            auto const network_id = top::get<common::xnetwork_id_t const>(election_network_result_info);
+            auto const & election_network_result = top::get<data::election::xelection_network_result_t>(election_network_result_info);
+
+            for (auto const & election_result_info : election_network_result) {
+                auto const node_type = top::get<common::xnode_type_t const>(election_result_info);
+                std::string node_type_str = node_type_map.at(node_type);
+                auto const & election_result = top::get<data::election::xelection_result_t>(election_result_info);
+                xJson::Value jn;
+                for (auto const & election_cluster_result_info : election_result) {
+                    // auto const & cluster_id = top::get<common::xcluster_id_t const>(election_cluster_result_info);
+                    auto const & election_cluster_result = top::get<data::election::xelection_cluster_result_t>(election_cluster_result_info);
+
+                    for (auto const & group_result_info : election_cluster_result) {
+                        auto const & group_id = top::get<common::xgroup_id_t const>(group_result_info);
+                        auto const & election_group_result = top::get<data::election::xelection_group_result_t>(group_result_info);
+
+                        for (auto const & node_info : election_group_result) {
+                            auto const & node_id = top::get<data::election::xelection_info_bundle_t>(node_info).node_id();
+                            if (node_id.empty()) {
+                                continue;
+                            }
+                            auto const & election_info = top::get<data::election::xelection_info_bundle_t>(node_info).election_info();
+
+                            switch (json_format) {
+                            case xjson_format_t::simple:
+                                json.append(node_id.to_string());
+                                break;
+
+                            case xjson_format_t::detail: {
+                                xJson::Value j;
+                                j["group_id"] = group_id.value();
+                                j["stake"] = static_cast<xJson::UInt64>(election_info.stake);
+                                j["round"] = static_cast<xJson::UInt64>(election_group_result.group_version().value());
+                                j["public_key"] = election_info.consensus_public_key.to_string();
+                                jn[node_id.to_string()].append(j);
+
+                                break;
+                            }
+
+                            default:
+                                assert(false);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                switch (json_format) {
+                case xjson_format_t::simple:
+                    break;
+                case xjson_format_t::detail:
+                    json[node_type_str] = jn;
+                    json["chain_id"] = common::to_string(network_id);
+                    break;
+                default:
+                    assert(false);
+                    break;
+                }
+            }
+        }
+    }
+}
+
 static void get_rec_standby_pool_property_data(observer_ptr<store::xstore_face_t const> store,
                                                common::xaccount_address_t const & contract_address,
                                                std::string const property_name,
@@ -1386,6 +1464,26 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         return get_proposal_map(m_store, contract_address, property_name, json);
     } else if (property_name == VOTE_MAP_ID) {
         return get_proposal_voting_map(m_store, contract_address, property_name, json);
+    }
+}
+
+void xtop_contract_manager::get_contract_data(common::xaccount_address_t const & contract_address,
+                                              const xaccount_ptr_t unitstate,
+                                              std::string const & property_name,
+                                              xjson_format_t const json_format,
+                                              xJson::Value & json) const {
+    if (contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
+        contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
+        contract_address == xaccount_address_t{sys_contract_rec_elect_edge_addr} ||     // NOLINT
+        contract_address == xaccount_address_t{sys_contract_rec_elect_archive_addr} ||  // NOLINT
+        contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr}) {
+        if (contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr} && property_name == XPROPERTY_CONTRACT_ELECTION_EXECUTED_KEY) {
+            std::string res;
+            m_store->string_get(contract_address.value(), property_name, res);
+            json[property_name] = res;
+            return;
+        }
+        return get_election_result_property_data(unitstate, contract_address, property_name, json_format, json);
     }
 }
 
