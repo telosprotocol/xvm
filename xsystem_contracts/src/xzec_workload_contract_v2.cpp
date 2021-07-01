@@ -70,8 +70,8 @@ std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullbl
         }
         auto block_height = next_block->get_height();
         XCONTRACT_ENSURE(next_block->is_fulltable(), "[xzec_workload_contract_v2::get_fullblock] next full tableblock is not full tableblock");
-        XCONTRACT_ENSURE(timestamp > next_block->get_clock(), "[xzec_workload_contract_v2::get_fullblock] time order error");
-        if (timestamp < (next_block->get_clock() + time_interval)) {
+        // XCONTRACT_ENSURE(timestamp > next_block->get_clock(), "[xzec_workload_contract_v2::get_fullblock] time order error");
+        if (timestamp < next_block->get_clock() || timestamp < (next_block->get_clock() + time_interval)) {
             xdbg("[xzec_workload_contract_v2::get_fullblock] clock interval not statisfy, timestamp: %lu, table: %s, full block height: %" PRIu64 ", block clock: %" PRIu64,
                  timestamp,
                  table_owner.value().c_str(),

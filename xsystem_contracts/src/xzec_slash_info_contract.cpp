@@ -438,9 +438,9 @@ std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_
 
         auto fulltable_height = tableblock->get_height();
         XCONTRACT_ENSURE(tableblock->is_fulltable(), "[xzec_slash_info_contract][get_next_fulltableblock] next full tableblock is not full tableblock");
-        XCONTRACT_ENSURE(TIME() > tableblock->get_clock(), "[xzec_slash_info_contract][get_next_fulltableblock] time order error");
+        // XCONTRACT_ENSURE(TIME() > tableblock->get_clock(), "[xzec_slash_info_contract][get_next_fulltableblock] time order error"); // for consensus rate
 
-        if (TIME() - tableblock->get_clock() < time_interval) { // less than time interval, do not process
+        if (TIME() < tableblock->get_clock() || TIME() - tableblock->get_clock() < time_interval) { // less than time interval, do not process
             xdbg("[xzec_slash_info_contract][get_next_fulltableblock] clock interval not statisfy, now: %" PRIu64 ", fulltableblock owner: %s, height: %" PRIu64 ", clock: %" PRIu64,
                                                                  TIME(), owner.value().c_str(), fulltable_height, tableblock->get_clock());
             break;
