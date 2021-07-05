@@ -37,7 +37,7 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
                                                          xrange_t<config::xgroup_size_t> const & group_size_range,
                                                          data::election::xstandby_network_result_t & standby_network_result,
                                                          data::election::xelection_network_result_t & election_network_result) {
-    assert(zid.has_value() && cid.has_value() && gid.has_value());
+    assert(!broadcast(cid) && !broadcast(gid));
     auto const log_prefix = "[elect non-consensus group contract] zone " + zid.to_string() + " cluster " + cid.to_string() + " group " + gid.to_string() + ":";
 
     auto const min_elect_group_size = group_size_range.begin;

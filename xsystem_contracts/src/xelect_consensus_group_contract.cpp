@@ -164,9 +164,9 @@ bool xtop_elect_consensus_group_contract::elect_group(common::xzone_id_t const &
                                                       xrange_t<config::xgroup_size_t> const & group_size_range,
                                                       data::election::xstandby_network_result_t const & standby_network_result,
                                                       data::election::xelection_network_result_t & election_network_result) {
-    assert(zid.has_value());
-    assert(cid.has_value());
-    assert(gid.has_value());
+    assert(!broadcast(zid));
+    assert(!broadcast(cid));
+    assert(!broadcast(gid));
 
     assert(zid == common::xcommittee_zone_id || zid == common::xzec_zone_id || zid == common::xconsensus_zone_id);
 
