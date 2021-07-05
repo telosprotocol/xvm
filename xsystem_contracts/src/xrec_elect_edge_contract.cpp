@@ -36,7 +36,8 @@ xtop_rec_elect_edge_contract::xtop_rec_elect_edge_contract(common::xnetwork_id_t
 
 #ifdef STATIC_CONSENSUS
 bool executed_rec_edge_first{false};
-bool executed_edge{false};
+bool executed_config_edge{false};
+uint64_t before_elect_config_edge_height{UINT64_MAX};
 // if enabled static_consensus
 // make sure add config in config.xxxx.json
 // like this :
@@ -48,10 +49,14 @@ static uint64_t node_start_time{UINT64_MAX};
 void xtop_rec_elect_edge_contract::elect_config_nodes(common::xlogic_time_t const current_time) {
     uint64_t latest_height = get_blockchain_height(sys_contract_rec_elect_edge_addr);
     xinfo("[edge_start_nodes] get_latest_height: %" PRIu64, latest_height);
-    if (latest_height > 1) {
-        executed_edge = true;
+    if (latest_height > before_elect_config_edge_height) {
+        // already elect config edge before
+        xinfo("[edge_start_nodes] already elect config edge before. get_latest_height: %" PRIu64 " | %" PRIu64, latest_height, before_elect_config_edge_height);
+        executed_config_edge = true;
         return;
     }
+    before_elect_config_edge_height = latest_height;
+
     using top::data::election::xelection_info_bundle_t;
     using top::data::election::xelection_info_t;
     using top::data::election::xelection_result_store_t;
@@ -121,7 +126,7 @@ void xtop_rec_elect_edge_contract::on_timer(const uint64_t current_time) {
         if (current_gmt_time - node_start_time < set_waste_time * 10000) {
             return;
         }
-        if (!executed_edge) {
+        if (!executed_config_edge) {
             elect_config_nodes(current_time);
         }
 #ifdef ELECT_WHEREAFTER
