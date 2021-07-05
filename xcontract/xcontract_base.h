@@ -481,6 +481,17 @@ public:
     get_blockchain_height(const std::string & owner) const;
 
     /**
+     * @brief get next fullblock
+     *
+     * @param owner the block owner
+     * @param cur_full_height current fullblock height
+     * @return the full block
+     */
+    base::xauto_ptr<xblock_t>
+    get_next_fullblock(std::string const & owner, uint64_t const cur_full_height) const;
+
+
+    /**
      * @brief get network id
      *
      * @return common::xnetwork_id_t const&

@@ -16,6 +16,7 @@ using namespace top::data;
 NS_BEG3(top, xvm, xcontract)
 
 #define SLASH_DELETE_PROPERTY  "SLASH_DELETE_PROPERTY"
+#define LAST_SLASH_TIME  "LAST_SLASH_TIME"
 
 xzec_slash_info_contract::xzec_slash_info_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
@@ -26,6 +27,7 @@ void xzec_slash_info_contract::setup() {
 
     MAP_CREATE(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY);
     MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, SLASH_DELETE_PROPERTY, "false");
+    MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, LAST_SLASH_TIME, "0");
 }
 
 void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t const timestamp) {
@@ -157,8 +159,8 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         auto time_interval = XGET_CONFIG(slash_fulltable_interval);
         auto const& full_blocks = get_next_fulltableblock(common::xaccount_address_t{table_owner}, (uint64_t)time_interval, read_height);
         if (!full_blocks.empty()) {
-            summarize_tableblock_count += full_blocks[0]->get_height() - read_height;
-            table_height[i] = full_blocks[0]->get_height();
+            summarize_tableblock_count += full_blocks[full_blocks.size() - 1]->get_height() - read_height;
+            table_height[i] = full_blocks[full_blocks.size() - 1]->get_height();
             xdbg("[xzec_slash_info_contract][do_unqualified_node_slash] update for latest full tableblock,  full tableblock height is: %" PRIu64 ", read_height: %" PRIu64, full_blocks[0]->get_height(), read_height);
             // process every fulltableblock statistic data
             for (std::size_t block_index = 0; block_index < full_blocks.size(); ++block_index) {
@@ -234,7 +236,37 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         return;
     }
 
-
+    // check slash interval time
+    std::string last_slash_time_str;
+    try {
+        XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_extended_function_key");
+        if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, LAST_SLASH_TIME)) {
+            last_slash_time_str = MAP_GET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, LAST_SLASH_TIME);
+        }
+    } catch (std::runtime_error & e) {
+        xwarn("[xzec_slash_info_contract][get_next_fulltableblock] read last slash time error:%s", e.what());
+        throw;
+    }
+    XCONTRACT_ENSURE(!last_slash_time_str.empty(), "read last slash time error, it is empty");
+    uint64_t last_slash_time = base::xstring_utl::toint64(last_slash_time_str);
+    XCONTRACT_ENSURE(timestamp > last_slash_time, "current timestamp smaller than last slash time");
+    if (timestamp - last_slash_time < XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_time_block)) {
+        xinfo("[xzec_slash_info_contract][do_unqualified_node_slash] punish interval time not enought, time round: %" PRIu64
+            ": SOURCE_ADDRESS: %s, pid:%d, last slash time: %s",
+            timestamp,
+            SOURCE_ADDRESS().c_str(),
+            getpid(),
+            last_slash_time_str.c_str());
+        return;
+    } else {
+        xinfo("[xzec_slash_info_contract][do_unqualified_node_slash] statisfy punish interval condition , time round: %" PRIu64
+            ": SOURCE_ADDRESS: %s, pid:%d",
+            timestamp,
+            SOURCE_ADDRESS().c_str(),
+            getpid());
+        XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_extend_key");
+        MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, LAST_SLASH_TIME, std::to_string(timestamp));
+    }
 
     auto node_to_action = filter_nodes(summarize_info);
     xdbg("[xzec_slash_info_contract][filter_slashed_nodes] remove summarize info, time round: %" PRIu64, timestamp);
@@ -394,25 +426,32 @@ void xzec_slash_info_contract::print_table_height_info() {
 
 std::vector<base::xauto_ptr<data::xblock_t>> xzec_slash_info_contract::get_next_fulltableblock(common::xaccount_address_t const& owner, uint64_t time_interval, uint64_t last_read_height) const {
     std::vector<base::xauto_ptr<data::xblock_t>> res;
-    auto blockchain_height = get_blockchain_height(owner.value());
-    xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, current blockchain height: %" PRIu64 " current read height: %" PRIu64,
-                                                            owner.value().c_str(), blockchain_height, last_read_height);
-    base::xauto_ptr<data::xblock_t> tableblock = get_block_by_height(owner.value(), blockchain_height);
-    auto last_fullblock_height  = tableblock->get_last_full_block_height();
+    xdbg("[xzec_slash_info_contract][get_next_fulltableblock] tableblock owner: %s, current read height: %" PRIu64,
+                                                            owner.value().c_str(), last_read_height);
 
-    while (last_read_height < last_fullblock_height && last_fullblock_height != 0) {
-        base::xauto_ptr<data::xblock_t> last_full_tableblock = get_block_by_height(owner.value(), last_fullblock_height);
-        XCONTRACT_ENSURE(last_full_tableblock, "[xzec_slash_info_contract][get_next_fulltableblock] last full tableblock is empty");
-        XCONTRACT_ENSURE(last_full_tableblock->is_fulltable(), "[xzec_slash_info_contract][get_next_fulltableblock] last full tableblock is not full tableblock");
-        XCONTRACT_ENSURE(TIME() > last_full_tableblock->get_clock(), "[xzec_slash_info_contract][get_next_fulltableblock] time order error");
-        last_fullblock_height = last_full_tableblock->get_last_full_block_height();
-        if (TIME() - last_full_tableblock->get_clock() < time_interval) { // less than time interval, do not process
-            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] clock interval not statisfy, now: %" PRIu64 ", fulltableblock owner: %s, height: %" PRIu64 ", clock: %" PRIu64,
-                                                                 TIME(), owner.value().c_str(), last_full_tableblock->get_height(), last_full_tableblock->get_clock());
-        } else {
-            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), last_full_tableblock->get_height());
-            res.push_back(std::move(last_full_tableblock));
+    while (true) {
+        base::xauto_ptr<data::xblock_t> tableblock = get_next_fullblock(owner.value(), last_read_height);
+        if (nullptr == tableblock) {
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] next full tableblock is empty, last read height: %" PRIu64, last_read_height);
+            break;
         }
+
+        auto fulltable_height = tableblock->get_height();
+        XCONTRACT_ENSURE(tableblock->is_fulltable(), "[xzec_slash_info_contract][get_next_fulltableblock] next full tableblock is not full tableblock");
+        // XCONTRACT_ENSURE(TIME() > tableblock->get_clock(), "[xzec_slash_info_contract][get_next_fulltableblock] time order error"); // for consensus rate
+
+        if (TIME() < tableblock->get_clock() || TIME() - tableblock->get_clock() < time_interval) { // less than time interval, do not process
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] clock interval not statisfy, now: %" PRIu64 ", fulltableblock owner: %s, height: %" PRIu64 ", clock: %" PRIu64,
+                                                                 TIME(), owner.value().c_str(), fulltable_height, tableblock->get_clock());
+            break;
+        } else {
+
+            xdbg("[xzec_slash_info_contract][get_next_fulltableblock] fulltableblock owner: %s, height: %" PRIu64, owner.value().c_str(), fulltable_height);
+            last_read_height = fulltable_height;
+            res.push_back(std::move(tableblock));
+        }
+
+
     }
 
     return res;

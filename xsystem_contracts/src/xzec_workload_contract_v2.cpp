@@ -55,109 +55,39 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
 };
 
 std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(const uint32_t table_id, common::xlogic_time_t const timestamp) {
-    static int64_t read_height_time = 0;
-    static int64_t make_address_time = 0;
-    static int64_t get_latest_block_time = 0;
-    static int64_t get_full_block_time = 0;
-    static int64_t write_height_time = 0;
-    int64_t t1 = 0;
-    int64_t t2 = 0;
-    int64_t t3 = 0;
-    int64_t t4 = 0;
-    int64_t t5 = 0;
-    int64_t t6 = 0;
-    t1 = xtime_utl::time_now_ms();
-    uint64_t cur_read_height = 0;
     uint64_t last_read_height = get_table_height(table_id);
-    t2 = xtime_utl::time_now_ms();
+    uint64_t cur_read_height = last_read_height;
     // calc table address
     auto const & table_owner = common::xaccount_address_t{xdatautil::serialize_owner_str(sys_contract_sharding_table_block_addr, table_id)};
-    t3 = xtime_utl::time_now_ms();
     // get block
     std::vector<xobject_ptr_t<data::xblock_t>> res;
-    auto cur_height = get_blockchain_height(table_owner.value());
-    auto time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{10}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
-    xobject_ptr_t<data::xblock_t> cur_tableblock = get_block_by_height(table_owner.value(), cur_height);
-    while (cur_tableblock == nullptr) {
-        if (cur_height > 0) {
-            cur_tableblock = get_block_by_height(table_owner.value(), --cur_height);
-        } else {
-            xwarn("[xzec_workload_contract_v2::get_fullblock] no_block_is_available. table %s at time %" PRIu64, table_owner.c_str(), timestamp);
-            return res;
-        }
-    }
-    t4 = xtime_utl::time_now_ms();
-    auto last_full_block_height = cur_tableblock->get_last_full_block_height();
-    while (last_full_block_height != 0 && last_read_height < last_full_block_height) {
-        xdbg("[xzec_workload_contract_v2::get_fullblock] last_full_block_height %lu", last_full_block_height);
-        // get full block, assume that all full table blocks are in time order
-        xobject_ptr_t<data::xblock_t> last_full_block = get_block_by_height(table_owner.value(), last_full_block_height);
-        if (last_full_block == nullptr) {
-            xwarn("[xzec_workload_contract_v2::get_fullblock] full block empty");
+    uint64_t time_interval = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::minutes{10}).count() / XGLOBAL_TIMER_INTERVAL_IN_SECONDS;
+    while (true) {
+        base::xauto_ptr<data::xblock_t> next_block = get_next_fullblock(table_owner.value(), cur_read_height);
+        if (nullptr == next_block) {
+            xdbg("[xzec_workload_contract_v2::get_fullblock] table %s next full block is empty, last read height: %lu", table_owner.value().c_str(), last_read_height);
             break;
         }
-        XCONTRACT_ENSURE(last_full_block->is_fulltable(), "[xzec_workload_contract_v2::get_fullblock] full block check error");
-        // check time interval
-        if (last_full_block->get_clock() + time_interval > timestamp) {
-            if (cur_read_height != 0) {
-                xwarn("[xzec_workload_contract_v2::get_fullblock] full table block may not in order. table %s at time %, " PRIu64 "front height %lu, rear height %lu",
-                      table_owner.c_str(),
-                      timestamp,
-                      last_full_block_height,
-                      cur_read_height);
-            }
+        auto block_height = next_block->get_height();
+        XCONTRACT_ENSURE(next_block->is_fulltable(), "[xzec_workload_contract_v2::get_fullblock] next full tableblock is not full tableblock");
+        // XCONTRACT_ENSURE(timestamp > next_block->get_clock(), "[xzec_workload_contract_v2::get_fullblock] time order error");
+        if (timestamp < next_block->get_clock() || timestamp < (next_block->get_clock() + time_interval)) {
+            xdbg("[xzec_workload_contract_v2::get_fullblock] clock interval not statisfy, timestamp: %lu, table: %s, full block height: %" PRIu64 ", block clock: %" PRIu64,
+                 timestamp,
+                 table_owner.value().c_str(),
+                 block_height,
+                 next_block->get_clock());
+            break;
         } else {
-            if (cur_read_height == 0) {
-                // cur read height first set
-                cur_read_height = last_full_block_height;
-            }
-            res.push_back(last_full_block);
+            xdbg("[xzec_workload_contract_v2::get_fullblock] table: %s, block height: %" PRIu64 " push in", table_owner.value().c_str(), block_height);
+            cur_read_height = block_height;
+            res.push_back(std::move(next_block));
         }
-        last_full_block_height = last_full_block->get_last_full_block_height();
-        xdbg("[xzec_workload_contract_v2::get_fullblock] table %s last block height in cycle : " PRIu64, table_owner.c_str(), last_full_block_height);
     }
-
-    t5 = xtime_utl::time_now_ms();
-
     // update table address height
     if (cur_read_height > last_read_height) {
         update_table_height(table_id, cur_read_height);
     }
-    t6 = xtime_utl::time_now_ms();
-    read_height_time += t2 - t1;
-    make_address_time += t3 - t2;
-    get_latest_block_time += t4 - t3;
-    get_full_block_time += t5 - t4;
-    write_height_time += t6 - t5;
-
-    xinfo(
-        "[xzec_workload_contract_v2::get_fullblock] singletimepoint: %lu, read_height_time: %ld, make_address_time: %ld, get_latest_block_time: %ld, get_full_block_time: %ld, "
-        "write_height_time: %ld",
-        timestamp,
-        t2 - t1,
-        t3 - t2,
-        t4 - t3,
-        t5 - t4,
-        t6 - t5);
-
-    if ((table_id+1) % 64 == 0) {
-        xinfo(
-            "[xzec_workload_contract_v2::get_fullblock] totaltimepoint: %lu, read_height_time: %ld, make_address_time: %ld, get_latest_block_time: %ld, get_full_block_time: %ld, "
-            "write_height_time: %ld",
-            timestamp,
-            read_height_time,
-            make_address_time,
-            get_latest_block_time,
-            get_full_block_time,
-            write_height_time);
-        read_height_time = 0;
-        make_address_time = 0;
-        get_latest_block_time = 0;
-        get_full_block_time = 0;
-        write_height_time = 0;
-    }
-    xinfo("[xzec_workload_contract_v2::get_fullblock] table table_owner address: %s, last height: %lu, cur height: %lu\n", table_owner.c_str(), last_read_height, cur_read_height);
-
     return res;
 }
 
@@ -431,14 +361,15 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
         return;
     }
     xinfo("[xzec_workload_contract_v2::on_timer] timestamp: %lu, self: %s, src: %s", timestamp, self_account.value().c_str(), source_address.c_str());
-    // check mainnet
-    if (!is_mainnet_activated()) {
-        return;
-    }
 
     std::map<common::xgroup_address_t, xauditor_workload_info_t> auditor_clusters_workloads;
     std::map<common::xgroup_address_t, xvalidator_workload_info_t> validator_clusters_workloads;
     accumulate_workload_with_fullblock(timestamp, auditor_clusters_workloads, validator_clusters_workloads);
+
+    // check mainnet
+    if (!is_mainnet_activated()) {
+        return;
+    }
 
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "call_reward_contract");
     std::map<common::xcluster_address_t, xauditor_workload_info_t> auditor_clusters_workloads2;
