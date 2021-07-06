@@ -185,9 +185,9 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
 common::xnode_type_t xtop_rec_elect_archive_contract::standby_type(common::xzone_id_t const & zid,
                                                                    common::xcluster_id_t const & cid,
                                                                    common::xgroup_id_t const & gid) const {
-    assert(!zid.empty());
-    assert(!cid.empty());
-    assert(!gid.empty());
+    assert(!broadcast(zid));
+    assert(!broadcast(cid));
+    assert(!broadcast(gid));
 
     assert(zid == common::xarchive_zone_id);
     assert(cid == common::xdefault_cluster_id);
