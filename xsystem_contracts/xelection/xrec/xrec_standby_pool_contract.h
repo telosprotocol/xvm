@@ -36,6 +36,7 @@ public:
 
 private:
     void nodeJoinNetwork(common::xaccount_address_t const & node_id,
+                         common::xnetwork_id_t const & joined_network_id,
 #if defined XENABLE_MOCK_ZEC_STAKE
                          common::xrole_type_t role_type,
                          std::string const & pubkey,

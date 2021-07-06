@@ -73,7 +73,7 @@ void xrec_registration_contract::setup() {
             node_info.m_account_mortgage    = 0;
             node_info.m_genesis_node        = true;
             node_info.m_registered_role     = common::xrole_type_t::edge | common::xrole_type_t::advance | common::xrole_type_t::validator;
-            node_info.m_network_ids.insert(network_id.value());
+            node_info.m_network_ids.insert(network_id);
             node_info.nickname              = std::string("bootnode") + std::to_string(i + 1);
             node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
             //xdbg("[xrec_registration_contract::setup] pid:%d,node account: %s, public key: %s\n", getpid(), node_data.m_account.c_str(), node_data.m_publickey.c_str());
@@ -108,9 +108,9 @@ void xrec_registration_contract::registerNode(const std::string & role_type_name
                                             , common::xaccount_address_t const & registration_account
 #endif
 ) {
-    std::set<uint32_t> network_ids;
+    std::set<common::xnetwork_id_t> network_ids;
     common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
-    network_ids.insert(nid.value());
+    network_ids.insert(nid);
 
 #if defined XENABLE_MOCK_ZEC_STAKE
     registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
@@ -123,7 +123,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
                                                const std::string & nickname,
                                                const std::string & signing_key,
                                                const uint32_t dividend_rate,
-                                               const std::set<uint32_t> & network_ids
+                                               const std::set<common::xnetwork_id_t> & network_ids
 #if defined XENABLE_MOCK_ZEC_STAKE
                                              , common::xaccount_address_t const & registration_account
 #endif
@@ -173,15 +173,15 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     node_info.consensus_public_key      = xpublic_key_t{signing_key};
     node_info.m_support_ratio_numerator = dividend_rate;
     if (network_ids.empty()) {
-        xdbg("[xrec_registration_contract::registerNode2] network_ids empty\n");
+        xdbg("[xrec_registration_contract::registerNode2] network_ids empty");
         common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
-        node_info.m_network_ids.insert(nid.value());
+        node_info.m_network_ids.insert(nid);
     } else {
         std::string network_ids_str;
         for (auto const & net_id : network_ids) {
-            network_ids_str += base::xstring_utl::tostring(net_id) + ' ';
+            network_ids_str += net_id.to_string() + ' ';
         }
-        xdbg("[xrec_registration_contract::registerNode2] network_ids %s\n", network_ids_str.c_str());
+        xdbg("[xrec_registration_contract::registerNode2] network_ids %s", network_ids_str.c_str());
         node_info.m_network_ids = network_ids;
     }
 
@@ -197,7 +197,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     }
     uint64_t min_deposit = node_info.get_required_min_deposit();
     xdbg(("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, transaction_type:%d, source action type: %d, m_deposit: %" PRIu64
-          ", min_deposit: %" PRIu64 ", account: %s\n"),
+          ", min_deposit: %" PRIu64 ", account: %s"),
          getpid(),
          trans_ptr->get_tx_type(),
          trans_ptr->get_source_action().get_action_type(),
@@ -219,7 +219,7 @@ void xrec_registration_contract::unregisterNode() {
     XMETRICS_TIME_RECORD(XREG_CONTRACT "unregisterNode_ExecutionTime");
     uint64_t cur_time = TIME();
     std::string const& account = SOURCE_ADDRESS();
-    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode() pid:%d, balance: %lld, account: %s\n", getpid(), GET_BALANCE(), account.c_str());
+    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode(), balance: %lld, account: %s", GET_BALANCE(), account.c_str());
 
     xreg_node_info node_info;
     auto ret = get_node_info(account, node_info);
@@ -230,7 +230,7 @@ void xrec_registration_contract::unregisterNode() {
         XCONTRACT_ENSURE(cur_time - s_info.m_punish_time >= s_info.m_staking_lock_time, "[xrec_registration_contract::unregisterNode]: has punish time, cannot deregister now");
     }
 
-    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode() pid:%d, balance:%lld, account: %s, refund: %lld\n",
+    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode() pid:%d, balance:%lld, account: %s, refund: %lld",
     getpid(), GET_BALANCE(), account.c_str(), node_info.m_account_mortgage);
     // refund
     // TRANSFER(account, node_info.m_account_mortgage);
@@ -239,7 +239,7 @@ void xrec_registration_contract::unregisterNode() {
 
     delete_node_info(account);
 
-    xdbg("[xrec_registration_contract::unregisterNode] finish call xregistration_contract unregisterNode() pid:%d\n", getpid());
+    xdbg("[xrec_registration_contract::unregisterNode] finish call xregistration_contract unregisterNode() pid:%d", getpid());
 
     XMETRICS_COUNTER_DECREMENT(XREG_CONTRACT "registeredUserCnt", 1);
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "unregisterNode_Executed", 1);
@@ -251,7 +251,7 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
 
     std::string const & account = SOURCE_ADDRESS();
 
-    xdbg("[xrec_registration_contract::updateNodeInfo] call xregistration_contract updateNodeInfo() pid:%d, balance: %lld, account: %s, nickname: %s, updateDepositType: %u, deposit: %llu, dividend_rate: %u, node_types: %s, node_sign_key: %s\n",
+    xdbg("[xrec_registration_contract::updateNodeInfo] call xregistration_contract updateNodeInfo() pid:%d, balance: %lld, account: %s, nickname: %s, updateDepositType: %u, deposit: %llu, dividend_rate: %u, node_types: %s, node_sign_key: %s",
          getpid(),
          GET_BALANCE(),
          account.c_str(),

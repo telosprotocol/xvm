@@ -152,7 +152,7 @@ private:
                        const std::string & nickname,
                        const std::string & signing_key,
                        const uint32_t dividend_rate,
-                       const std::set<uint32_t> & network_ids
+                       const std::set<common::xnetwork_id_t> & network_ids
 #if defined XENABLE_MOCK_ZEC_STAKE
                      , common::xaccount_address_t const & registration_account
 #endif

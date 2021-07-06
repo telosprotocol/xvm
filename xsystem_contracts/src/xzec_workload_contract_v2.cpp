@@ -222,7 +222,6 @@ void xzec_workload_contract_v2::accumulate_workload(xstatistics_data_t const & s
                 group_addr.zone_id(),
                 group_addr.cluster_id(),
                 group_addr.group_id(),
-                common::xdefault_network_version,
                 (uint16_t)group_account_data.account_statistics_data.size(),
                 static_item.first};
             xdbg("[xzec_workload_contract_v2::accumulate_workload] group xvip2: %llu, %llu",

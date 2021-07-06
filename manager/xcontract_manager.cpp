@@ -778,7 +778,7 @@ static void get_rec_nodes_map(observer_ptr<store::xstore_face_t const> store,
         j["zec_stake"] = static_cast<unsigned long long>(reg_node_info.zec_stake());
         std::string network_ids;
         for (auto const & net_id : reg_node_info.m_network_ids) {
-            network_ids += base::xstring_utl::tostring(net_id) + ' ';
+            network_ids += net_id.to_string() + ' ';
         }
         j["network_id"] = network_ids;
         j["nodename"] = reg_node_info.nickname;
