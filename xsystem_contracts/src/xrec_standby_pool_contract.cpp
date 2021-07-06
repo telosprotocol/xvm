@@ -62,6 +62,7 @@ void xtop_rec_standby_pool_contract::setup() {
 }
 
 void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t const & node_id,
+                                                     common::xnetwork_id_t const & joined_network_id,
 #if defined(XENABLE_MOCK_ZEC_STAKE)
                                                      common::xrole_type_t role_type,
                                                      std::string const & consensus_public_key,
@@ -84,10 +85,9 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
     base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
     xstake::xreg_node_info node;
     node.serialize_from(stream);
-    if (node.m_account != node_id) {
-        xwarn("[xrec_standby_pool_contract_t][nodeJoinNetwork] storage data messed up?");
-        return;
-    }
+
+    XCONTRACT_ENSURE(node.m_account == node_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] storage data messed up?");
+    XCONTRACT_ENSURE(node.m_network_ids.find(joined_network_id) != std::end(node.m_network_ids), "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched. Joined network id: " + joined_network_id.to_string());
 
     auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY);
 
@@ -101,9 +101,11 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
 
 #else
     // mock stake test
-    std::set<uint32_t> network_ids{};
+    std::set<common::xnetwork_id_t> network_ids{};
     common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
-    network_ids.insert(nid.value());
+    assert(nid == joined_network_id);
+    XCONTRACT_ENSURE(nid == joined_network_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched");
+    network_ids.insert(nid);
 
     bool rec = common::has<common::xrole_type_t::advance>(role_type);
     bool zec = common::has<common::xrole_type_t::advance>(role_type);
@@ -151,42 +153,41 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
 
     bool new_node{false};
     for (const auto network_id : network_ids) {
-        common::xnetwork_id_t chain_network_id{network_id};
-        assert(network_id == base::enum_test_chain_id || network_id == base::enum_main_chain_id);
+        assert(network_id == common::xnetwork_id_t{ base::enum_test_chain_id } || network_id == common::xnetwork_id_t{ base::enum_main_chain_id });
 
         if (rec) {
             new_node_info.stake_container[common::xnode_type_t::rec] = stake;
-            new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
+            new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
 
         if (zec) {
             new_node_info.stake_container[common::xnode_type_t::zec] = stake;
-            new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
+            new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
 
         if (auditor) {
             new_node_info.stake_container[common::xnode_type_t::consensus_auditor] = stake;
-            new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
+            new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
 
         if (validator) {
             new_node_info.stake_container[common::xnode_type_t::consensus_validator] = stake;
-            new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
+            new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
 
         if (edge) {
             new_node_info.stake_container[common::xnode_type_t::edge] = stake;
-            new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
+            new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
 
         if (archive) {
             new_node_info.stake_container[common::xnode_type_t::storage_archive] = stake;
-            new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
+            new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
 
         if (full_node) {
             new_node_info.stake_container[common::xnode_type_t::storage_full_node] = stake;
-            new_node |= standby_result_store.result_of(chain_network_id).insert({ node_id, new_node_info }).second;
+            new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
     }
 
@@ -200,11 +201,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t 
 bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & program_version,
                                                          xstake::xreg_node_info const & node,
                                                          data::election::xstandby_result_store_t & standby_result_store) {
-    std::set<uint32_t> network_ids{};
-
-    for (auto nid : node.m_network_ids) {
-        network_ids.insert(nid);
-    }
+    std::set<common::xnetwork_id_t> network_ids = node.m_network_ids;
 
     auto consensus_public_key = node.consensus_public_key;
     uint64_t rec_stake{ 0 }, zec_stake{ 0 }, auditor_stake{ 0 }, validator_stake{ 0 }, edge_stake{ 0 }, archive_stake{ 0 }, full_node_stake{ 0 };
@@ -254,8 +251,8 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
     // common::xnode_id_t xnode_id{node_id};
     bool new_node{false};
     for (const auto network_id : network_ids) {
-        common::xnetwork_id_t chain_network_id{network_id};
-        assert(network_id == base::enum_test_chain_id || network_id == base::enum_main_chain_id);
+        assert(network_id == common::xnetwork_id_t{ base::enum_test_chain_id } ||
+               network_id == common::xnetwork_id_t{ base::enum_main_chain_id });
 
         if (rec) {
             new_node_info.stake_container[common::xnode_type_t::rec] = rec_stake;
@@ -285,7 +282,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
             new_node_info.stake_container[common::xnode_type_t::storage_full_node] = full_node_stake;
         }
 
-        new_node |= standby_result_store.result_of(chain_network_id).insert2({node.m_account, new_node_info}).second;
+        new_node |= standby_result_store.result_of(network_id).insert2({node.m_account, new_node_info}).second;
     }
 
     return new_node;

@@ -471,7 +471,6 @@ xunqualified_node_info_t xzec_slash_info_contract::process_statistic_data(top::d
                 group_addr.zone_id(),
                 group_addr.cluster_id(),
                 group_addr.group_id(),
-                common::xdefault_network_version,
                 (uint16_t)group_account_data.account_statistics_data.size(),
                 static_item.first
             };
