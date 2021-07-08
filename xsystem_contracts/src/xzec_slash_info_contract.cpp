@@ -180,7 +180,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     #ifdef DEBUG
         print_table_height_info();
         print_summarize_info(summarize_info);
-        xdbg_info("[xzec_slash_info_contract][do_unqualified_node_slash] current round: u%", round);
+        xdbg_info("[xzec_slash_info_contract][do_unqualified_node_slash] current round: %u", round);
         xdbg_info("[xzec_slash_info_contract][do_unqualified_node_slash] summarize_tableblock_count current, time round: %" PRIu64
             ", pid:%d, tableblock_count:%u",
             timestamp,
