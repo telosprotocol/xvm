@@ -978,6 +978,52 @@ static void get_node_reward(observer_ptr<store::xstore_face_t const> store,
     }
 }
 
+static void get_reward_detail(common::xaccount_address_t const & contract_address,
+                              std::string const & property_name,
+                              const xaccount_ptr_t unitstate,
+                              const xjson_format_t json_format,
+                              xJson::Value & json) {
+    std::string serialized_value{};
+    if (!unitstate->string_get(property_name, serialized_value) || serialized_value.empty()) {
+        xdbg("[get_reward_detail] contract_address: %s, property_name: %s, error", contract_address.to_string().c_str(), property_name.c_str());
+        return;
+    }
+    xstake::xissue_detail issue_detail;
+    issue_detail.from_string(serialized_value);
+    xJson::Value jv;
+    jv["onchain_timer_round"] = (xJson::UInt64)issue_detail.onchain_timer_round;
+    jv["zec_vote_contract_height"] = (xJson::UInt64)issue_detail.m_zec_vote_contract_height;
+    jv["zec_workload_contract_height"] = (xJson::UInt64)issue_detail.m_zec_workload_contract_height;
+    jv["zec_reward_contract_height"] = (xJson::UInt64)issue_detail.m_zec_reward_contract_height;
+    jv["edge_reward_ratio"] = issue_detail.m_edge_reward_ratio;
+    jv["archive_reward_ratio"] = issue_detail.m_archive_reward_ratio;
+    jv["validator_reward_ratio"] = issue_detail.m_validator_reward_ratio;
+    jv["auditor_reward_ratio"] = issue_detail.m_auditor_reward_ratio;
+    jv["vote_reward_ratio"] = issue_detail.m_vote_reward_ratio;
+    jv["governance_reward_ratio"] = issue_detail.m_governance_reward_ratio;
+    jv["validator_group_count"] = (xJson::UInt)issue_detail.m_validator_group_count;
+    jv["auditor_group_count"] = (xJson::UInt)issue_detail.m_auditor_group_count;
+    xJson::Value jr;
+    for (auto const & node_reward : issue_detail.m_node_rewards) {
+        std::stringstream ss;
+        ss << "edge_reward: " << static_cast<uint64_t>(node_reward.second.m_edge_reward / xstake::REWARD_PRECISION) << "." << std::setw(6) << std::setfill('0')
+           << static_cast<uint32_t>(node_reward.second.m_edge_reward % xstake::REWARD_PRECISION)
+           << ", archive_reward: " << static_cast<uint64_t>(node_reward.second.m_archive_reward / xstake::REWARD_PRECISION) << "." << std::setw(6) << std::setfill('0')
+           << static_cast<uint32_t>(node_reward.second.m_archive_reward % xstake::REWARD_PRECISION)
+           << ", validator_reward: " << static_cast<uint64_t>(node_reward.second.m_validator_reward / xstake::REWARD_PRECISION) << "." << std::setw(6) << std::setfill('0')
+           << static_cast<uint32_t>(node_reward.second.m_validator_reward % xstake::REWARD_PRECISION)
+           << ", auditor_reward: " << static_cast<uint64_t>(node_reward.second.m_auditor_reward / xstake::REWARD_PRECISION) << "." << std::setw(6) << std::setfill('0')
+           << static_cast<uint32_t>(node_reward.second.m_auditor_reward % xstake::REWARD_PRECISION)
+           << ", voter_reward: " << static_cast<uint64_t>(node_reward.second.m_vote_reward / xstake::REWARD_PRECISION) << "." << std::setw(6) << std::setfill('0')
+           << static_cast<uint32_t>(node_reward.second.m_vote_reward % xstake::REWARD_PRECISION)
+           << ", self_reward: " << static_cast<uint64_t>(node_reward.second.m_self_reward / xstake::REWARD_PRECISION) << "." << std::setw(6) << std::setfill('0')
+           << static_cast<uint32_t>(node_reward.second.m_self_reward % xstake::REWARD_PRECISION);
+        jr[node_reward.first] = ss.str();
+    }
+    jv["node_rewards"] = jr;
+    json = jv;
+}
+
 static void get_refunds(observer_ptr<store::xstore_face_t const> store,
                                                  common::xaccount_address_t const & contract_address,
                                                  std::string const & property_name,
@@ -1518,6 +1564,8 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         return get_unqualified_slash_info_map(m_store, contract_address, property_name, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_NODE_REWARD_KEY) {
         return get_node_reward(m_store, contract_address, property_name, json);
+    } else if (property_name == xstake::XPROPERTY_REWARD_DETAIL) {
+        return get_reward_detail(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == PROPOSAL_MAP_ID) {
         return get_proposal_map(m_store, contract_address, property_name, json);
     } else if (property_name == VOTE_MAP_ID) {
