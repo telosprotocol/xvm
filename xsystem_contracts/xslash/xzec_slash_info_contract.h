@@ -60,6 +60,15 @@ private:
     void print_table_height_info();
 
     /**
+     * @brief get current stored property info for slash, judge some pre-condition
+     *
+     * @param summarize_info   in&out  the slash summarize_info property
+     * @param tableblock_count  in&out  the tableblock count property
+     *
+     */
+    void pre_condition_process(xunqualified_node_info_t& summarize_info, uint32_t& tableblock_count);
+
+    /**
      * @brief filter out the slash node according the summarized slash info
      *
      * @param summarize_info   the summarized slash info
@@ -109,6 +118,15 @@ private:
      *
      */
     void  accumulate_node_info(xunqualified_node_info_t const&  node_info, xunqualified_node_info_t& summarize_info);
+
+    /**
+     * @brief check if statisfy the slash condition
+     * @param summarize_tableblock_count  current summarized table block
+     * @param timestamp  current slash timestamp
+     *
+     * @return bool  true means statisfy the slash condition
+     */
+    bool slash_condition_check(uint32_t summarize_tableblock_count, common::xlogic_time_t const timestamp);
 
 
 };
