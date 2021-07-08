@@ -37,6 +37,7 @@
 #include "xvm/xsystem_contracts/xworkload/xzec_workload_contract_v2.h"
 #include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
 #include "xvm/xvm_service.h"
+#include "xmetrics/xmetrics.h"
 
 #include <cinttypes>
 
@@ -257,7 +258,7 @@ void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
             return;
         }
 
-        auto block = mbus::extract_block_from(store_event); // load mini-block firstly
+        auto block = mbus::extract_block_from(store_event, metrics::blockstore_access_from_mbus_contract_db_on_block); // load mini-block firstly
         if (block == nullptr) {  // should not happen
             assert(false);
             return;
