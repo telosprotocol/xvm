@@ -348,6 +348,7 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
     }
 #endif
     update_tgas(table_pledge_balance_change_tgas);
+    XMETRICS_COUNTER_SET(XWORKLOAD_CONTRACT "accumulate_total_time_counter", total_get_fullblock_time + total_accumulate_workload_time);
 }
 
 void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) {
