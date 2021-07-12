@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "xdata/xblock_statistics_data.h"
 #include "xdata/xtableblock.h"
-#include "xdata/xworkload_info.h"
 #include "xstake/xstake_algorithm.h"
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
@@ -13,8 +13,7 @@
 
 NS_BEG3(top, xvm, system_contracts)
 
-//using namespace xvm;
-//using namespace xvm::xcontract;
+using xgroup_workload_t = top::xstake::cluster_workload_t;
 
 class xzec_workload_contract_v2 : public xcontract::xcontract_base
 {
@@ -63,43 +62,35 @@ private:
     /**
      * @brief get_fullblock
      */
-    std::vector<xobject_ptr_t<data::xblock_t>> get_fullblock(const uint32_t table_id, const uint64_t timestamp);
+    std::vector<xobject_ptr_t<data::xblock_t>> get_fullblock(const uint64_t timestamp, const uint32_t table_id);
 
     /**
      * @brief add_workload_with_fullblock
      */
-    void accumulate_workload(xstatistics_data_t const &stat_data,
-                             std::map<common::xgroup_address_t, xauditor_workload_info_t> &bookload_auditor_group_workload_info,
-                             std::map<common::xgroup_address_t, xvalidator_workload_info_t> &bookload_validator_group_workload_info);
-
-    /**
-     * @brief accumulate_validator_workload
-     */
-    void accumulate_validator_workload(common::xgroup_address_t const &group_addr,
-                                       std::string const &account_str,
-                                       const uint32_t slotid,
-                                       xgroup_related_statistics_data_t const &group_account_data,
-                                       const uint32_t workload_per_tableblock,
-                                       const uint32_t workload_per_tx,
-                                       std::map<common::xgroup_address_t, xvalidator_workload_info_t> &validator_group_workload);
-
-    /**
-     * @brief accumulate_auditor_workload
-     */
-    void accumulate_auditor_workload(common::xgroup_address_t const &group_addr,
-                                     std::string const &account_str,
-                                     const uint32_t slotid,
-                                     xgroup_related_statistics_data_t const &group_account_data,
-                                     const uint32_t workload_per_tableblock,
-                                     const uint32_t workload_per_tx,
-                                     std::map<common::xgroup_address_t, xauditor_workload_info_t> &auditor_group_workload);
+    void accumulate_workload(xstatistics_data_t const & stat_data, std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload);
 
     /**
      * @brief add_workload_with_fullblock
      */
     void accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp,
-                                            std::map<common::xgroup_address_t, xauditor_workload_info_t> & auditor_group_workload,
-                                            std::map<common::xgroup_address_t, xvalidator_workload_info_t> & validator_group_workload);
+                                            const uint32_t start_table,
+                                            const uint32_t end_table,
+                                            std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload);
+
+    /**
+     * @brief stash_workload
+     */
+    void update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload);
+
+    /**
+     * @brief upload_workload
+     */
+    void upload_workload(common::xlogic_time_t const timestamp);
+
+    /**
+     * @brief clear_workload
+     */
+    void clear_workload();
 
     /**
      * @brief get_table_height
