@@ -266,7 +266,7 @@ void xzec_reward_contract::execute_task() {
     xdbg("[xzec_reward_contract::execute_task] map size: %d\n", dispatch_tasks.size());
     XMETRICS_COUNTER_SET(XREWARD_CONTRACT "currentTaskCnt", dispatch_tasks.size());
 
-    auto task_num_per_round = XGET_ONCHAIN_GOVERNANCE_PARAMETER(task_num_per_round);
+    const int32_t task_num_per_round = 16;
     for (auto i = 0; i < task_num_per_round; i++) {
         auto it = dispatch_tasks.begin();
         if (it == dispatch_tasks.end())
@@ -584,24 +584,6 @@ top::xstake::uint128_t xzec_reward_contract::calc_issuance(uint64_t total_height
     return additional_issuance;
 }
 
-top::xstake::uint128_t xzec_reward_contract::get_reward(top::xstake::uint128_t issuance, xreward_type reward_type) {
-    uint64_t reward_numerator = 0;
-    if (reward_type == xreward_type::edge_reward) {
-        reward_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(edge_reward_ratio);
-    } else if (reward_type == xreward_type::archive_reward) {
-        reward_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_reward_ratio);
-    } else if (reward_type == xreward_type::validator_reward) {
-        reward_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_reward_ratio);
-    } else if (reward_type == xreward_type::auditor_reward) {
-        reward_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_reward_ratio);
-    } else if (reward_type == xreward_type::vote_reward) {
-        reward_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(vote_reward_ratio);
-    } else if (reward_type == xreward_type::governance_reward) {
-        reward_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(governance_reward_ratio);
-    }
-    return issuance * reward_numerator / 100;
-}
-
 int xzec_reward_contract::get_accumulated_record(xaccumulated_reward_record & record) {
     std::string value_str = STRING_GET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY);
     xstream_t stream(xcontext_t::instance(), (uint8_t *)value_str.c_str(), (uint32_t)value_str.size());
@@ -781,7 +763,6 @@ void xzec_reward_contract::get_reward_param(const common::xlogic_time_t current_
     onchain_param.auditor_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_reward_ratio);
     onchain_param.vote_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(vote_reward_ratio);
     onchain_param.governance_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(governance_reward_ratio);
-    onchain_param.cluster_zero_workload = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_zero_workload);
     onchain_param.shard_zero_workload = XGET_ONCHAIN_GOVERNANCE_PARAMETER(shard_zero_workload);
     xdbg("[xzec_reward_contract::get_reward_param] onchain_timer_round: %u", current_time);
     xdbg("[xzec_reward_contract::get_reward_param] min_ratio_annual_total_reward: %u", onchain_param.min_ratio_annual_total_reward);
@@ -792,7 +773,6 @@ void xzec_reward_contract::get_reward_param(const common::xlogic_time_t current_
     xdbg("[xzec_reward_contract::get_reward_param] auditor_reward_ratio: %u", onchain_param.auditor_reward_ratio);
     xdbg("[xzec_reward_contract::get_reward_param] vote_reward_ratio: %u", onchain_param.min_ratio_annual_total_reward);
     xdbg("[xzec_reward_contract::get_reward_param] governance_reward_ratio: %u", onchain_param.governance_reward_ratio);
-    xdbg("[xzec_reward_contract::get_reward_param] cluster_zero_workload: %u", onchain_param.cluster_zero_workload);
     xdbg("[xzec_reward_contract::get_reward_param] shard_zero_workload: %u", onchain_param.shard_zero_workload);
     auto total_ratio = onchain_param.edge_reward_ratio + onchain_param.archive_reward_ratio + onchain_param.validator_reward_ratio + onchain_param.auditor_reward_ratio +
                        onchain_param.vote_reward_ratio + onchain_param.governance_reward_ratio;
@@ -1438,7 +1418,7 @@ void xzec_reward_contract::calc_nodes_rewards_v5(const common::xlogic_time_t iss
     if (auditor_group_workload_rewards != 0) {
         community_reward += calc_invalid_workload_group_reward(true, property_param.map_nodes, auditor_group_workload_rewards, property_param.auditor_workloads_detail);
         community_reward +=
-            calc_zero_workload_reward(true, property_param.auditor_workloads_detail, onchain_param.cluster_zero_workload, auditor_group_workload_rewards, zero_workload_account);
+            calc_zero_workload_reward(true, property_param.auditor_workloads_detail, onchain_param.shard_zero_workload, auditor_group_workload_rewards, zero_workload_account);
     }
     if (validator_group_workload_rewards != 0) {
         community_reward += calc_invalid_workload_group_reward(false, property_param.map_nodes, validator_group_workload_rewards, property_param.validator_workloads_detail);
