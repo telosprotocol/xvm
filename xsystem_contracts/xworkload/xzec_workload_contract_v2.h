@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "xdata/xblock_statistics_data.h"
 #include "xdata/xtableblock.h"
 #include "xstake/xstake_algorithm.h"
 #include "xvm/xcontract/xcontract_base.h"

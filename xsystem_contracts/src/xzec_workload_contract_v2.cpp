@@ -358,10 +358,10 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
     xinfo("[xzec_workload_contract_v2::on_timer] timestamp: %lu, self: %s, src: %s", timestamp, self_account.value().c_str(), source_address.c_str());
 
     // total 256 tables
-    // total 64 rounds, 4 tables per round
-    // total 64 minutes, 1 minute per round(workload_collection_interval = 60 / 10)
+    // total 16 rounds, 16 tables per round
+    // total 32 minutes, 2 minute per round(workload_collection_interval = 120 / 10)
     const xinterval_t time_per_round = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_collection_interval);
-    const uint32_t table_per_round = 4U;
+    const uint32_t table_per_round = 16U;
 
     const uint32_t total_tables = enum_vledger_const::enum_vbucket_has_tables_count;
     const uint32_t total_rounds = total_tables / table_per_round;
