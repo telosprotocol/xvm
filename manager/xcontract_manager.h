@@ -57,10 +57,6 @@ public:
     void init(observer_ptr<store::xstore_face_t> const & store,
               xobject_ptr_t<store::xsyncvstore_t> const & syncstore);
 
-    void init(observer_ptr<store::xstore_face_t> const & store,
-        observer_ptr<store::xsyncvstore_t> const & syncstore,
-        observer_ptr<base::xvblockstore_t> blkstore);
-
     /**
      * @brief Set up blockchains
      *
@@ -231,7 +227,6 @@ private:
     xcontract_register_t                                             m_contract_register;
     observer_ptr<xstore_face_t>                                      m_store{};
     observer_ptr<store::xsyncvstore_t>                               m_syncstore{};
-    observer_ptr<base::xvblockstore_t>                               m_blockstore{};
     std::unordered_map<common::xaccount_address_t, xcontract_base *> m_contract_inst_map;
     base::xrwlock_t                                                  m_rwlock;
 
