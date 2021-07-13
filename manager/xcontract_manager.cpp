@@ -331,14 +331,6 @@ void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store,
     m_syncstore = make_observer(syncstore.get());
 }
 
-void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store,
-    observer_ptr<store::xsyncvstore_t> const & syncstore,
-    observer_ptr<base::xvblockstore_t> blkstore) {
-    m_store = store;
-    m_syncstore = syncstore;
-    m_blockstore = blkstore;
-}
-
 void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address, xvblockstore_t * blockstore) {
     assert(contract_cluster_address.has_value());
 
