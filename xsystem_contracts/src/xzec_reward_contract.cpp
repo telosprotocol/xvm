@@ -763,7 +763,8 @@ void xzec_reward_contract::get_reward_param(const common::xlogic_time_t current_
     onchain_param.auditor_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_reward_ratio);
     onchain_param.vote_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(vote_reward_ratio);
     onchain_param.governance_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(governance_reward_ratio);
-    onchain_param.shard_zero_workload = XGET_ONCHAIN_GOVERNANCE_PARAMETER(shard_zero_workload);
+    onchain_param.auditor_group_zero_workload = XGET_ONCHAIN_GOVERNANCE_PARAMETER(auditor_group_zero_workload);
+    onchain_param.validator_group_zero_workload = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_group_zero_workload);
     xdbg("[xzec_reward_contract::get_reward_param] onchain_timer_round: %u", current_time);
     xdbg("[xzec_reward_contract::get_reward_param] min_ratio_annual_total_reward: %u", onchain_param.min_ratio_annual_total_reward);
     xdbg("[xzec_reward_contract::get_reward_param] additional_issue_year_ratio: %u", onchain_param.additional_issue_year_ratio);
@@ -773,7 +774,8 @@ void xzec_reward_contract::get_reward_param(const common::xlogic_time_t current_
     xdbg("[xzec_reward_contract::get_reward_param] auditor_reward_ratio: %u", onchain_param.auditor_reward_ratio);
     xdbg("[xzec_reward_contract::get_reward_param] vote_reward_ratio: %u", onchain_param.min_ratio_annual_total_reward);
     xdbg("[xzec_reward_contract::get_reward_param] governance_reward_ratio: %u", onchain_param.governance_reward_ratio);
-    xdbg("[xzec_reward_contract::get_reward_param] shard_zero_workload: %u", onchain_param.shard_zero_workload);
+    xdbg("[xzec_reward_contract::get_reward_param] auditor_group_zero_workload: %u", onchain_param.auditor_group_zero_workload);
+    xdbg("[xzec_reward_contract::get_reward_param] validator_group_zero_workload: %u", onchain_param.validator_group_zero_workload);
     auto total_ratio = onchain_param.edge_reward_ratio + onchain_param.archive_reward_ratio + onchain_param.validator_reward_ratio + onchain_param.auditor_reward_ratio +
                        onchain_param.vote_reward_ratio + onchain_param.governance_reward_ratio;
     XCONTRACT_ENSURE(total_ratio == 100, "onchain reward total ratio not 100!");
@@ -1418,12 +1420,12 @@ void xzec_reward_contract::calc_nodes_rewards_v5(const common::xlogic_time_t iss
     if (auditor_group_workload_rewards != 0) {
         community_reward += calc_invalid_workload_group_reward(true, property_param.map_nodes, auditor_group_workload_rewards, property_param.auditor_workloads_detail);
         community_reward +=
-            calc_zero_workload_reward(true, property_param.auditor_workloads_detail, onchain_param.shard_zero_workload, auditor_group_workload_rewards, zero_workload_account);
+            calc_zero_workload_reward(true, property_param.auditor_workloads_detail, onchain_param.auditor_group_zero_workload, auditor_group_workload_rewards, zero_workload_account);
     }
     if (validator_group_workload_rewards != 0) {
         community_reward += calc_invalid_workload_group_reward(false, property_param.map_nodes, validator_group_workload_rewards, property_param.validator_workloads_detail);
         community_reward +=
-            calc_zero_workload_reward(false, property_param.validator_workloads_detail, onchain_param.shard_zero_workload, validator_group_workload_rewards, zero_workload_account);
+            calc_zero_workload_reward(false, property_param.validator_workloads_detail, onchain_param.validator_group_zero_workload, validator_group_workload_rewards, zero_workload_account);
     }
 
     // TODO: voter to zero workload account has no workload reward

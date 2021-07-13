@@ -24,7 +24,8 @@ struct xreward_onchain_param_t {
     uint32_t auditor_reward_ratio;
     uint32_t vote_reward_ratio;
     uint32_t governance_reward_ratio;
-    uint32_t shard_zero_workload;
+    uint32_t auditor_group_zero_workload;
+    uint32_t validator_group_zero_workload;
 };
 
 struct xreward_property_param_t {
