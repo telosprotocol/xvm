@@ -192,6 +192,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     if (!result) {
         xinfo("[xzec_slash_info_contract][do_unqualified_node_slash] slash condition not statisfied, time round: %" PRIu64 ": pid:%d",
             timestamp, getpid());
+        return;
     }
 
     auto node_to_action = filter_nodes(summarize_info);
