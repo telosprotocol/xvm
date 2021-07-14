@@ -15,8 +15,6 @@ NS_BEG2(top, xstake)
 using namespace xvm;
 using namespace xvm::xcontract;
 
-enum class xreward_type : std::uint8_t { edge_reward, archive_reward, validator_reward, auditor_reward, vote_reward, governance_reward };
-
 struct xreward_onchain_param_t {
     uint32_t min_ratio_annual_total_reward;
     uint32_t additional_issue_year_ratio;
@@ -26,8 +24,8 @@ struct xreward_onchain_param_t {
     uint32_t auditor_reward_ratio;
     uint32_t vote_reward_ratio;
     uint32_t governance_reward_ratio;
-    uint32_t cluster_zero_workload;
-    uint32_t shard_zero_workload;
+    uint32_t auditor_group_zero_workload;
+    uint32_t validator_group_zero_workload;
 };
 
 struct xreward_property_param_t {
@@ -168,14 +166,6 @@ private:
      * @return void
      */
     void        update_accumulated_record(const xaccumulated_reward_record & record);
-    /**
-     * @brief Get the reward of specified reward_type
-     *
-     * @param issuance total issuance of this round
-     * @param reward_type reward type
-     * @return top::xstake::uint128_t reward
-     */
-    top::xstake::uint128_t    get_reward(top::xstake::uint128_t issuance, xreward_type reward_type);
 
     /**
      * @brief Get the activated time
