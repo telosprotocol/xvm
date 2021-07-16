@@ -30,12 +30,12 @@ public:
     void setup();
 
     BEGIN_CONTRACT_WITH_PARAM(xtop_rec_standby_pool_contract)
-    CONTRACT_FUNCTION_PARAM(xtop_rec_standby_pool_contract, nodeJoinNetwork);
+    CONTRACT_FUNCTION_PARAM(xtop_rec_standby_pool_contract, nodeJoinNetwork2);
     CONTRACT_FUNCTION_PARAM(xtop_rec_standby_pool_contract, on_timer);
     END_CONTRACT_WITH_PARAM
 
 private:
-    void nodeJoinNetwork(common::xaccount_address_t const & node_id,
+    void nodeJoinNetwork2(common::xaccount_address_t const & node_id,
                          common::xnetwork_id_t const & joined_network_id,
 #if defined XENABLE_MOCK_ZEC_STAKE
                          common::xrole_type_t role_type,
