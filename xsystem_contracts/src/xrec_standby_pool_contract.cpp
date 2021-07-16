@@ -61,12 +61,12 @@ void xtop_rec_standby_pool_contract::setup() {
     serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
 }
 
-void xtop_rec_standby_pool_contract::nodeJoinNetwork(common::xaccount_address_t const & node_id,
-                                                     common::xnetwork_id_t const & joined_network_id,
+void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t const & node_id,
+                                                      common::xnetwork_id_t const & joined_network_id,
 #if defined(XENABLE_MOCK_ZEC_STAKE)
-                                                     common::xrole_type_t role_type,
-                                                     std::string const & consensus_public_key,
-                                                     uint64_t const stake,
+                                                      common::xrole_type_t role_type,
+                                                      std::string const & consensus_public_key,
+                                                      uint64_t const stake,
 #endif
                                                      std::string const & program_version) {
     XMETRICS_TIME_RECORD(XREC_STANDBY "add_node_all_time");
