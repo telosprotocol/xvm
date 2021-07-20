@@ -2,7 +2,7 @@
 
 #include "xbase/xbase.h"
 #include "xbase/xutl.h"
-#include "xchain_upgrade/xchain_reset_center.h"
+#include "xchain_upgrade/xchain_data_processor.h"
 #include "xconfig/xconfig_register.h"
 #include "xconfig/xconfig_update_parameter_action.h"
 #include "xdata/xblock.h"

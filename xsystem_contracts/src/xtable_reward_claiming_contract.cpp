@@ -4,7 +4,7 @@
 
 #include "xvm/xsystem_contracts/xreward/xtable_reward_claiming_contract.h"
 
-#include "xchain_upgrade/xchain_reset_center.h"
+#include "xchain_upgrade/xchain_data_processor.h"
 #include "xdata/xdatautil.h"
 #include "xdata/xnative_contract_address.h"
 #include "xmetrics/xmetrics.h"

@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "xchain_upgrade/xchain_reset_center.h"
+#include "xchain_upgrade/xchain_data_processor.h"
 #include "xcommon/xip.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xfull_tableblock.h"
