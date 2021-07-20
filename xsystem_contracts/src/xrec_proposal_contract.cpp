@@ -226,7 +226,7 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
     }
 
 
-    auto committee_list = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tcc_member_number);
+    auto committee_list = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tcc_member);
     std::vector<std::string> vec_committee;
     uint32_t voter_committee_size = base::xstring_utl::split_string(committee_list, ',', vec_committee);
 
@@ -449,7 +449,7 @@ bool xrec_proposal_contract::get_value_map(const std::string & map_key_id, const
 }
 
 bool xrec_proposal_contract::voter_in_committee(const std::string & voter_client_addr) {
-    auto committee_list = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tcc_member_number);
+    auto committee_list = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tcc_member);
     std::vector<std::string> vec_committee;
     base::xstring_utl::split_string(committee_list, ',', vec_committee);
 
