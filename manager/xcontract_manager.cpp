@@ -5,8 +5,7 @@
 #include "xvm/manager/xcontract_manager.h"
 
 #include "xbase/xmem.h"
-#include "xchain_upgrade/xchain_reset_center.h"
-#include "xchain_upgrade/xchain_reset_data.h"
+#include "xchain_upgrade/xchain_data_processor.h"
 #include "xcodec/xmsgpack_codec.hpp"
 #include "xcommon/xip.h"
 #include "xconfig/xconfig_register.h"
