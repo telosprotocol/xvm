@@ -3,10 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "xvm/xsystem_contracts/xreward/xtable_vote_contract.h"
-#include "xchain_upgrade/xchain_upgrade_center.h"
 
 #include "xbase/xutl.h"
 #include "xbasic/xutility.h"
+#include "xchain_upgrade/xchain_reset_center.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
 #include "xmetrics/xmetrics.h"
@@ -24,14 +24,66 @@ NS_BEG2(top, xstake)
 xtable_vote_contract::xtable_vote_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
 void xtable_vote_contract::setup() {
+    const int old_tables_count = 256;
+    uint32_t table_id = 0;
+    if (!EXTRACT_TABLE_ID(SELF_ADDRESS(), table_id)) {
+        xwarn("[xtable_vote_contract::setup] EXTRACT_TABLE_ID failed, node reward pid: %d, account: %s\n", getpid(), SELF_ADDRESS().c_str());
+        return;
+    }
+    
     // vote related
+    std::map<std::string, uint64_t> adv_get_votes_detail;
     for (auto i = 1; i <= xstake::XPROPERTY_SPLITED_NUM; i++) {
         std::string property;
         property = property + XPORPERTY_CONTRACT_VOTES_KEY_BASE + "-" + std::to_string(i);
         MAP_CREATE(property);
+        {
+            std::map<std::string, std::map<std::string, uint64_t>> votes_detail;
+            for (auto j = 0; j < old_tables_count; j++) {
+                auto table_addr = std::string{sys_contract_sharding_vote_addr} + "@" + base::xstring_utl::tostring(j);
+                std::vector<std::pair<std::string, std::string>> db_kv_112;
+                chain_reset::xchain_reset_center_t::get_reset_stake_map_property(common::xaccount_address_t{table_addr}, property, db_kv_112);
+                for (auto const & _p : db_kv_112) {
+                    base::xvaccount_t vaccount{_p.first};
+                    auto account_table_id = vaccount.get_ledger_subaddr();
+                    if (static_cast<uint16_t>(account_table_id) != static_cast<uint16_t>(table_id)) {
+                        continue;
+                    }
+                    std::map<std::string, uint64_t> votes;
+                    base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)_p.second.c_str(), (uint32_t)_p.second.size());
+                    stream >> votes;
+                    for (auto const & vote : votes) {
+                        if (votes_detail[_p.first].count(vote.first)) {
+                            votes_detail[_p.first][vote.first] += vote.second;
+                        } else {
+                            votes_detail[_p.first][vote.first] = vote.second;
+                        }
+                    }
+                }
+            }
+            for (auto const & vote_detail : votes_detail) {
+                for (auto const adv_get_votes : vote_detail.second) {
+                    if (adv_get_votes_detail.count(adv_get_votes.first)) {
+                        adv_get_votes_detail[adv_get_votes.first] += adv_get_votes.second;
+                    } else {
+                        adv_get_votes_detail[adv_get_votes.first] = adv_get_votes.second;
+                    }
+                }
+                xstream_t stream(xcontext_t::instance());
+                stream << vote_detail.second;
+                std::string vote_info_str = std::string((char *)stream.data(), stream.size());
+                MAP_SET(property, vote_detail.first, vote_info_str);
+            }
+        }
     }
 
     MAP_CREATE(XPORPERTY_CONTRACT_POLLABLE_KEY);
+    {
+        for (auto const & adv_get_votes : adv_get_votes_detail) {
+            MAP_SET(XPORPERTY_CONTRACT_POLLABLE_KEY, adv_get_votes.first, base::xstring_utl::tostring(adv_get_votes.second));
+        }
+    }
+
     STRING_CREATE(XPORPERTY_CONTRACT_TIME_KEY);
 }
 

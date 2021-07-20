@@ -77,6 +77,13 @@ void xcontract_helper::create_transfer_tx(const string& grant_account, const uin
     m_account_context->create_transfer_tx(grant_account, amount);
 }
 
+void xcontract_helper::top_token_increase(const uint64_t amount) {
+    m_account_context->top_token_transfer_in(amount);
+}
+
+void xcontract_helper::top_token_decrease(const uint64_t amount) {
+    m_account_context->top_token_transfer_out(amount);
+}
 
 void xcontract_helper::string_create(const string& key) {
     if (m_account_context->string_create(key)) {

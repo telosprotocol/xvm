@@ -2,7 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xchain_upgrade/xchain_reset_center.h"
 #include "xcommon/xip.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xfull_tableblock.h"
@@ -24,6 +24,46 @@ xzec_slash_info_contract::xzec_slash_info_contract(common::xnetwork_id_t const &
 void xzec_slash_info_contract::setup() {
     // initialize map key
     MAP_CREATE(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY);
+    std::vector<std::pair<std::string, std::string>> db_kv_131;
+    chain_reset::xchain_reset_center_t::get_reset_stake_map_property(SELF_ADDRESS(), xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, db_kv_131);
+    for (auto const & _p : db_kv_131) {
+        if (_p.first == "UNQUALIFIED_NODE") {
+            xunqualified_node_info_t node_info;
+            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)_p.second.data(), _p.second.size());
+            base::xstream_t internal_stream{ base::xcontext_t::instance() };
+            stream >> internal_stream;
+            int32_t count;
+            internal_stream >> count;
+            // xdbg("LON cnt: %d", count); 
+            for (int32_t i = 0; i < count; i++) {   
+                std::string id;
+                xnode_vote_percent_t value;
+                base::xstream_t &internal_stream_temp = internal_stream;
+                base::xstream_t internal_key_stream{ base::xcontext_t::instance() };
+                internal_stream_temp >> internal_key_stream; 
+                internal_key_stream >> id; 
+                common::xnode_id_t node_id(id);
+                value.serialize_from(internal_stream);
+                node_info.auditor_info.emplace(std::make_pair(std::move(node_id), std::move(value)));                                                                                                      \
+            }
+            internal_stream >> count;
+            for (int32_t i = 0; i < count; i++) {   
+                common::xnode_id_t node_id;
+                xnode_vote_percent_t value;
+                base::xstream_t &internal_stream_temp = internal_stream;
+                base::xstream_t internal_key_stream{ base::xcontext_t::instance() };
+                internal_stream_temp >> internal_key_stream; 
+                internal_key_stream >> node_id;
+                value.serialize_from(internal_stream);
+                node_info.validator_info.emplace(std::make_pair(std::move(node_id), std::move(value)));                                                                                                     \
+            }
+            stream.reset();
+            node_info.serialize_to(stream);
+            MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, _p.first, std::string((char *)stream.data(), stream.size()));
+        } else {
+            MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, _p.first, _p.second);
+        }
+    }
     MAP_CREATE(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY);
 
     MAP_CREATE(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY);

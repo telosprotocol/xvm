@@ -34,6 +34,9 @@ public:
     void get_contract_code(std::string &code) const;
     void create_transfer_tx(const std::string& grant_account, const uint64_t amount);
 
+    void top_token_increase(const uint64_t amount);
+    void top_token_decrease(const uint64_t amount);
+
     void string_create(const std::string& key);
     void string_set(const std::string& key, const std::string& value, bool native = false);
     std::string string_get(const std::string& key, const std::string& addr="");

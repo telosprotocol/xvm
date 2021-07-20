@@ -2,14 +2,15 @@
 
 #include "xbase/xbase.h"
 #include "xbase/xutl.h"
+#include "xchain_upgrade/xchain_reset_center.h"
 #include "xconfig/xconfig_register.h"
 #include "xconfig/xconfig_update_parameter_action.h"
 #include "xdata/xblock.h"
 #include "xdata/xelect_transaction.hpp"
 #include "xmbus/xevent_store.h"
 #include "xmetrics/xmetrics.h"
-#include "xverifier/xverifier_utl.h"
 #include "xverifier/xverifier_errors.h"
+#include "xverifier/xverifier_utl.h"
 
 #include <algorithm>
 #include <cinttypes>
@@ -36,6 +37,10 @@ void xrec_proposal_contract::setup() {
     // MAP_CREATE(COSIGN_MAP_ID);
     MAP_CREATE(VOTE_MAP_ID);
     STRING_CREATE(CURRENT_VOTED_PROPOSAL);
+
+    top::chain_reset::reset_data_t reset_data;
+    top::chain_reset::xtop_chain_reset_center::get_reset_contract_data(SELF_ADDRESS(), reset_data);
+    TOP_TOKEN_INCREASE(reset_data.top_balance);
 }
 
 bool xrec_proposal_contract::get_proposal_info(const std::string & proposal_id, proposal_info & proposal) {

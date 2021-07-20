@@ -4,6 +4,7 @@
 
 #include "xvm/xsystem_contracts/xreward/xtable_reward_claiming_contract.h"
 
+#include "xchain_upgrade/xchain_reset_center.h"
 #include "xdata/xdatautil.h"
 #include "xdata/xnative_contract_address.h"
 #include "xmetrics/xmetrics.h"
@@ -13,12 +14,71 @@ NS_BEG4(top, xvm, system_contracts, reward)
 xtop_table_reward_claiming_contract::xtop_table_reward_claiming_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
 void xtop_table_reward_claiming_contract::setup() {
+    const int old_tables_count = 256;
+    uint32_t table_id = 0;
+    if (!EXTRACT_TABLE_ID(SELF_ADDRESS(), table_id)) {
+        xwarn("[xtop_table_reward_claiming_contract::setup] EXTRACT_TABLE_ID failed, node reward pid: %d, account: %s", getpid(), SELF_ADDRESS().c_str());
+        return;
+    }
+    xdbg("[xtop_table_reward_claiming_contract::setup] table id: %d", table_id);
+    
+    uint64_t acc_token = 0; 
+    uint32_t acc_token_decimals = 0;
     for (auto i = 1; i <= xstake::XPROPERTY_SPLITED_NUM; i++) {
         std::string property{xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY_BASE};
         property += "-" + std::to_string(i);
         MAP_CREATE(property);
+        {
+            for (auto j = 0; j < old_tables_count; j++) {
+                auto table_addr = std::string{sys_contract_sharding_reward_claiming_addr} + "@" + base::xstring_utl::tostring(j);
+                std::vector<std::pair<std::string, std::string>> db_kv_121;
+                chain_reset::xchain_reset_center_t::get_reset_stake_map_property(common::xaccount_address_t{table_addr}, property, db_kv_121);
+                for (auto const & _p : db_kv_121) {
+                    base::xvaccount_t vaccount{_p.first};
+                    auto account_table_id = vaccount.get_ledger_subaddr();
+                    if (static_cast<uint16_t>(account_table_id) != static_cast<uint16_t>(table_id)) {
+                        continue;
+                    }
+                    xstake::xreward_record record;
+                    auto detail = _p.second;
+                    base::xstream_t stream{base::xcontext_t::instance(), (uint8_t *)detail.data(), static_cast<uint32_t>(detail.size())};
+                    record.serialize_from(stream);
+                    MAP_SET(property, _p.first, _p.second);
+                    acc_token += static_cast<uint64_t>(record.unclaimed / xstake::REWARD_PRECISION);
+                    acc_token_decimals += static_cast<uint32_t>(record.unclaimed % xstake::REWARD_PRECISION);
+                }
+            }
+        }
     }
+    
     MAP_CREATE(xstake::XPORPERTY_CONTRACT_NODE_REWARD_KEY);
+    {
+        for (auto i = 0; i < old_tables_count; i++) {
+            auto table_addr = std::string{sys_contract_sharding_reward_claiming_addr} + "@" + base::xstring_utl::tostring(i);
+            std::vector<std::pair<std::string, std::string>> db_kv_124;
+            chain_reset::xchain_reset_center_t::get_reset_stake_map_property(common::xaccount_address_t{table_addr}, XPORPERTY_CONTRACT_NODE_REWARD_KEY, db_kv_124);
+            for (auto const & _p : db_kv_124) {
+                base::xvaccount_t vaccount{_p.first};
+                auto account_table_id = vaccount.get_ledger_subaddr();
+                if (static_cast<uint16_t>(account_table_id) != static_cast<uint16_t>(table_id)) {
+                    continue;
+                }
+                MAP_SET(XPORPERTY_CONTRACT_NODE_REWARD_KEY, _p.first, _p.second);
+                xstake::xreward_node_record record;
+                auto detail = _p.second;
+                base::xstream_t stream{base::xcontext_t::instance(), (uint8_t *)detail.data(), static_cast<uint32_t>(detail.size())};
+                record.serialize_from(stream);
+                acc_token += static_cast<uint64_t>(record.m_unclaimed / xstake::REWARD_PRECISION);
+                acc_token_decimals += static_cast<uint32_t>(record.m_unclaimed % xstake::REWARD_PRECISION);
+            }
+        }
+    }
+
+    acc_token += (acc_token_decimals / xstake::REWARD_PRECISION);
+    if (acc_token_decimals % xstake::REWARD_PRECISION != 0) {
+        acc_token += 1;
+    }
+    TOP_TOKEN_INCREASE(acc_token);
 }
 
 xcontract::xcontract_base * xtop_table_reward_claiming_contract::clone() {
