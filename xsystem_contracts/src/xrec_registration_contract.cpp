@@ -97,7 +97,6 @@ void xrec_registration_contract::setup() {
         STRING_SET(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, db_kv_129);
     }
 
-    MAP_CREATE(XPORPERTY_CONTRACT_TICKETS_KEY);
     const uint32_t old_tables_count = 256;
     for (auto table = 0; table < enum_vledger_const::enum_vbucket_has_tables_count; table++) {
         std::string table_address{std::string{sys_contract_sharding_vote_addr} + "@" + std::to_string(table)};
