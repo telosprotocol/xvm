@@ -35,20 +35,12 @@ public:
     /**
      * @brief receive contract nodes votes
      *
-     * @param contract_adv_votes contract noes votes map
-     */
-    void on_receive_shard_votes(std::map<std::string, std::string> contract_adv_votes);
-
-    /**
-     * @brief receive contract nodes votes
-     *
      * @param report_time
      * @param contract_adv_votes
      */
     void on_receive_shard_votes_v2(uint64_t report_time, std::map<std::string, std::string> const & contract_adv_votes);
 
     BEGIN_CONTRACT_WITH_PARAM(xzec_vote_contract)
-        CONTRACT_FUNCTION_PARAM(xzec_vote_contract, on_receive_shard_votes);
         CONTRACT_FUNCTION_PARAM(xzec_vote_contract, on_receive_shard_votes_v2);
     END_CONTRACT_WITH_PARAM
 

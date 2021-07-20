@@ -164,6 +164,14 @@ common::xaccount_address_t const & xcontract_base::SELF_ADDRESS() const noexcept
     return m_contract_helper->get_self_account();
 }
 
+void xcontract_base::TOP_TOKEN_INCREASE(const uint64_t amount) {
+    m_contract_helper->top_token_increase(amount);
+}
+
+void xcontract_base::TOP_TOKEN_DECREASE(const uint64_t amount) {
+    m_contract_helper->top_token_decrease(amount);
+}
+
 void xcontract_base::STRING_CREATE(const string& key) {
     m_contract_helper->string_create(key);
 }

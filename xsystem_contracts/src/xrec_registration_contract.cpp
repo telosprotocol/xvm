@@ -4,20 +4,20 @@
 
 #include "xvm/xsystem_contracts/xregistration/xrec_registration_contract.h"
 
+#include "secp256k1/secp256k1.h"
+#include "secp256k1/secp256k1_recovery.h"
 #include "xbase/xmem.h"
 #include "xbase/xutl.h"
 #include "xbasic/xutility.h"
+#include "xchain_upgrade/xchain_reset_center.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xproperty.h"
-#include "xdata/xslash.h"
 #include "xdata/xrootblock.h"
+#include "xdata/xslash.h"
 #include "xelect_common/elect_option.h"
-#include "xstore/xstore_error.h"
-#include "secp256k1/secp256k1.h"
-#include "secp256k1/secp256k1_recovery.h"
 #include "xmetrics/xmetrics.h"
-
+#include "xstore/xstore_error.h"
 
 using top::base::xcontext_t;
 using top::base::xstream_t;
@@ -42,6 +42,64 @@ void xrec_registration_contract::setup() {
     MAP_CREATE(XPORPERTY_CONTRACT_REFUND_KEY);
     STRING_CREATE(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY);
     MAP_CREATE(XPROPERTY_CONTRACT_SLASH_INFO_KEY);
+
+    std::vector<std::pair<std::string, std::string>> db_kv_101;
+    chain_reset::xchain_reset_center_t::get_reset_stake_map_property(SELF_ADDRESS(), XPORPERTY_CONTRACT_REG_KEY, db_kv_101);
+    for (auto const & _p : db_kv_101) {
+        auto const & node_info_serialized = _p.second;
+
+        base::xstream_t stream{ base::xcontext_t::instance(), (uint8_t *)node_info_serialized.data(), (uint32_t)node_info_serialized.size() };
+        xreg_node_info node_info;
+        node_info.serialize_from(stream);
+
+        auto old_role = static_cast<common::xold_role_type_t>(node_info.m_registered_role);
+        switch (old_role) {
+        case common::xold_role_type_t::advance:
+            node_info.m_registered_role = common::xrole_type_t::advance;
+            break;
+
+        case common::xold_role_type_t::consensus:
+            node_info.m_registered_role = common::xrole_type_t::validator;
+            break;
+
+        case common::xold_role_type_t::archive:
+            node_info.m_registered_role = common::xrole_type_t::archive;
+            break;
+
+        case common::xold_role_type_t::edge:
+            node_info.m_registered_role = common::xrole_type_t::edge;
+            break;
+
+        default:
+            break;
+        }
+        stream.reset();
+        node_info.serialize_to(stream);
+
+        MAP_SET(XPORPERTY_CONTRACT_REG_KEY, _p.first, { reinterpret_cast<char *>(stream.data()), static_cast<size_t>(stream.size()) });
+    }
+
+    std::vector<std::pair<std::string, std::string>> db_kv_128;
+    chain_reset::xchain_reset_center_t::get_reset_stake_map_property(SELF_ADDRESS(), XPORPERTY_CONTRACT_REFUND_KEY, db_kv_128);
+    for (auto const & _p : db_kv_128) {
+        MAP_SET(XPORPERTY_CONTRACT_REFUND_KEY, _p.first, _p.second);
+    }
+
+    std::vector<std::pair<std::string, std::string>> db_kv_132;
+    chain_reset::xchain_reset_center_t::get_reset_stake_map_property(SELF_ADDRESS(), XPROPERTY_CONTRACT_SLASH_INFO_KEY, db_kv_132);
+    for (auto const & _p : db_kv_132) {
+        MAP_SET(XPROPERTY_CONTRACT_SLASH_INFO_KEY, _p.first, _p.second);
+    }
+
+    std::string db_kv_129;
+    chain_reset::xchain_reset_center_t::get_reset_stake_string_property(SELF_ADDRESS(), XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, db_kv_129);
+    if (!db_kv_129.empty()) {
+        STRING_SET(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, db_kv_129);
+    }
+
+    top::chain_reset::reset_data_t reset_data;
+    top::chain_reset::xtop_chain_reset_center::get_reset_contract_data(SELF_ADDRESS(), reset_data);
+    TOP_TOKEN_INCREASE(reset_data.top_balance);
 
     auto const & source_address = SOURCE_ADDRESS();
     MAP_CREATE(XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY);
@@ -69,6 +127,9 @@ void xrec_registration_contract::setup() {
         for (size_t i = 0; i < seed_nodes.size(); i++) {
             node_info_t node_data = seed_nodes[i];
 
+            if (MAP_FIELD_EXIST(XPORPERTY_CONTRACT_REG_KEY, node_data.m_account.value())) {
+                continue;
+            }
             node_info.m_account             = node_data.m_account;
             node_info.m_account_mortgage    = 0;
             node_info.m_genesis_node        = true;

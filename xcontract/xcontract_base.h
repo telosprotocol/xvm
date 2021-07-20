@@ -248,6 +248,20 @@ public:
     virtual common::xaccount_address_t const & SELF_ADDRESS() const noexcept;
 
     /**
+     * @brief add token
+     *
+     * @return void
+     */
+    void TOP_TOKEN_INCREASE(const uint64_t amount);
+
+    /**
+     * @brief sub token
+     *
+     * @return void
+     */
+    void TOP_TOKEN_DECREASE(const uint64_t amount);
+
+    /**
      * @brief create the string type property
      *
      * @param key  the property key
