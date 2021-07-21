@@ -38,9 +38,9 @@ void xrec_proposal_contract::setup() {
     MAP_CREATE(VOTE_MAP_ID);
     STRING_CREATE(CURRENT_VOTED_PROPOSAL);
 
-    top::chain_reset::reset_data_t reset_data;
-    top::chain_reset::xtop_chain_reset_center::get_reset_contract_data(SELF_ADDRESS(), reset_data);
-    TOP_TOKEN_INCREASE(reset_data.top_balance);
+    top::chain_data::data_processor_t data;
+    top::chain_data::xtop_chain_data_processor::get_contract_data(SELF_ADDRESS(), data);
+    TOP_TOKEN_INCREASE(data.top_balance);
 }
 
 bool xrec_proposal_contract::get_proposal_info(const std::string & proposal_id, proposal_info & proposal) {
