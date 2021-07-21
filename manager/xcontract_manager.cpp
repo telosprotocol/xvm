@@ -1830,6 +1830,35 @@ static void get_node_reward(common::xaccount_address_t const & contract_address,
     }
 }
 
+static void get_zec_votes(common::xaccount_address_t const & contract_address,
+                              std::string const & property_name,
+                              const xaccount_ptr_t unitstate,
+                              const xjson_format_t json_format,
+                              xJson::Value & json) {
+    std::map<std::string, std::string> votes;
+    if (!unitstate->map_get(property_name, votes) || votes.empty()) {
+        xdbg("[get_node_reward] contract_address: %s, property_name: %s, error", contract_address.to_string().c_str(), property_name.c_str());
+        return;
+    }
+    std::map<std::string, std::string> votes_table;
+    for (auto m : votes) {
+        auto detail = m.second;
+        if (!detail.empty()) {
+            votes_table.clear();
+            base::xstream_t stream{xcontext_t::instance(), (uint8_t *)detail.data(), static_cast<uint32_t>(detail.size())};
+            stream >> votes_table;
+        }
+
+        xJson::Value jv;
+        xJson::Value jvn;
+        for (auto v : votes_table) {
+            jvn[v.first] = (xJson::UInt64)base::xstring_utl::touint64(v.second);
+        }
+        jv["vote_infos"] = jvn;
+        json[m.first] = jv;
+    }
+}
+
 static void get_table_votes(common::xaccount_address_t const & contract_address,
                               std::string const & property_name,
                               const xaccount_ptr_t unitstate,
@@ -1856,6 +1885,35 @@ static void get_table_votes(common::xaccount_address_t const & contract_address,
         }
         jv["vote_infos"] = jvn;
         json[m.first] = jv;
+    }
+}
+
+static void get_zec_workload_map(common::xaccount_address_t const & contract_address,
+                              std::string const & property_name,
+                              const xaccount_ptr_t unitstate,
+                              const xjson_format_t json_format,
+                              xJson::Value & json) {
+    std::map<std::string, std::string> workloads;
+    if (!unitstate->map_get(property_name, workloads) || workloads.empty()) {
+        xdbg("[get_node_reward] contract_address: %s, property_name: %s, error", contract_address.to_string().c_str(), property_name.c_str());
+        return;
+    }
+    for (auto m : workloads) {
+        auto detail = m.second;
+        base::xstream_t stream{xcontext_t::instance(), (uint8_t *)detail.data(), static_cast<uint32_t>(detail.size())};
+        xstake::cluster_workload_t workload;
+        workload.serialize_from(stream);
+        xJson::Value jn;
+        jn["cluster_total_workload"] = workload.cluster_total_workload;
+        auto const & key_str = workload.cluster_id;
+        common::xcluster_address_t cluster;
+        xstream_t key_stream(xcontext_t::instance(), (uint8_t *)key_str.data(), key_str.size());
+        key_stream >> cluster;
+        XSTD_PRINT("--------------------cluster: %s, size: %u\n", cluster.group_id().to_string().c_str(), static_cast<uint32_t>(workload.m_leader_count.size()));
+        for (auto node : workload.m_leader_count) {
+            jn[node.first] = node.second;
+        }
+        json[cluster.group_id().to_string()] = jn;
     }
 }
 
@@ -1889,11 +1947,11 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
     } else if (property_name == xstake::XPORPERTY_CONTRACT_REG_KEY) {
         return get_rec_nodes_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY || property_name == xstake::XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY) {
-        return get_zec_workload_map(m_store, contract_address, property_name, json);
+        return get_zec_workload_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_TASK_KEY) {
         return get_zec_tasks_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_TICKETS_KEY) {
-        return get_zec_votes(m_store, contract_address, property_name, json);
+        return get_zec_votes(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY1 || property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY2 || property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY3 ||
         property_name == xstake::XPORPERTY_CONTRACT_VOTES_KEY4) {
         return get_table_votes(contract_address, property_name, unitstate, json_format, json);
@@ -1901,7 +1959,7 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         property_name == xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY3 || property_name == xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY4) {
         return get_voter_dividend(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_REFUND_KEY) {
-        return get_contract_data(contract_address, unitstate, property_name, json_format, json);
+        return get_refunds(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE) {
         return get_accumulated_issuance_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
