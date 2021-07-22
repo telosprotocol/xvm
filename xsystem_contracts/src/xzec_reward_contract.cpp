@@ -72,6 +72,12 @@ void xzec_reward_contract::setup() {
     STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME, last_read_rec_reg_contract_logic_time);
 
     STRING_CREATE(XPROPERTY_REWARD_DETAIL);
+    {
+        xissue_detail issue_detail;
+        auto issue_detail_str = issue_detail.to_string();
+        STRING_SET(XPROPERTY_REWARD_DETAIL, issue_detail_str);
+    }
+    
     MAP_CREATE(XPORPERTY_CONTRACT_WORKLOAD_KEY);
     std::vector<std::pair<std::string, std::string>> db_kv_103;
     chain_data::xchain_data_processor_t::get_stake_map_property(SELF_ADDRESS(), XPORPERTY_CONTRACT_WORKLOAD_KEY, db_kv_103);
