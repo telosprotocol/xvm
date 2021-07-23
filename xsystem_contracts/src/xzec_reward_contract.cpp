@@ -409,10 +409,11 @@ void xzec_reward_contract::update_accumulated_issuance(uint64_t const issuance, 
         if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, base::xstring_utl::tostring(current_year))) {
             cur_year_issuances_str = MAP_GET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, base::xstring_utl::tostring(current_year));
         }
-        total_issuances_str = MAP_GET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, "total");
+        if (MAP_FIELD_EXIST(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, "total")) {
+            total_issuances_str = MAP_GET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, "total");
+        }
     } catch (std::runtime_error & e) {
         xwarn("[xzec_reward_contract][update_accumulated_issuance] read accumulated issuances error:%s", e.what());
-        throw;
     }
 
     if (!cur_year_issuances_str.empty()) {
@@ -420,7 +421,11 @@ void xzec_reward_contract::update_accumulated_issuance(uint64_t const issuance, 
     }
 
     cur_year_issuances += issuance;
-    total_issuances = base::xstring_utl::touint64(total_issuances_str) + issuance;
+    if (!total_issuances_str.empty()) {
+        total_issuances = base::xstring_utl::touint64(total_issuances_str) + issuance;
+    } else {
+        total_issuances = issuance;
+    }
 
     {
         XMETRICS_TIME_RECORD(XREWARD_CONTRACT "XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_SetExecutionTime");
@@ -531,82 +536,6 @@ top::xstake::uint128_t xzec_reward_contract::calc_issuance_internal(uint64_t tot
           TIMER_BLOCK_HEIGHT_PER_YEAR);
 
     last_issuance_time = total_height;
-    return additional_issuance;
-}
-
-top::xstake::uint128_t xzec_reward_contract::calc_issuance(uint64_t total_height) {
-    if (0 == total_height) {
-        return 0;
-    }
-
-    auto get_reserve_reward = [&](top::xstake::uint128_t issued_until_last_year_end) {
-        top::xstake::uint128_t reserve_reward = 0;
-        auto min_ratio_annual_total_reward = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_ratio_annual_total_reward);
-        auto minimum_issuance = static_cast<top::xstake::uint128_t>(TOTAL_ISSUANCE) * min_ratio_annual_total_reward / 100 * REWARD_PRECISION;
-        if (static_cast<top::xstake::uint128_t>(TOTAL_RESERVE) * REWARD_PRECISION > issued_until_last_year_end) {
-            auto issuance_rate = XGET_ONCHAIN_GOVERNANCE_PARAMETER(additional_issue_year_ratio);
-            reserve_reward = std::max(static_cast<top::xstake::uint128_t>(static_cast<top::xstake::uint128_t>(TOTAL_RESERVE) * REWARD_PRECISION - issued_until_last_year_end) * issuance_rate / 100, minimum_issuance);
-        } else {
-            reserve_reward = minimum_issuance;
-        }
-        return reserve_reward;
-    };
-
-    top::xstake::uint128_t    additional_issuance = 0;
-    uint64_t        issued_clocks       = 0; // from last issuance to last year end
-    xaccumulated_reward_record record;
-    get_accumulated_record(record);
-    uint64_t call_duration_height = total_height - record.last_issuance_time;
-    uint32_t current_year = (total_height - 1) / TIMER_BLOCK_HEIGHT_PER_YEAR + 1;
-    uint32_t last_issuance_year = record.last_issuance_time == 0 ? 1 : (record.last_issuance_time - 1) / TIMER_BLOCK_HEIGHT_PER_YEAR + 1;
-    xdbg("[xzec_reward_contract::calc_issuance] last_issuance_time: %llu, current_year: %u, last_issuance_year:%u",
-        record.last_issuance_time, current_year, last_issuance_year);
-    while (last_issuance_year < current_year) {
-        uint64_t remaining_clocks = TIMER_BLOCK_HEIGHT_PER_YEAR - record.last_issuance_time % TIMER_BLOCK_HEIGHT_PER_YEAR;
-        if (remaining_clocks > 0) {
-            auto reserve_reward = get_reserve_reward(record.issued_until_last_year_end);
-            additional_issuance += reserve_reward * remaining_clocks / TIMER_BLOCK_HEIGHT_PER_YEAR;
-            xinfo("[xzec_reward_contract::calc_issuance] cross year, last_issuance_year: %u, reserve_reward: [%llu, %u], remaining_clocks: %llu, issued_clocks: %u, additional_issuance: [%llu, %u], issued_until_last_year_end: [%llu, %u]",
-                last_issuance_year,
-                static_cast<uint64_t>(reserve_reward / REWARD_PRECISION),
-                static_cast<uint32_t>(reserve_reward % REWARD_PRECISION),
-                remaining_clocks,
-                issued_clocks,
-                static_cast<uint64_t>(additional_issuance / REWARD_PRECISION),
-                static_cast<uint32_t>(additional_issuance % REWARD_PRECISION),
-                static_cast<uint64_t>(record.issued_until_last_year_end / REWARD_PRECISION),
-                static_cast<uint32_t>(record.issued_until_last_year_end % REWARD_PRECISION));
-            issued_clocks += remaining_clocks;
-            record.last_issuance_time += remaining_clocks;
-            record.issued_until_last_year_end += reserve_reward;
-        }
-        last_issuance_year++;
-    }
-
-    auto reserve_reward = get_reserve_reward(record.issued_until_last_year_end);
-    additional_issuance += reserve_reward * (call_duration_height - issued_clocks) / TIMER_BLOCK_HEIGHT_PER_YEAR;
-
-    xinfo("[xzec_reward_contract::calc_issuance] additional_issuance: [%" PRIu64 ", %u], call_duration_height: %" PRId64
-          ", total_height: %" PRId64 ", current_year: %" PRIu32 ", last_issuance_year: %" PRIu32
-          ", pid: %d"
-          ", reserve_reward: [%llu, %u], last_issuance_time: %llu, issued_until_last_year_end: [%llu, %u], TIMER_BLOCK_HEIGHT_PER_YEAR: %llu",
-         static_cast<uint64_t>(additional_issuance / REWARD_PRECISION),
-         static_cast<uint32_t>(additional_issuance % REWARD_PRECISION),
-         call_duration_height,
-         total_height,
-         current_year,
-         last_issuance_year,
-         getpid(),
-         static_cast<uint64_t>(reserve_reward / REWARD_PRECISION),
-         static_cast<uint32_t>(reserve_reward % REWARD_PRECISION),
-         record.last_issuance_time,
-         static_cast<uint64_t>(record.issued_until_last_year_end / REWARD_PRECISION),
-         static_cast<uint32_t>(record.issued_until_last_year_end % REWARD_PRECISION),
-         TIMER_BLOCK_HEIGHT_PER_YEAR);
-
-    record.last_issuance_time = total_height;
-    update_accumulated_record(record);
-
     return additional_issuance;
 }
 
