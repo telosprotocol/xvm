@@ -146,13 +146,6 @@ private:
                                                   top::xstake::uint128_t & issued_until_last_year_end);
 
     /**
-     * @brief calculate issuance
-     *
-     * @param total_height chain timer height
-     * @return uint64_t issuance
-     */
-    top::xstake::uint128_t    calc_issuance(uint64_t total_height);
-    /**
      * @brief Get the accumulated record
      *
      * @param record accumulated issuance record
