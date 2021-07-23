@@ -365,10 +365,11 @@ void xtop_table_reward_claiming_contract::claimNodeReward() {
 
     XMETRICS_PACKET_INFO("sysContract_tableRewardClaiming_claim_node_reward", "timer round", std::to_string(TIME()), "source address", account.c_str(), "reward", std::to_string(static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION)));
 
-    reward_record.m_unclaimed = reward_record.m_unclaimed % REWARD_PRECISION;
+    TRANSFER(account.to_string(), static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION));
+
+    reward_record.m_unclaimed -= reward_record.m_unclaimed / REWARD_PRECISION * REWARD_PRECISION;
     reward_record.m_last_claim_time = cur_time;
     update_working_reward_record(account, reward_record);
-    TRANSFER(account.to_string(), static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION));
 }
 
 int32_t xtop_table_reward_claiming_contract::get_working_reward_record(common::xaccount_address_t const & account, xstake::xreward_node_record & record) {
