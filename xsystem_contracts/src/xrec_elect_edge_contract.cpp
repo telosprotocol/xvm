@@ -90,11 +90,11 @@ void xtop_rec_elect_edge_contract::elect_config_nodes(common::xlogic_time_t cons
         election_group_result.insert(std::move(election_info_bundle));
     }
 
-    election_group_result.election_committee_version(common::xversion_t{0});
+    election_group_result.election_committee_version(common::xelection_round_t{0});
     election_group_result.timestamp(current_time);
     election_group_result.start_time(current_time);
     if (election_group_result.group_version().empty()) {
-        election_group_result.group_version(common::xversion_t::max());
+        election_group_result.group_version(common::xelection_round_t::max());
     }
     xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(
         *this, data::election::get_property_by_group_id(common::xdefault_group_id), election_result_store);

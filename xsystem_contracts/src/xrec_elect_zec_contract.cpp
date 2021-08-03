@@ -75,7 +75,7 @@ void xtop_rec_elect_zec_contract::elect_config_nodes(common::xlogic_time_t const
         xelection_info_t new_election_info{};
         new_election_info.consensus_public_key = xpublic_key_t{one_node_info[2]};
         new_election_info.stake = static_cast<std::uint64_t>(std::atoi(one_node_info[1].c_str()));
-        new_election_info.joined_version = common::xversion_t{0};
+        new_election_info.joined_version = common::xelection_round_t{0};
 
         xelection_info_bundle_t election_info_bundle{};
         election_info_bundle.node_id(common::xnode_id_t{one_node_info[0]});
@@ -84,11 +84,11 @@ void xtop_rec_elect_zec_contract::elect_config_nodes(common::xlogic_time_t const
         election_group_result.insert(std::move(election_info_bundle));
     }
 
-    election_group_result.election_committee_version(common::xversion_t{0});
+    election_group_result.election_committee_version(common::xelection_round_t{0});
     election_group_result.timestamp(current_time);
     election_group_result.start_time(current_time);
     if (election_group_result.group_version().empty()) {
-        election_group_result.group_version(common::xversion_t::max());
+        election_group_result.group_version(common::xelection_round_t::max());
     }
     xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(
         *this, data::election::get_property_by_group_id(common::xcommittee_group_id), election_result_store);

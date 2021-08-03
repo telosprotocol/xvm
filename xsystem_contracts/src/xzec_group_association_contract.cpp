@@ -36,7 +36,7 @@ xtop_group_association_contract::setup() {
     // static initialize assocation between consensus group and advance group.
     data::election::xelection_association_result_store_t election_association_result_store;
     auto & election_association_result = election_association_result_store.result_of(common::xdefault_cluster_id);
-    election_association_result.cluster_version(common::xversion_t{ 0 });   // version starts from zero
+    election_association_result.cluster_version(common::xelection_round_t{ 0 });   // version starts from zero
     for (std::uint16_t i = 0u; i < validator_group_count; ++i) {
         common::xgroup_id_t consensus_gid{
             static_cast<common::xgroup_id_t::value_type>(common::xvalidator_group_id_value_begin + i)

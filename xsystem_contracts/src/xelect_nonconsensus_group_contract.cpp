@@ -90,11 +90,11 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
             xdbg("%s elected in %s", log_prefix.c_str(), top::get<xelection_info_bundle_t>(node_info).node_id().c_str());
         }
 #endif
-        new_group_result.election_committee_version(common::xversion_t{0});
+        new_group_result.election_committee_version(common::xelection_round_t{0});
         new_group_result.timestamp(election_timestamp);
         new_group_result.start_time(start_time);
         if (new_group_result.group_version().empty()) {
-            new_group_result.group_version(common::xversion_t::max());
+            new_group_result.group_version(common::xelection_round_t::max());
         }
 
         xwarn("%s version %s size %zu timestamp %" PRIu64 " start time %" PRIu64,
