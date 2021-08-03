@@ -35,11 +35,11 @@ xtop_rec_elect_rec_contract::xtop_rec_elect_rec_contract(common::xnetwork_id_t c
 
 void xtop_rec_elect_rec_contract::setup() {
     xelection_result_store_t election_result_store;
-    common::xversion_t group_version{0};
+    common::xelection_round_t group_version{0};
 
     auto & current_group_nodes =
         election_result_store.result_of(network_id()).result_of(common::xnode_type_t::committee).result_of(common::xcommittee_cluster_id).result_of(common::xcommittee_group_id);
-    current_group_nodes.election_committee_version(common::xversion_t{0});
+    current_group_nodes.election_committee_version(common::xelection_round_t{0});
     current_group_nodes.timestamp(0);
     current_group_nodes.start_time(0);
     current_group_nodes.group_version(group_version);

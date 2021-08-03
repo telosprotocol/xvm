@@ -220,14 +220,14 @@ bool xtop_elect_consensus_group_contract::elect_group(common::xzone_id_t const &
         if (!next_version.empty()) {
             next_version.increase();
         } else {
-            next_version = common::xversion_t{0};
+            next_version = common::xelection_round_t{0};
         }
         assert(!next_version.empty());
 
         // update new version/timestamp
         // if election failed (return false), property serialization won't be executed, thus nothing changed.
         current_group_nodes.group_version(next_version);
-        current_group_nodes.election_committee_version(common::xversion_t{0});
+        current_group_nodes.election_committee_version(common::xelection_round_t{0});
         current_group_nodes.timestamp(election_timestamp);
         current_group_nodes.start_time(start_time);
 

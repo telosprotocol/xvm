@@ -142,10 +142,10 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
             if (!next_version.empty()) {
                 next_version.increase();
             } else {
-                next_version = common::xversion_t{0};
+                next_version = common::xelection_round_t{0};
             }
             election_group_result.group_version(next_version);
-            election_group_result.election_committee_version(common::xversion_t{0});
+            election_group_result.election_committee_version(common::xelection_round_t{0});
             election_group_result.timestamp(current_time);
             election_group_result.start_time(current_time);
 
@@ -183,7 +183,7 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
                                          .result_of(common::xdefault_cluster_id)
                                          .result_of(common::xgroup_id_t{validator_group_id_start++});
             validator_group.associated_group_id(common::xgroup_id_t{auditor_group_id_start});
-            validator_group.cluster_version(common::xversion_t{0});
+            validator_group.cluster_version(common::xelection_round_t{0});
             validator_group.associated_group_version(auditor_group.group_version());
         }
         auditor_group_id_start++;
@@ -414,9 +414,9 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
               static_cast<std::uint16_t>(zone_id.value()),
               static_cast<std::uint16_t>(cluster_id.value()));
         auto const & election_association_result = election_association_result_store.result_of(cluster_id);
-        for (auto p : election_association_result) {
-            auto validator_group_id = p.first;
-            auto auditor_group_id = p.second;
+        for (auto const & p : election_association_result) {
+            auto const & validator_group_id = p.first;
+            auto const & auditor_group_id = p.second;
 
             auto const & election_result_store = all_cluster_election_result_store.at(auditor_group_id);
             auto const & election_network_result = election_result_store.result_of(network_id());

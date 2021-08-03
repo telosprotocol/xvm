@@ -15,7 +15,7 @@ NS_BEG4(top, xvm, system_contracts, zec)
 class xtop_zec_elect_consensus_group_contract final : public xelect_consensus_group_contract_t {
     using xbase_t = xelect_consensus_group_contract_t;
 
-    common::xversion_t m_zec_round_version{0};
+    common::xelection_round_t m_zec_round_version{0};
     mutable bool m_update_registration_contract_read_status{ false };
 
 public:
