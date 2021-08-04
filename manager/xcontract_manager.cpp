@@ -176,7 +176,7 @@ void xtop_contract_manager::clear() {
 bool xtop_contract_manager::filter_event(const xevent_ptr_t & e) {
     switch (e->major_type) {
     case xevent_major_type_store:
-        return e->minor_type == xevent_store_t::type_block_to_db;
+        return e->minor_type == xevent_store_t::type_block_committed;
     case xevent_major_type_vnode:
         return true;
     case xevent_major_type_chain_timer:
@@ -252,9 +252,9 @@ void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
                 pr.second->on_block_timer(e);
             }
         }
-    } else if (e->major_type == xevent_major_type_store && e->minor_type == xevent_store_t::type_block_to_db) {
+    } else if (e->major_type == xevent_major_type_store && e->minor_type == xevent_store_t::type_block_committed) {
         // TODO(jimmy) check if need process firstly
-        xevent_store_block_to_db_ptr_t store_event = dynamic_xobject_ptr_cast<xevent_store_block_to_db_t>(e);
+        xevent_store_block_committed_ptr_t store_event = dynamic_xobject_ptr_cast<xevent_store_block_committed_t>(e);
         if (store_event->blk_level != base::enum_xvblock_level_table) {  // only broadcast table
             return;
         }
