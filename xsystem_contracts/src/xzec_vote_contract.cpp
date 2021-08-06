@@ -45,7 +45,7 @@ void xzec_vote_contract::setup() {
             property = property + XPORPERTY_CONTRACT_VOTES_KEY_BASE + "-" + std::to_string(i);
             {
                 std::map<std::string, std::map<std::string, uint64_t>> votes_detail;
-                for (size_t j = 0; j < old_tables_count; j++) {
+                for (uint32_t j = 0; j < old_tables_count; j++) {
                     auto table_addr = std::string{sys_contract_sharding_vote_addr} + "@" + base::xstring_utl::tostring(j);
                     std::vector<std::pair<std::string, std::string>> db_kv_112;
                     chain_data::xchain_data_processor_t::get_stake_map_property(common::xaccount_address_t{table_addr}, property, db_kv_112);
@@ -68,7 +68,7 @@ void xzec_vote_contract::setup() {
                     }
                 }
                 for (auto const & vote_detail : votes_detail) {
-                    for (auto const adv_get_votes : vote_detail.second) {
+                    for (auto const & adv_get_votes : vote_detail.second) {
                         if (adv_get_votes_detail.count(adv_get_votes.first)) {
                             adv_get_votes_detail[adv_get_votes.first] += adv_get_votes.second;
                         } else {
