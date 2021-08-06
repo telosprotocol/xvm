@@ -62,7 +62,7 @@ void xtable_vote_contract::setup() {
                 }
             }
             for (auto const & vote_detail : votes_detail) {
-                for (auto const adv_get_votes : vote_detail.second) {
+                for (auto const & adv_get_votes : vote_detail.second) {
                     if (adv_get_votes_detail.count(adv_get_votes.first)) {
                         adv_get_votes_detail[adv_get_votes.first] += adv_get_votes.second;
                     } else {
