@@ -130,6 +130,17 @@ protected:
      */
     bool is_scheduled_table_contract(common::xaccount_address_t const& addr) const;
 
+    /**
+     * @brief trigger_workload
+     *
+     * @param block
+     * @param info
+     * @param block_table_id
+     */
+    void on_block_trigger_workload(const xblock_ptr_t & block,
+                                   xblock_monitor_info_t * info,
+                                   const uint32_t block_table_id);
+
 protected:
     observer_ptr<xstore_face_t>                                                 m_store{};
     observer_ptr<store::xsyncvstore_t>                                          m_syncstore{};

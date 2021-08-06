@@ -34,10 +34,21 @@ xrole_context_t::~xrole_context_t() {
     }
 }
 
+void xrole_context_t::on_block_trigger_workload(const xblock_ptr_t & block,
+                                                xblock_monitor_info_t * info,
+                                                const uint32_t block_table_id) {
+    if (!block->is_fullblock()) {
+        return;
+    }
+    xinfo("xrole_context_t::on_block_trigger_workload contract : %s , %llu ,%d", block->get_account().c_str(), block->get_height(), static_cast<int32_t>(info->type));
+    call_contract(block->get_height(), info, block->get_timestamp(), block_table_id);
+}
+
 void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_broadcasted) {
     if (!m_contract_info->has_monitors()) {
         return;
     }
+    // process broadcasts
     if (m_contract_info->has_broadcasts()) {
         if (event_broadcasted) {  // only select one node to broadcast
             return;
@@ -81,6 +92,30 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
                     break;
                 }
             }
+        }
+    }
+
+    // process trigger contract
+    if (m_contract_info->has_block_monitors()) {
+        std::string block_account{block->get_account()};
+        std::string block_address{};
+        uint32_t block_table_id{0};
+        if (is_block_contract_address(common::xaccount_address_t{block_account}) || is_sys_sharding_contract_address(common::xaccount_address_t{block_account})) {
+            // check block_contract
+            if (!xdatautil::deserialize_owner_str(block->get_account(), block_address, block_table_id)) {
+                return;
+            }
+        } else {
+            block_address = block_account;
+        }
+        xblock_monitor_info_t * info = m_contract_info->find(common::xaccount_address_t{block_address});
+        if (info == nullptr) {
+            return;
+        }
+        xinfo("lon address: %s, %s, height: %d", block_account.c_str(), block_address.c_str(), block->get_height());
+        // sharding table monitor
+        if (block_address == sys_contract_sharding_table_block_addr) {
+            on_block_trigger_workload(block, info, block_table_id);
         }
     }
 }
