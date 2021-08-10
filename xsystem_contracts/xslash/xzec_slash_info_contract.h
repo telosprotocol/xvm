@@ -34,6 +34,15 @@ public:
     setup();
 
     /**
+     * @brief summarize the slash info from table slash contract
+     *
+     * @param slash_info  the table slash info
+     */
+    void
+    summarize_slash_info(std::string const& slash_info);
+
+
+    /**
      * @brief do slash according the summarized slash info
      *
      * @param timestamp  the logic time to do the slash
@@ -42,6 +51,7 @@ public:
     do_unqualified_node_slash(common::xlogic_time_t const timestamp);
 
     BEGIN_CONTRACT_WITH_PARAM(xzec_slash_info_contract)
+        CONTRACT_FUNCTION_PARAM(xzec_slash_info_contract, summarize_slash_info);
         CONTRACT_FUNCTION_PARAM(xzec_slash_info_contract, do_unqualified_node_slash);
     END_CONTRACT_WITH_PARAM
 

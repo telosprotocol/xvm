@@ -34,25 +34,25 @@ void xzec_slash_info_contract::setup() {
             stream >> internal_stream;
             int32_t count;
             internal_stream >> count;
-            // xdbg("LON cnt: %d", count); 
-            for (int32_t i = 0; i < count; i++) {   
+            // xdbg("LON cnt: %d", count);
+            for (int32_t i = 0; i < count; i++) {
                 std::string id;
                 xnode_vote_percent_t value;
                 base::xstream_t &internal_stream_temp = internal_stream;
                 base::xstream_t internal_key_stream{ base::xcontext_t::instance() };
-                internal_stream_temp >> internal_key_stream; 
-                internal_key_stream >> id; 
+                internal_stream_temp >> internal_key_stream;
+                internal_key_stream >> id;
                 common::xnode_id_t node_id(id);
                 value.serialize_from(internal_stream);
                 node_info.auditor_info.emplace(std::make_pair(std::move(node_id), std::move(value)));                                                                                                      \
             }
             internal_stream >> count;
-            for (int32_t i = 0; i < count; i++) {   
+            for (int32_t i = 0; i < count; i++) {
                 common::xnode_id_t node_id;
                 xnode_vote_percent_t value;
                 base::xstream_t &internal_stream_temp = internal_stream;
                 base::xstream_t internal_key_stream{ base::xcontext_t::instance() };
-                internal_stream_temp >> internal_key_stream; 
+                internal_stream_temp >> internal_key_stream;
                 internal_key_stream >> node_id;
                 value.serialize_from(internal_stream);
                 node_info.validator_info.emplace(std::make_pair(std::move(node_id), std::move(value)));                                                                                                     \
@@ -71,6 +71,93 @@ void xzec_slash_info_contract::setup() {
     MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, LAST_SLASH_TIME, "0");
     MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, SLASH_TABLE_ROUND, "0");
 }
+
+
+void xzec_slash_info_contract::summarize_slash_info(std::string const & slash_info) {
+    XMETRICS_TIME_RECORD("sysContract_zecSlash_summarize_slash_info");
+    auto const & account = SELF_ADDRESS();
+    auto const & source_addr = SOURCE_ADDRESS();
+
+    std::string base_addr = "";
+    uint32_t table_id = 0;
+    XCONTRACT_ENSURE(data::xdatautil::extract_parts(source_addr, base_addr, table_id), "source address extract base_addr or table_id error!");
+    xdbg("[xzec_slash_info_contract][summarize_slash_info] self_account %s, source_addr %s, base_addr %s\n", account.c_str(), source_addr.c_str(), base_addr.c_str());
+    XCONTRACT_ENSURE(base_addr == top::sys_contract_sharding_slash_info_addr, "invalid source addr's call!");
+
+    xinfo("[xzec_slash_info_contract][summarize_slash_info] table contract report slash info, SOURCE_ADDRESS: %s, pid:%d, ", source_addr.c_str(), getpid());
+
+    xunqualified_node_info_t summarize_info;
+    std::string value_str;
+
+    try {
+        XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_unqualified_node_key");
+        if (MAP_FIELD_EXIST(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE"))
+            value_str = MAP_GET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE");
+    } catch (std::runtime_error const & e) {
+        xwarn("[xzec_slash_info_contract][summarize_slash_info] read summarized slash info error:%s", e.what());
+        throw;
+    }
+
+    if (!value_str.empty()) {
+        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+        summarize_info.serialize_from(stream);
+    }
+
+    value_str.clear();
+    uint32_t summarize_tableblock_count = 0;
+    try {
+        XMETRICS_TIME_RECORD("sysContract_zecSlash_get_property_contract_tableblock_num_key");
+        if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM")) {
+            value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM");
+        }
+    } catch (std::runtime_error & e) {
+        xwarn("[xzec_slash_info_contract][summarize_slash_info] read summarized tableblock num error:%s", e.what());
+        throw;
+    }
+
+    if (!value_str.empty()) {
+        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+        stream >> summarize_tableblock_count;
+    }
+
+    xunqualified_node_info_t node_info;
+    std::uint32_t tableblock_count;
+    base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)slash_info.data(), slash_info.size());
+    node_info.serialize_from(stream);
+    stream >> tableblock_count;
+
+    for (auto const & item : node_info.auditor_info) {
+        summarize_info.auditor_info[item.first].block_count += item.second.block_count;
+        summarize_info.auditor_info[item.first].subset_count += item.second.subset_count;
+    }
+
+    for (auto const & item : node_info.validator_info) {
+        summarize_info.validator_info[item.first].block_count += item.second.block_count;
+        summarize_info.validator_info[item.first].subset_count += item.second.subset_count;
+    }
+
+    summarize_tableblock_count += tableblock_count;
+
+    stream.reset();
+    summarize_info.serialize_to(stream);
+    {
+        XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_unqualified_node_key");
+        MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
+    }
+    stream.reset();
+    stream << summarize_tableblock_count;
+    {
+        XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_tableblock_num_key");
+        MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM", std::string((char *)stream.data(), stream.size()));
+    }
+    xkinfo("[xzec_slash_info_contract][summarize_slash_info]  table contract report slash info, auditor size: %zu, validator size: %zu, summarized tableblock num: %u, pid: %d",
+         summarize_info.auditor_info.size(),
+         summarize_info.validator_info.size(),
+         summarize_tableblock_count,
+         getpid());
+}
+
+
 
 void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t const timestamp) {
     XMETRICS_TIME_RECORD("sysContract_zecSlash_do_unqualified_node_slash");
