@@ -44,7 +44,8 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
     // process block event
     if (m_contract_info->has_block_monitors()) {
         auto block_owner = block->get_block_owner();
-        if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_slash_info_addr}) &&
+        // table fulltable block process
+        if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) &&
              block_owner.find(sys_contract_sharding_table_block_addr) != std::string::npos && block->is_fulltable()) {
             auto block_height = block->get_height();
             xdbg("xrole_context_t::on_block_to_db fullblock process, owner: %s, height: %" PRIu64, block->get_block_owner().c_str(), block_height);
@@ -62,7 +63,7 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
             uint32_t table_id = 0;
             auto result = xdatautil::extract_table_id_from_address(block_owner, table_id);
             assert(result);
-            on_fulltableblock_event(m_contract_info->address, "on_collect_slash_info", action_params, block->get_timestamp(), (uint16_t)table_id);
+            on_fulltableblock_event(m_contract_info->address, "on_collect_statistic_info", action_params, block->get_timestamp(), (uint16_t)table_id);
         }
 
     }
@@ -155,7 +156,7 @@ void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
                     block_timestamp = block->get_timestamp();
 
 
-                    if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_slash_info_addr}) && valid_call(onchain_timer_round)) {
+                    if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) && valid_call(onchain_timer_round)) {
 
                         int table_num = m_driver->table_ids().size();
                         if (table_num == 0) {

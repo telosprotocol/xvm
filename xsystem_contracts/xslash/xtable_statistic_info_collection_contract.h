@@ -17,18 +17,18 @@ NS_BEG3(top, xvm, xcontract)
  * @brief the table slash contract
  *
  */
-class xtable_slash_info_collection_contract final : public xcontract_base {
+class xtable_statistic_info_collection_contract final : public xcontract_base {
     using xbase_t = xcontract_base;
 public:
-    XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xtable_slash_info_collection_contract);
-    XDECLARE_DEFAULTED_OVERRIDE_DESTRUCTOR(xtable_slash_info_collection_contract);
+    XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xtable_statistic_info_collection_contract);
+    XDECLARE_DEFAULTED_OVERRIDE_DESTRUCTOR(xtable_statistic_info_collection_contract);
 
     explicit
-    xtable_slash_info_collection_contract(common::xnetwork_id_t const & network_id);
+    xtable_statistic_info_collection_contract(common::xnetwork_id_t const & network_id);
 
     xcontract_base*
     clone() override {
-        return new xtable_slash_info_collection_contract(network_id());
+        return new xtable_statistic_info_collection_contract(network_id());
     }
 
     void
@@ -40,7 +40,7 @@ public:
      * @param info  the info to collect slash info
      */
     void
-    on_collect_slash_info(std::string const& slash_info, uint64_t block_height);
+    on_collect_statistic_info(std::string const& slash_info, uint64_t block_height);
 
     /**
      * @brief report the summarized slash info
@@ -48,11 +48,11 @@ public:
      *
      */
     void
-    report_summarized_slash_info(common::xlogic_time_t timestamp);
+    report_summarized_statistic_info(common::xlogic_time_t timestamp);
 
-    BEGIN_CONTRACT_WITH_PARAM(xtable_slash_info_collection_contract)
-        CONTRACT_FUNCTION_PARAM(xtable_slash_info_collection_contract, on_collect_slash_info);
-        CONTRACT_FUNCTION_PARAM(xtable_slash_info_collection_contract, report_summarized_slash_info);
+    BEGIN_CONTRACT_WITH_PARAM(xtable_statistic_info_collection_contract)
+        CONTRACT_FUNCTION_PARAM(xtable_statistic_info_collection_contract, on_collect_statistic_info);
+        CONTRACT_FUNCTION_PARAM(xtable_statistic_info_collection_contract, report_summarized_statistic_info);
     END_CONTRACT_WITH_PARAM
 
 private:
