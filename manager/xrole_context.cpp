@@ -4,6 +4,7 @@
 
 #include "xchain_timer/xchain_timer_face.h"
 #include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xdata/xfull_tableblock.h"
 #include "xmbus/xevent_timer.h"
 #include "xmbus/xevent_store.h"
 #include "xvm/manager/xcontract_address_map.h"
@@ -39,6 +40,35 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
     if (!m_contract_info->has_monitors()) {
         return;
     }
+
+    // process block event
+    if (m_contract_info->has_block_monitors()) {
+        auto block_owner = block->get_block_owner();
+        if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_slash_info_addr}) &&
+             block_owner.find(sys_contract_sharding_table_block_addr) != std::string::npos && block->is_fulltable()) {
+            auto block_height = block->get_height();
+            xdbg("xrole_context_t::on_block_to_db fullblock process, owner: %s, height: %" PRIu64, block->get_block_owner().c_str(), block_height);
+            base::xauto_ptr<base::xvblock_t> full_block = base::xvchain_t::instance().get_xblockstore()->load_block_object(base::xvaccount_t{block_owner}, block_height, base::enum_xvblock_flag_committed, true);
+
+            xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_block.get());
+            auto fulltable_statisitc_data_str = full_tableblock->get_table_statistics_string();
+
+            base::xstream_t stream(base::xcontext_t::instance());
+            stream << fulltable_statisitc_data_str;
+            stream << block_height;
+            std::string action_params = std::string((char *)stream.data(), stream.size());
+
+            xblock_monitor_info_t * info = m_contract_info->find(m_contract_info->address);
+            uint32_t table_id = 0;
+            auto result = xdatautil::extract_table_id_from_address(block_owner, table_id);
+            assert(result);
+            on_fulltableblock_event(m_contract_info->address, "on_collect_slash_info", action_params, block->get_timestamp(), (uint16_t)table_id);
+        }
+
+    }
+
+
+    // process broadcasts
     if (m_contract_info->has_broadcasts()) {
         if (event_broadcasted) {  // only select one node to broadcast
             return;
@@ -118,10 +148,47 @@ void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
                 xtimer_block_monitor_info_t * timer_info = dynamic_cast<xtimer_block_monitor_info_t *>(info);
                 assert(timer_info);
                 auto time_interval = timer_info->get_interval();
+
                 if (address == common::xaccount_address_t{sys_contract_beacon_timer_addr}) {
                     xdbg("[xrole_context_t::on_block] get timer block at %" PRIu64, block->get_height());
                     onchain_timer_round = block->get_height();
                     block_timestamp = block->get_timestamp();
+
+
+                    if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_slash_info_addr}) && valid_call(onchain_timer_round)) {
+
+                        int table_num = m_driver->table_ids().size();
+                        if (table_num == 0) {
+                            xwarn("xrole_context_t::on_block_timer: table_ids empty\n");
+                            return;
+                        }
+
+                        int clock_interval = 1;
+                        clock_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tableslash_report_schedule_interval);
+
+                        if (m_table_contract_schedule.find(m_contract_info->address) != m_table_contract_schedule.end()) {
+                            auto& schedule_info = m_table_contract_schedule[m_contract_info->address];
+                            schedule_info.target_interval = clock_interval;
+                            schedule_info.cur_interval++;
+                            if (schedule_info.cur_interval == schedule_info.target_interval) {
+                                schedule_info.cur_table = m_driver->table_ids().at(0) +  static_cast<uint16_t>((onchain_timer_round / clock_interval) % table_num);
+                                xinfo("xrole_context_t::on_block_timer: table contract schedule, contract address %s, timer %" PRIu64 ", schedule info:[%hu, %hu, %hu %hu]",
+                                    m_contract_info->address.value().c_str(), onchain_timer_round, schedule_info.cur_interval, schedule_info.target_interval, schedule_info.clock_or_table, schedule_info.cur_table);
+                                call_contract(onchain_timer_round, info, block_timestamp, schedule_info.cur_table);
+                                schedule_info.cur_interval = 0;
+                            }
+                        } else { // have not schedule yet
+                            xtable_schedule_info_t schedule_info(clock_interval, m_driver->table_ids().at(0) + static_cast<uint16_t>((onchain_timer_round / clock_interval) % table_num));
+                            xinfo("xrole_context_t::on_block_timer: table contract schedule initial, contract address %s, timer %" PRIu64 ", schedule info:[%hu, %hu, %hu %hu]",
+                                    m_contract_info->address.value().c_str(), onchain_timer_round, schedule_info.cur_interval, schedule_info.target_interval, schedule_info.clock_or_table, schedule_info.cur_table);
+                            call_contract(onchain_timer_round, info, block_timestamp, schedule_info.cur_table);
+                            m_table_contract_schedule[m_contract_info->address] = schedule_info;
+                        }
+
+                        return;
+                    }
+
+
 
                     bool first_blk = runtime_stand_alone(onchain_timer_round, m_contract_info->address);
                     if (time_interval != 0 && onchain_timer_round != 0 && ((first_blk && (onchain_timer_round % 3) == 0) || (!first_blk && (onchain_timer_round % time_interval) == 0))) {
@@ -279,6 +346,31 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
         // auto trace = s.deal_transaction(tx, &ac);
         // xinfo("[xrole_context_t] call_contract in no_consensus mode with return code : %d", (int)trace->m_errno);
     }
+}
+
+void xrole_context_t::on_fulltableblock_event(common::xaccount_address_t const& contract_name, std::string const& action_name, std::string const& action_params, uint64_t timestamp, uint16_t table_id) {
+    auto const address = xcontract_address_map_t::calc_cluster_address(contract_name, table_id);
+
+    auto tx = make_object_ptr<xtransaction_t>();
+    tx->make_tx_run_contract(action_name, action_params);
+    tx->set_same_source_target_address(address.value());
+    xaccount_ptr_t account = m_store->query_account(address.value());
+    assert(account != nullptr);
+    tx->set_last_trans_hash_and_nonce(account->account_send_trans_hash(), account->account_send_trans_number());
+    tx->set_fire_timestamp(timestamp);
+    tx->set_expire_duration(300);
+    tx->set_digest();
+    tx->set_len();
+
+
+    int32_t r = m_unit_service->request_transaction_consensus(tx, true);
+    xinfo("[xrole_context_t::fulltableblock_event] call_contract in consensus mode with return code : %d, %s, %s %s %ld, %lld",
+            r,
+            tx->get_digest_hex_str().c_str(),
+            address.c_str(),
+            data::to_hex_str(account->account_send_trans_hash()).c_str(),
+            account->account_send_trans_number(),
+            timestamp);
 }
 
 void xrole_context_t::broadcast(const xblock_ptr_t & block_ptr, common::xnode_type_t types) {

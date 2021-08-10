@@ -95,6 +95,18 @@ protected:
      * @param table_id
      */
     void call_contract(const std::string & action_params, uint64_t timestamp, xblock_monitor_info_t * info, uint16_t table_id);
+
+    /**
+     * @brief call the contract
+     *
+     * @param contract_name the contract to call
+     * @param action_name  the function name to call
+     * @param action_params the params of the function name
+     * @param timestamp block_timestamp
+     * @param table_id  the table id
+     */
+    void on_fulltableblock_event(common::xaccount_address_t const& contract_name, std::string const& action_name, std::string const& action_params, uint64_t timestamp, uint16_t table_id);
+
     /**
      * @brief check if timer is unorder
      *
