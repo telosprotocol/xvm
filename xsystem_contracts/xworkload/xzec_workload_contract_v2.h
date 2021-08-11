@@ -40,7 +40,15 @@ public:
      */
     void on_timer(common::xlogic_time_t const timestamp);
 
+    /**
+     * @brief process on receiving workload
+     *
+     * @param workload_str workload
+     */
+    void on_receive_workload(std::string const & workload_str);
+
     BEGIN_CONTRACT_WITH_PARAM(xzec_workload_contract_v2)
+    CONTRACT_FUNCTION_PARAM(xzec_workload_contract_v2, on_receive_workload);
     CONTRACT_FUNCTION_PARAM(xzec_workload_contract_v2, on_timer);
     END_CONTRACT_WITH_PARAM
 

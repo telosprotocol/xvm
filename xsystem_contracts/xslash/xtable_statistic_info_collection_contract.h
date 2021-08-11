@@ -7,6 +7,7 @@
 #include "xcommon/xlogic_time.h"
 #include "xdata/xfull_tableblock.h"
 #include "xdata/xslash.h"
+#include "xstake/xstake_algorithm.h"
 #include "xvledger/xvcnode.h"
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
@@ -73,6 +74,39 @@ private:
      */
     xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service);
 
+    /**
+     * @brief process workload statistic data
+     *
+     * @param  xstatistics_data_t  statistic data
+     *
+     */
+    void process_workload_statistic_data(xstatistics_data_t const & statistic_data);
+
+    /**
+     * @brief get_workload
+     *
+     * @param  xstatistics_data_t  statistic data
+     *
+     */
+    std::map<common::xgroup_address_t, xstake::xgroup_workload_t> get_workload(xstatistics_data_t const & statistic_data);
+
+    /**
+     * @brief update_workload
+     *
+     * @param  group_workload  group workload
+     *
+     */
+    void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload);
+
+    /**
+     * @brief upload_workload
+     */
+    void upload_workload();
+
+    /**
+     * @brief clear_workload
+     */
+    void clear_workload();
 };
 
 NS_END3
