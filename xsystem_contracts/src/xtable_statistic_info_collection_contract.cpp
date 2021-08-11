@@ -14,7 +14,9 @@
 #include "xstake/xstake_algorithm.h"
 #include "xvm/manager/xcontract_manager.h"
 
-using namespace top::data;  // NOLINE
+using namespace top::base;
+using namespace top::data;
+using namespace top::xstake;
 
 NS_BEG3(top, xvm, xcontract)
 
@@ -25,11 +27,12 @@ xtable_statistic_info_collection_contract::xtable_statistic_info_collection_cont
 
 void xtable_statistic_info_collection_contract::setup() {
     // initialize map key
-    MAP_CREATE(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY);
+    MAP_CREATE(XPORPERTY_CONTRACT_WORKLOAD_KEY);
+    MAP_CREATE(XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY);
 
-    MAP_CREATE(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY);
-    MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY, "0");
-    MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, "0");
+    MAP_CREATE(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY);
+    MAP_SET(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY, "0");
+    MAP_SET(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, "0");
 
 }
 
@@ -142,6 +145,8 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
         table_id,
         getpid());
 
+    // tgas();
+    process_workload_statistic_data(statistic_data);
 }
 
 void  xtable_statistic_info_collection_contract::accumulate_node_info(xunqualified_node_info_t const&  node_info, xunqualified_node_info_t& summarize_info) {
@@ -312,6 +317,161 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
         CALL(common::xaccount_address_t{sys_contract_zec_slash_info_addr}, "summarize_slash_info", std::string((char *)stream.data(), stream.size()));
     }
 
+    upload_workload();
+    clear_workload();
+
+}
+
+std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_collection_contract::get_workload(xstatistics_data_t const & statistic_data) {
+    std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
+    auto node_service = contract::xcontract_manager_t::instance().get_node_service();
+    auto workload_per_tableblock = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tableblock);
+    auto workload_per_tx = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tx);
+    for (auto const & static_item : statistic_data.detail) {
+        auto elect_statistic = static_item.second;
+        for (auto const & group_item : elect_statistic.group_statistics_data) {
+            common::xgroup_address_t const & group_addr = group_item.first;
+            xgroup_related_statistics_data_t const & group_account_data = group_item.second;
+            xvip2_t const & group_xvip2 = top::common::xip2_t{group_addr.network_id(),
+                                                              group_addr.zone_id(),
+                                                              group_addr.cluster_id(),
+                                                              group_addr.group_id(),
+                                                              (uint16_t)group_account_data.account_statistics_data.size(),
+                                                              static_item.first};
+            xdbg("[xtable_statistic_info_collection_contract::get_workload] group xvip2: %llu, %llu", group_xvip2.high_addr, group_xvip2.low_addr);
+            for (size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                auto account_str = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                uint32_t block_count = group_account_data.account_statistics_data[slotid].block_data.block_count;
+                uint32_t tx_count = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
+                uint32_t workload = block_count * workload_per_tableblock + tx_count * workload_per_tx;
+                if (workload > 0) {
+                    auto it2 = group_workload.find(group_addr);
+                    if (it2 == group_workload.end()) {
+                        xgroup_workload_t group_workload_info;
+                        auto ret = group_workload.insert(std::make_pair(group_addr, group_workload_info));
+                        XCONTRACT_ENSURE(ret.second, "insert workload failed");
+                        it2 = ret.first;
+                    }
+
+                    it2->second.m_leader_count[account_str] += workload;
+                }
+
+                xdbg(
+                    "[xtable_statistic_info_collection_contract::get_workload] group_addr: [%s, network_id: %u, zone_id: %u, cluster_id: %u, group_id: %u], leader: %s, workload: "
+                    "%u, block_count: %u, tx_count: %u, workload_per_tableblock: %u, workload_per_tx: %u",
+                    group_addr.to_string().c_str(),
+                    group_addr.network_id().value(),
+                    group_addr.zone_id().value(),
+                    group_addr.cluster_id().value(),
+                    group_addr.group_id().value(),
+                    account_str.c_str(),
+                    workload,
+                    block_count,
+                    tx_count,
+                    workload_per_tableblock,
+                    workload_per_tx);
+            }
+        }
+    }
+    return group_workload;
+}
+
+void xtable_statistic_info_collection_contract::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
+    for (auto const & one_group_workload : group_workload) {
+        auto const & group_address = one_group_workload.first;
+        auto const & workload = one_group_workload.second;
+        // get
+        std::string group_address_str;
+        xstream_t stream(xcontext_t::instance());
+        stream << group_address;
+        group_address_str = std::string((const char *)stream.data(), stream.size());
+        xgroup_workload_t total_workload;
+        {
+            std::string value_str;
+            if (MAP_GET2(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_address_str, value_str)) {
+                xdbg("[xtable_statistic_info_collection_contract::update_workload] group not exist: %s", group_address.to_string().c_str());
+                total_workload.cluster_id = group_address_str;
+            } else {
+                xstream_t stream(xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
+                total_workload.serialize_from(stream);
+            }
+        }
+        // update
+        for (auto const & leader_workload : workload.m_leader_count) {
+            auto const & leader = leader_workload.first;
+            auto const & count = leader_workload.second;
+            total_workload.m_leader_count[leader] += count;
+            total_workload.cluster_total_workload += count;
+            xdbg("[xtable_statistic_info_collection_contract::update_workload] group: %u, leader: %s, count: %d, total_count: %d, total_workload: %d",
+                 group_address.group_id().value(),
+                 leader.c_str(),
+                 count,
+                 total_workload.m_leader_count[leader],
+                 total_workload.cluster_total_workload);
+        }
+        // set
+        {
+            xstream_t stream(xcontext_t::instance());
+            total_workload.serialize_to(stream);
+            std::string value_str = std::string((const char *)stream.data(), stream.size());
+            MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_address_str, value_str);
+        }
+    }
+}
+
+void xtable_statistic_info_collection_contract::upload_workload() {
+    std::map<std::string, std::string> group_workload_str;
+    std::map<common::xgroup_address_t, xgroup_workload_t> group_workload_upload;
+
+    MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_workload_str);
+    for (auto it = group_workload_str.begin(); it != group_workload_str.end(); it++) {
+        xstream_t key_stream(xcontext_t::instance(), (uint8_t *)it->first.data(), it->first.size());
+        common::xgroup_address_t group_address;
+        key_stream >> group_address;
+        xstream_t stream(xcontext_t::instance(), (uint8_t *)it->second.data(), it->second.size());
+        xgroup_workload_t group_workload;
+        group_workload.serialize_from(stream);
+
+        for (auto const & leader_workload : group_workload.m_leader_count) {
+            auto const & leader = leader_workload.first;
+            auto const & workload = leader_workload.second;
+
+            auto it2 = group_workload_upload.find(group_address);
+            if (it2 == group_workload_upload.end()) {
+                xgroup_workload_t empty_workload;
+                auto ret = group_workload_upload.insert(std::make_pair(group_address, empty_workload));
+                it2 = ret.first;
+            }
+            it2->second.m_leader_count[leader] += workload;
+        }
+    }
+    if (group_workload_upload.size() > 0) {
+        std::string group_workload_upload_str;
+        {
+            xstream_t stream(xcontext_t::instance());
+            MAP_OBJECT_SERIALIZE2(stream, group_workload_upload);
+            stream << int64_t(0);
+            group_workload_upload_str = std::string((char *)stream.data(), stream.size());
+            xinfo("[xtable_statistic_info_collection_contract::upload_workload] upload workload to zec reward, group_workload_upload size: %d", group_workload_upload.size());
+        }
+        {
+            xstream_t stream(xcontext_t::instance());
+            stream << group_workload_upload_str;
+            CALL(common::xaccount_address_t{sys_contract_zec_workload_addr}, "on_receive_workload", std::string((char *)stream.data(), stream.size()));
+            group_workload_upload.clear();
+        }
+    }
+}
+
+void xtable_statistic_info_collection_contract::clear_workload() {
+    MAP_CLEAR(XPORPERTY_CONTRACT_WORKLOAD_KEY);
+}
+
+void xtable_statistic_info_collection_contract::process_workload_statistic_data(xstatistics_data_t const & statistic_data) {
+    auto const & group_workload = get_workload(statistic_data);
+    if (!group_workload.empty()) {
+        update_workload(group_workload);
+    }
 }
 
 NS_END3

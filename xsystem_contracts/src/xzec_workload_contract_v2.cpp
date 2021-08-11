@@ -52,6 +52,34 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
     return static_cast<bool>(record.activated);
 };
 
+void xzec_workload_contract_v2::on_receive_workload(std::string const & workload_str) {
+    auto const & source_address = SOURCE_ADDRESS();
+
+    std::string base_addr;
+    uint32_t table_id;
+    if (!data::xdatautil::extract_parts(source_address, base_addr, table_id) || sys_contract_sharding_statistic_info_addr != base_addr) {
+        xwarn("[xzec_workload_contract_v2::on_receive_workload] invalid call from %s", source_address.c_str());
+        return;
+    }
+
+    xstream_t stream(xcontext_t::instance(), (uint8_t *)workload_str.data(), workload_str.size());
+    std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
+    int64_t table_pledge_balance_change_tgas = 0;
+
+    MAP_OBJECT_DESERIALZE2(stream, group_workload);
+    stream >> table_pledge_balance_change_tgas;
+    xdbg("[xzec_workload_contract::on_receive_workload] pid:%d, SOURCE_ADDRESS: %s, group_workload size: %zu, table_pledge_balance_change_tgas: %lld\n", getpid(), source_address.c_str(), table_pledge_balance_change_tgas);
+
+    // update system total tgas
+    update_tgas(table_pledge_balance_change_tgas);
+
+    if (!is_mainnet_activated()) {
+        return;
+    }
+
+    update_workload(group_workload);
+}
+
 std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(common::xlogic_time_t const timestamp, const uint32_t table_id) {
     uint64_t last_read_height = get_table_height(table_id);
     uint64_t cur_read_height = last_read_height;
@@ -363,46 +391,46 @@ void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) 
     }
     xinfo("[xzec_workload_contract_v2::on_timer] timestamp: %lu, self: %s, src: %s", timestamp, self_account.value().c_str(), source_address.c_str());
 
-    // total 256 tables
-    // total 16 rounds, 16 tables per round
-    // total 32 minutes, 2 minute per round(workload_collection_interval = 120 / 10)
-    const xinterval_t time_per_round = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_collection_interval);
-    const uint32_t table_per_round = 16U;
+    // // total 256 tables
+    // // total 16 rounds, 16 tables per round
+    // // total 32 minutes, 2 minute per round(workload_collection_interval = 120 / 10)
+    // const xinterval_t time_per_round = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_collection_interval);
+    // const uint32_t table_per_round = 16U;
 
-    const uint32_t total_tables = enum_vledger_const::enum_vbucket_has_tables_count;
-    const uint32_t total_rounds = total_tables / table_per_round;
-    const xinterval_t total_time = time_per_round * total_rounds;
-    const uint32_t this_round = timestamp % total_time / time_per_round + 1;
-    const uint32_t start_table = (this_round - 1) * table_per_round;
-    const uint32_t end_table = (this_round == total_rounds) ? (total_tables - 1) : (this_round * table_per_round - 1);
-    std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
-    accumulate_workload_with_fullblock(timestamp, start_table, end_table, group_workload);
+    // const uint32_t total_tables = enum_vledger_const::enum_vbucket_has_tables_count;
+    // const uint32_t total_rounds = total_tables / table_per_round;
+    // const xinterval_t total_time = time_per_round * total_rounds;
+    // const uint32_t this_round = timestamp % total_time / time_per_round + 1;
+    // const uint32_t start_table = (this_round - 1) * table_per_round;
+    // const uint32_t end_table = (this_round == total_rounds) ? (total_tables - 1) : (this_round * table_per_round - 1);
+    // std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
+    // accumulate_workload_with_fullblock(timestamp, start_table, end_table, group_workload);
 
-    if (!is_mainnet_activated()) {
-        return;
-    }
+    // if (!is_mainnet_activated()) {
+    //     return;
+    // }
 
-    if (!group_workload.empty()) {
-        update_workload(group_workload);
-    }
-    if (this_round % total_rounds == 0) {
-        xdbg("[xzec_workload_contract_v2::on_timer] timstamp: %lu, this round: %u, upload workload", timestamp, this_round);
+    // if (!group_workload.empty()) {
+    //     update_workload(group_workload);
+    // }
+    // if (this_round % total_rounds == 0) {
+    //     xdbg("[xzec_workload_contract_v2::on_timer] timstamp: %lu, this round: %u, upload workload", timestamp, this_round);
         upload_workload(timestamp);
         clear_workload();
-    }
-    uint64_t t2 = xtime_utl::time_now_ms();
-    xinfo(
-        "[xzec_workload_contract_v2::on_timer] timstamp: %lu, timecost: %lu, time_per_round: %u, table_per_round: %u, total_rounds: %u, total_time: %u, this_round: %u, "
-        "strat_table: %u, end_table: %u",
-        timestamp,
-        t2 - t1,
-        time_per_round,
-        table_per_round,
-        total_tables,
-        total_rounds,
-        this_round,
-        start_table,
-        end_table);
+    // }
+    // uint64_t t2 = xtime_utl::time_now_ms();
+    // xinfo(
+    //     "[xzec_workload_contract_v2::on_timer] timstamp: %lu, timecost: %lu, time_per_round: %u, table_per_round: %u, total_rounds: %u, total_time: %u, this_round: %u, "
+    //     "strat_table: %u, end_table: %u",
+    //     timestamp,
+    //     t2 - t1,
+    //     time_per_round,
+    //     table_per_round,
+    //     total_tables,
+    //     total_rounds,
+    //     this_round,
+    //     start_table,
+    //     end_table);
 }
 
 NS_END3
