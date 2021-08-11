@@ -41,7 +41,7 @@ public:
      * @param info  the info to collect slash info
      */
     void
-    on_collect_statistic_info(std::string const& slash_info, uint64_t block_height);
+    on_collect_statistic_info(std::string const& slash_info, uint64_t block_height, int64_t tgas);
 
     /**
      * @brief report the summarized slash info
@@ -80,7 +80,15 @@ private:
      * @param  xstatistics_data_t  statistic data
      *
      */
-    void process_workload_statistic_data(xstatistics_data_t const & statistic_data);
+    void process_workload_statistic_data(xstatistics_data_t const & statistic_data, const int64_t tgas);
+
+    /**
+     * @brief get_zec_table_height
+     * 
+     * @param table_id table_id
+     * 
+     */
+    uint64_t get_zec_table_height(uint32_t table_id);
 
     /**
      * @brief get_workload
@@ -99,14 +107,17 @@ private:
     void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload);
 
     /**
+     * @brief update_tgas
+     *
+     * @param  table_pledge_balance_change_tgas  table_pledge_balance_change_tgas
+     *
+     */
+    void update_tgas(const int64_t table_pledge_balance_change_tgas);
+
+    /**
      * @brief upload_workload
      */
     void upload_workload();
-
-    /**
-     * @brief clear_workload
-     */
-    void clear_workload();
 };
 
 NS_END3
