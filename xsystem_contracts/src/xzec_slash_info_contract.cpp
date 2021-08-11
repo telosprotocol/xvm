@@ -84,7 +84,7 @@ void xzec_slash_info_contract::summarize_slash_info(std::string const & slash_in
     xdbg("[xzec_slash_info_contract][summarize_slash_info] self_account %s, source_addr %s, base_addr %s\n", account.c_str(), source_addr.c_str(), base_addr.c_str());
     XCONTRACT_ENSURE(base_addr == top::sys_contract_sharding_statistic_info_addr, "invalid source addr's call!");
 
-    xinfo("[xzec_slash_info_contract][summarize_slash_info] table contract report slash info, SOURCE_ADDRESS: %s, pid:%d, ", source_addr.c_str(), getpid());
+    xinfo("[xzec_slash_info_contract][summarize_slash_info] enter table contract report slash info, SOURCE_ADDRESS: %s, pid:%d, ", source_addr.c_str(), getpid());
 
     xunqualified_node_info_t summarize_info;
     std::string value_str;
@@ -122,20 +122,15 @@ void xzec_slash_info_contract::summarize_slash_info(std::string const & slash_in
 
     xunqualified_node_info_t node_info;
     std::uint32_t tableblock_count;
+    std::uint64_t cur_statistic_height;
     base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)slash_info.data(), slash_info.size());
     node_info.serialize_from(stream);
     stream >> tableblock_count;
+    stream >> cur_statistic_height;
+    xdbg("wenstest tableblock_count: %u, cur_statistic_height: %" PRIu64, tableblock_count, cur_statistic_height);
 
-    for (auto const & item : node_info.auditor_info) {
-        summarize_info.auditor_info[item.first].block_count += item.second.block_count;
-        summarize_info.auditor_info[item.first].subset_count += item.second.subset_count;
-    }
-
-    for (auto const & item : node_info.validator_info) {
-        summarize_info.validator_info[item.first].block_count += item.second.block_count;
-        summarize_info.validator_info[item.first].subset_count += item.second.subset_count;
-    }
-
+    // accoumulate node info
+    accumulate_node_info(node_info, summarize_info);
     summarize_tableblock_count += tableblock_count;
 
     stream.reset();
@@ -150,7 +145,7 @@ void xzec_slash_info_contract::summarize_slash_info(std::string const & slash_in
         XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_tableblock_num_key");
         MAP_SET(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY, "TABLEBLOCK_NUM", std::string((char *)stream.data(), stream.size()));
     }
-    xkinfo("[xzec_slash_info_contract][summarize_slash_info]  table contract report slash info, auditor size: %zu, validator size: %zu, summarized tableblock num: %u, pid: %d",
+    xkinfo("[xzec_slash_info_contract][summarize_slash_info] effective table contract report slash info, auditor size: %zu, validator size: %zu, summarized tableblock num: %u, pid: %d",
          summarize_info.auditor_info.size(),
          summarize_info.validator_info.size(),
          summarize_tableblock_count,
@@ -176,6 +171,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
          SOURCE_ADDRESS().c_str(),
          getpid());
 
+    return;
     /**
      *
      * get stored processed slash info
