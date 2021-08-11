@@ -41,31 +41,35 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
         return;
     }
 
-    // process block event
-    if (m_contract_info->has_block_monitors()) {
-        auto block_owner = block->get_block_owner();
-        // table fulltable block process
-        if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) &&
-             block_owner.find(sys_contract_sharding_table_block_addr) != std::string::npos && block->is_fulltable()) {
-            auto block_height = block->get_height();
-            xdbg("xrole_context_t::on_block_to_db fullblock process, owner: %s, height: %" PRIu64, block->get_block_owner().c_str(), block_height);
-            base::xauto_ptr<base::xvblock_t> full_block = base::xvchain_t::instance().get_xblockstore()->load_block_object(base::xvaccount_t{block_owner}, block_height, base::enum_xvblock_flag_committed, true);
+    auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
+    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_clock())) {
+        // process block event
+        if (m_contract_info->has_block_monitors()) {
+            auto block_owner = block->get_block_owner();
+            // table fulltable block process
+            if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) &&
+                block_owner.find(sys_contract_sharding_table_block_addr) != std::string::npos && block->is_fulltable()) {
+                auto block_height = block->get_height();
+                xdbg("xrole_context_t::on_block_to_db fullblock process, owner: %s, height: %" PRIu64, block->get_block_owner().c_str(), block_height);
+                base::xauto_ptr<base::xvblock_t> full_block = base::xvchain_t::instance().get_xblockstore()->load_block_object(base::xvaccount_t{block_owner}, block_height, base::enum_xvblock_flag_committed, true);
 
-            xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_block.get());
-            auto fulltable_statisitc_data_str = full_tableblock->get_table_statistics_string();
+                xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_block.get());
+                auto fulltable_statisitc_data_str = full_tableblock->get_table_statistics_string();
 
-            base::xstream_t stream(base::xcontext_t::instance());
-            stream << fulltable_statisitc_data_str;
-            stream << block_height;
-            std::string action_params = std::string((char *)stream.data(), stream.size());
+                base::xstream_t stream(base::xcontext_t::instance());
+                stream << fulltable_statisitc_data_str;
+                stream << block_height;
+                stream << block->get_pledge_balance_change_tgas();
 
-            xblock_monitor_info_t * info = m_contract_info->find(m_contract_info->address);
-            uint32_t table_id = 0;
-            auto result = xdatautil::extract_table_id_from_address(block_owner, table_id);
-            assert(result);
-            on_fulltableblock_event(m_contract_info->address, "on_collect_statistic_info", action_params, block->get_timestamp(), (uint16_t)table_id);
+                std::string action_params = std::string((char *)stream.data(), stream.size());
+
+                xblock_monitor_info_t * info = m_contract_info->find(m_contract_info->address);
+                uint32_t table_id = 0;
+                auto result = xdatautil::extract_table_id_from_address(block_owner, table_id);
+                assert(result);
+                on_fulltableblock_event(m_contract_info->address, "on_collect_statistic_info", action_params, block->get_timestamp(), (uint16_t)table_id);
+            }
         }
-
     }
 
 
