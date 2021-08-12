@@ -36,15 +36,16 @@ public:
     setup();
 
     /**
-     * @brief  collect the slash info on tables
+     * @brief  collect the statistic info on tables
      *
-     * @param info  the info to collect slash info
+     * @param statistic_info  the info to collect
+     * @param block_height the fullblock height
      */
     void
-    on_collect_statistic_info(std::string const& slash_info, uint64_t block_height, int64_t tgas);
+    on_collect_statistic_info(std::string const& statistic_info, uint64_t block_height, int64_t tgas);
 
     /**
-     * @brief report the summarized slash info
+     * @brief report the summarized statistic info
      * @param timestamp  the clock timer
      *
      */

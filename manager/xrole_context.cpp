@@ -58,14 +58,13 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
                 base::xstream_t stream(base::xcontext_t::instance());
                 stream << fulltable_statisitc_data_str;
                 stream << block_height;
-                stream << block->get_pledge_balance_change_tgas();
-
                 std::string action_params = std::string((char *)stream.data(), stream.size());
 
                 xblock_monitor_info_t * info = m_contract_info->find(m_contract_info->address);
                 uint32_t table_id = 0;
                 auto result = xdatautil::extract_table_id_from_address(block_owner, table_id);
                 assert(result);
+                XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_fullblock_event, 1);
                 on_fulltableblock_event(m_contract_info->address, "on_collect_statistic_info", action_params, block->get_timestamp(), (uint16_t)table_id);
             }
         }
