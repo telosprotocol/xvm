@@ -21,7 +21,7 @@ using namespace top::xstake;
 
 NS_BEG3(top, xvm, xcontract)
 
-#define FULLTABLE_NUM_PROPERTY  "FULLTABLE_NUM_PROPERTY"
+#define FULLTABLE_NUM           "FULLTABLE_NUM"
 #define FULLTABLE_HEIGHT        "FULLTABLE_HEIGHT"
 
 xtable_statistic_info_collection_contract::xtable_statistic_info_collection_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
@@ -32,7 +32,7 @@ void xtable_statistic_info_collection_contract::setup() {
     MAP_CREATE(XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY);
 
     MAP_CREATE(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY);
-    MAP_SET(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY, "0");
+    MAP_SET(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM, "0");
     MAP_SET(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, "0");
 
     STRING_CREATE(XPORPERTY_CONTRACT_TGAS_KEY);
@@ -40,8 +40,9 @@ void xtable_statistic_info_collection_contract::setup() {
 
 }
 
-void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::string const& slash_info, uint64_t block_height, int64_t tgas) {
+void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::string const& statistic_info, uint64_t block_height, int64_t tgas) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
+    XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_exec_fullblock, 1);
 
     auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
     if (!chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, TIME())) {
@@ -91,7 +92,7 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
 
     // get the slash info from db event
     xstatistics_data_t statistic_data;
-    statistic_data.deserialize_based_on<base::xstream_t>({ std::begin(slash_info), std::end(slash_info) });
+    statistic_data.deserialize_based_on<base::xstream_t>({ std::begin(statistic_info), std::end(statistic_info) });
     auto node_service = contract::xcontract_manager_t::instance().get_node_service();
     auto const node_info = process_statistic_data(statistic_data, node_service);
 
@@ -121,11 +122,11 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
     uint32_t summarize_fulltableblock_num = 0;
     try {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_tableblock_num_key");
-        if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY)) {
-            value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY);
+        if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM)) {
+            value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM);
         }
     } catch (std::runtime_error & e) {
-        xwarn("[xtable_statistic_info_collection_contract][summarize_slash_info] read summarized tableblock num error:%s", e.what());
+        xwarn("[xtable_statistic_info_collection_contract][on_collect_statistic_info] read summarized tableblock num error:%s", e.what());
         throw;
     }
 
@@ -145,7 +146,7 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_extended_function_key");
         MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, base::xstring_utl::tostring(block_height));
         summarize_fulltableblock_num++;
-        MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY, base::xstring_utl::tostring(summarize_fulltableblock_num));
+        MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM, base::xstring_utl::tostring(summarize_fulltableblock_num));
     }
 
 
@@ -239,11 +240,11 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
     std::string value_str;
     try {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_tableblock_num_key");
-        if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY)) {
-            value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY);
+        if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM)) {
+            value_str = MAP_GET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM);
         }
     } catch (std::runtime_error & e) {
-        xwarn("[xtable_statistic_info_collection_contract][summarize_slash_info] read summarized tableblock num error:%s", e.what());
+        xwarn("[xtable_statistic_info_collection_contract][report_summarized_statistic_info] read summarized tableblock num error:%s", e.what());
         throw;
     }
 
@@ -320,7 +321,7 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
     }
     {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_remove_property_contract_tableblock_num_key");
-        MAP_REMOVE(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM_PROPERTY);
+        MAP_REMOVE(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM);
     }
 
     std::string shard_slash_collect = std::string((char *)stream.data(), stream.size());
