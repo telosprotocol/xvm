@@ -83,14 +83,6 @@ private:
     void process_workload_statistic_data(xstatistics_data_t const & statistic_data, const int64_t tgas);
 
     /**
-     * @brief get_zec_table_height
-     * 
-     * @param table_id table_id
-     * 
-     */
-    uint64_t get_zec_table_height(uint32_t table_id);
-
-    /**
      * @brief get_workload
      *
      * @param  xstatistics_data_t  statistic data
