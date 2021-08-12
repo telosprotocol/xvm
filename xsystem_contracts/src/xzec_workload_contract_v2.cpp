@@ -69,7 +69,14 @@ void xzec_workload_contract_v2::on_receive_workload(std::string const & workload
 
     MAP_OBJECT_DESERIALZE2(stream, group_workload);
     stream >> table_pledge_balance_change_tgas;
+    stream >> height;
     xdbg("[xzec_workload_contract::on_receive_workload] pid:%d, SOURCE_ADDRESS: %s, group_workload size: %zu, table_pledge_balance_change_tgas: %lld\n", getpid(), source_address.c_str(), group_workload.size(), table_pledge_balance_change_tgas);
+
+    uint64_t last_read_height = get_table_height(table_id);
+    if (last_read_height >= height) {
+        xwarn("[xzec_workload_contract::on_receive_workload] table id: %u, zec_last_read_height: %lu >= table_previous_height: %lu, ignore!", table_id, last_read_height, height);
+        return;
+    }
 
     // update system total tgas
     update_tgas(table_pledge_balance_change_tgas);

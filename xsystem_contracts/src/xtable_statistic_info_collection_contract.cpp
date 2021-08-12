@@ -154,14 +154,7 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
         table_id,
         getpid());
 
-    if (get_zec_table_height(table_id) < block_height) {
-        process_workload_statistic_data(statistic_data, tgas);
-    } else {
-        xinfo("[xtable_statistic_info_collection_contract::on_collect_statistic_info] table id: %u, zec_last_read_height: %lu >= previous_height: %lu, ignore!",
-              table_id,
-              get_zec_table_height(table_id),
-              block_height);
-    }
+    process_workload_statistic_data(statistic_data, tgas);
 }
 
 void  xtable_statistic_info_collection_contract::accumulate_node_info(xunqualified_node_info_t const&  node_info, xunqualified_node_info_t& summarize_info) {
@@ -341,19 +334,6 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
 
 }
 
-uint64_t xtable_statistic_info_collection_contract::get_zec_table_height(uint32_t table_id) {
-    uint64_t last_read_height = 0;
-
-    std::map<std::string, std::string> map_height;
-    MAP_COPY_GET(XPORPERTY_CONTRACT_TABLEBLOCK_HEIGHT_KEY, map_height, sys_contract_zec_workload_addr);
-    std::string key = std::to_string(table_id);
-    if (map_height.count(key)) {
-        last_read_height = xstring_utl::touint64(map_height[key]);
-    }
-
-    return last_read_height;
-}
-
 std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_collection_contract::get_workload(xstatistics_data_t const & statistic_data) {
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
     auto node_service = contract::xcontract_manager_t::instance().get_node_service();
@@ -496,11 +476,24 @@ void xtable_statistic_info_collection_contract::upload_workload() {
             }
         }
 
+        uint64_t height = 0;
+        {
+            std::string value_str;
+            if (MAP_GET2(XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, value_str)) {
+                xwarn("[xtable_statistic_info_collection_contract::update_workload] table height not exist!");
+            } else {
+                if (!value_str.empty()) {
+                    height = base::xstring_utl::touint64(value_str);
+                }
+            }
+        }
+
         std::string group_workload_upload_str;
         {
             xstream_t stream(xcontext_t::instance());
             MAP_OBJECT_SERIALIZE2(stream, group_workload_upload);
             stream << tgas;
+            stream << height;
             group_workload_upload_str = std::string((char *)stream.data(), stream.size());
             xinfo("[xtable_statistic_info_collection_contract::upload_workload] upload workload to zec reward, group_workload_upload size: %d", group_workload_upload.size());
         }
