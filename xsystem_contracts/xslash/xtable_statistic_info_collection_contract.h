@@ -79,6 +79,7 @@ private:
      * @brief process workload statistic data
      *
      * @param  xstatistics_data_t  statistic data
+     * @param  tgas tgas
      *
      */
     void process_workload_statistic_data(xstatistics_data_t const & statistic_data, const int64_t tgas);
@@ -89,7 +90,17 @@ private:
      * @param  xstatistics_data_t  statistic data
      *
      */
-    std::map<common::xgroup_address_t, xstake::xgroup_workload_t> get_workload(xstatistics_data_t const & statistic_data);
+    std::map<common::xgroup_address_t, xstake::xgroup_workload_t> get_workload_from_data(xstatistics_data_t const & statistic_data);
+
+    /**
+     * @brief get_workload
+     */
+    xstake::xgroup_workload_t get_workload(common::xgroup_address_t const & group_address);
+
+    /**
+     * @brief set_workload
+     */
+    void set_workload(common::xgroup_address_t const & group_address, xstake::xgroup_workload_t const & group_workload);
 
     /**
      * @brief update_workload

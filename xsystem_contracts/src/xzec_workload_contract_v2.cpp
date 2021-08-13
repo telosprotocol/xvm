@@ -280,14 +280,9 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
     XMETRICS_COUNTER_SET(XWORKLOAD_CONTRACT "accumulate_total_time_counter", total_get_fullblock_time + total_accumulate_workload_time);
 }
 
-void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
-    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "update_workload_time");
-    XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "update_workload_cpu_time");
-    auto t1 = xtime_utl::time_now_ms();
-    for (auto const & one_group_workload : group_workload) {
-        auto const & group_address = one_group_workload.first;
-        auto const & workload = one_group_workload.second;
-        // get
+xgroup_workload_t xzec_workload_contract_v2::get_workload(common::xgroup_address_t const & group_address) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "get_workload_time");
+    XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "get_workload_cpu_time");
         std::string group_address_str;
         xstream_t stream(xcontext_t::instance());
         stream << group_address;
@@ -306,6 +301,26 @@ void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_
                 total_workload.serialize_from(stream);
             }
         }
+    return total_workload;
+}
+
+void xzec_workload_contract_v2::set_workload(common::xgroup_address_t const & group_address, xgroup_workload_t const & group_workload) {
+    xstream_t key_stream(xcontext_t::instance());
+    key_stream << group_address;
+    std::string group_address_str = std::string((const char *)key_stream.data(), key_stream.size());
+    xstream_t stream(xcontext_t::instance());
+    group_workload.serialize_to(stream);
+    std::string value_str = std::string((const char *)stream.data(), stream.size());
+    MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_address_str, value_str);
+}
+
+void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
+    auto t1 = xtime_utl::time_now_ms();
+    for (auto const & one_group_workload : group_workload) { 
+        auto const & group_address = one_group_workload.first;
+        auto const & workload = one_group_workload.second;
+        // get
+        auto total_workload = get_workload(group_address);
         // update
         for (auto const & leader_workload : workload.m_leader_count) {
             auto const & leader = leader_workload.first;
@@ -320,13 +335,7 @@ void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_
                  total_workload.cluster_total_workload);
         }
         // set
-        {
-            xstream_t stream(xcontext_t::instance());
-            total_workload.serialize_to(stream);
-            std::string value_str = std::string((const char *)stream.data(), stream.size());
-            XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "XPORPERTY_CONTRACT_WORKLOAD_KEY_SetExecutionTime");
-            MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_address_str, value_str);
-        }
+        set_workload(group_address, total_workload);
     }
     auto t2 = xtime_utl::time_now_ms();
     XMETRICS_COUNTER_SET(XWORKLOAD_CONTRACT "update_workload_counter", t2 - t1);

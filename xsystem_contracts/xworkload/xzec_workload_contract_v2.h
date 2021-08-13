@@ -13,8 +13,6 @@
 
 NS_BEG3(top, xvm, system_contracts)
 
-using xgroup_workload_t = top::xstake::cluster_workload_t;
-
 class xzec_workload_contract_v2 : public xcontract::xcontract_base
 {
     using xbase_t = xcontract::xcontract_base;
@@ -75,7 +73,7 @@ private:
     /**
      * @brief add_workload_with_fullblock
      */
-    void accumulate_workload(xstatistics_data_t const & stat_data, std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload);
+    void accumulate_workload(xstatistics_data_t const & stat_data, std::map<common::xgroup_address_t, xstake::xgroup_workload_t> & group_workload);
 
     /**
      * @brief add_workload_with_fullblock
@@ -83,12 +81,22 @@ private:
     void accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp,
                                             const uint32_t start_table,
                                             const uint32_t end_table,
-                                            std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload);
+                                            std::map<common::xgroup_address_t, xstake::xgroup_workload_t> & group_workload);
+
+    /**
+     * @brief get_workload
+     */
+    xstake::xgroup_workload_t get_workload(common::xgroup_address_t const & group_address);
+
+    /**
+     * @brief set_workload
+     */
+    void set_workload(common::xgroup_address_t const & group_address, xstake::xgroup_workload_t const & group_workload);
 
     /**
      * @brief stash_workload
      */
-    void update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload);
+    void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload);
 
     /**
      * @brief upload_workload
