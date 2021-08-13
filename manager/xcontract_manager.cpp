@@ -1185,6 +1185,172 @@ static void get_other_map(observer_ptr<store::xstore_face_t const> store,
     }
 }
 
+
+static void get_sharding_statistic_contract_property(std::string const & sharding_contract_addr,
+                                                    std::string const & property_name,
+                                                    uint64_t const height,
+                                                    observer_ptr<store::xstore_face_t> store,
+                                                    xJson::Value & json,
+                                                    std::error_code & ec
+                                                    ) {
+
+    assert(!ec);
+    assert(store != nullptr);
+
+    std::map<std::string, std::string> result;
+    if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
+        auto error = store->get_map_property(sharding_contract_addr, height, property_name, result);
+        if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_fail_to_get_block;
+            return;
+        }
+
+#if defined(DEBUG)
+        xdbg("get_table_statistic_contract_property #131, height: %" PRIu64 ", map size: %zu", height, result.size());
+        for (auto const & p : result) {
+            xdbg("get_table_statistic_contract_property, key: %s; value: %s", p.first.c_str(), p.second.c_str());
+        }
+#endif
+
+        auto const it = result.find("UNQUALIFIED_NODE");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        auto const & value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        xunqualified_node_info_t data;
+        base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(value.data())), static_cast<uint32_t>(value.size()) };
+        try {
+            data.serialize_from(stream);
+        } catch (top::error::xtop_error_t const & eh) {
+            ec = eh.code();
+            return;
+        } catch (enum_xerror_code const errc) {
+            ec = errc;
+            return;
+        }
+
+        for (auto const & auditor_data : data.auditor_info) {
+            xJson::Value v;
+            auto const & unqualified_data = top::get<xnode_vote_percent_t>(auditor_data);
+
+            v["account"] = top::get<common::xaccount_address_t const>(auditor_data).value();
+            v["block_count"] = unqualified_data.block_count;
+            v["subset_count"] = unqualified_data.subset_count;
+
+            json[property_name]["auditor"].append(v);
+        }
+
+        for (auto const & validator_data : data.validator_info) {
+            xJson::Value v;
+            auto const & unqualified_data = top::get<xnode_vote_percent_t>(validator_data);
+
+            v["account"] = top::get<common::xaccount_address_t const>(validator_data).value();
+            v["block_count"] = unqualified_data.block_count;
+            v["subset_count"] = unqualified_data.subset_count;
+
+            json[property_name]["validator"].append(v);
+        }
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY) {
+        auto error = store->get_map_property(sharding_contract_addr, height, property_name, result);
+        if (error) {
+            return;
+        }
+
+#if defined(DEBUG)
+        xdbg("get_table_statistic_contract_property #134, height: %" PRIu64 ", map size: %zu", height, result.size());
+        for (auto const & p : result) {
+            xdbg("get_table_statistic_contract_property, key: %s; value: %s", p.first.c_str(), p.second.c_str());
+        }
+#endif
+
+        auto it = result.find("FULLTABLE_NUM");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        auto& value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        uint32_t summarize_fulltableblock_count = xstring_utl::touint32(value);
+        json[property_name]["fulltableblock_count"] = summarize_fulltableblock_count;
+
+
+        it = result.find("FULLTABLE_HEIGHT");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        uint32_t summarize_fulltableblock_height = xstring_utl::touint32(value);
+        json[property_name]["fulltableblock_height"] = summarize_fulltableblock_height;
+
+
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY) {
+        auto error = store->get_map_property(sharding_contract_addr, height, property_name, result);
+        if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_fail_to_get_block;
+            return;
+        }
+
+#if defined(DEBUG)
+        for (auto const & p : result) {
+            xdbg("table_statistic_contract: key : %s; value size %zu", p.first.c_str(), p.second.size());
+        }
+#endif
+        if (result.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        for (auto const & m : result) {
+            xJson::Value jm;
+            auto const & detail = m.second;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(detail.data())), static_cast<uint32_t>(detail.size()) };
+            xstake::cluster_workload_t workload;
+            try {
+                workload.serialize_from(stream);
+            } catch (top::error::xtop_error_t const & eh) {
+                ec = eh.code();
+                return;
+            } catch (enum_xerror_code const errc) {
+                ec = errc;
+                return;
+            }
+            {
+                xJson::Value jn;
+                jn["cluster_total_workload"] = workload.cluster_total_workload;
+                auto const & key_str = workload.cluster_id;
+                common::xcluster_address_t cluster;
+                base::xstream_t key_stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(key_str.data())), static_cast<uint32_t>(key_str.size()) };
+                key_stream >> cluster;
+                for (auto const & node : workload.m_leader_count) {
+                    jn[node.first] = node.second;
+                }
+                jm[cluster.group_id().to_string()] = jn;
+            }
+            json["auditor_workload"].append(jm);
+        }
+
+    }
+}
+
 static void get_zec_slash_contract_property(std::string const & property_name,
                                             uint64_t const height,
                                             observer_ptr<store::xstore_face_t> store,
@@ -1421,7 +1587,28 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
                                               xJson::Value & json,
                                               std::error_code & ec) const {
     assert(!ec);
-    if (contract_address == xaccount_address_t{ sys_contract_zec_slash_info_addr }) {
+    if (contract_address.value().find(sys_contract_sharding_statistic_info_addr) != std::string::npos ) {
+        std::error_code internal_ec;
+        get_sharding_statistic_contract_property(contract_address.value(), xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, height, m_store, json, internal_ec);
+        if (internal_ec) {
+            xdbg("table_statistic_contract, get xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+        get_sharding_statistic_contract_property(contract_address.value(), xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, height, m_store, json, internal_ec);
+        if (internal_ec && !ec) {
+            xdbg("table_statistic_contract, get xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+        get_sharding_statistic_contract_property(contract_address.value(), xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, height, m_store, json, internal_ec);
+        if (internal_ec && !ec) {
+            xdbg("table_statistic_contract, get xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+
+    } else if (contract_address == xaccount_address_t{ sys_contract_zec_slash_info_addr }) {
         std::error_code internal_ec;
         get_zec_slash_contract_property(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, height, m_store, json, internal_ec);
         if (internal_ec) {

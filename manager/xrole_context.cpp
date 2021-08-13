@@ -59,6 +59,7 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
                 base::xstream_t stream(base::xcontext_t::instance());
                 stream << fulltable_statisitc_data_str;
                 stream << block_height;
+                stream << block->get_pledge_balance_change_tgas();
                 std::string action_params = std::string((char *)stream.data(), stream.size());
 
                 xblock_monitor_info_t * info = m_contract_info->find(m_contract_info->address);
