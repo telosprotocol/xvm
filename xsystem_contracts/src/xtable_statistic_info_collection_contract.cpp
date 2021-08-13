@@ -303,7 +303,6 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
 
     base::xstream_t stream(base::xcontext_t::instance());
     summarize_info.serialize_to(stream);
-    stream << summarize_fulltableblock_num;
     stream << cur_statistic_height;
 
     xkinfo("[xtable_statistic_info_collection_contract][report_summarized_statistic_info] effective reprot summarized info, timer round %" PRIu64

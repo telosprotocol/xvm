@@ -138,6 +138,14 @@ private:
      */
     bool slash_condition_check(uint32_t summarize_tableblock_count, common::xlogic_time_t const timestamp);
 
+    /**
+     * @brief get fulltable height of table
+     *
+     * @param table_id
+     * @return uint64_t
+     */
+    uint64_t read_fulltable_height_of_table(uint32_t table_id);
+
 
 };
 
