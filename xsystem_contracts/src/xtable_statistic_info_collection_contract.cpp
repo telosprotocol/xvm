@@ -227,7 +227,6 @@ xunqualified_node_info_t  xtable_statistic_info_collection_contract::process_sta
 
 void xtable_statistic_info_collection_contract::report_summarized_statistic_info(common::xlogic_time_t timestamp) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_report_summarized_statistic_info");
-    XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_report_fullblock, 1);
 
     auto const & source_addr = SOURCE_ADDRESS();
     auto const & account = SELF_ADDRESS();
@@ -333,6 +332,7 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
             MAP_REMOVE(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM);
         }
 
+        XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_report_fullblock, 1);
         std::string shard_slash_collect = std::string((char *)stream.data(), stream.size());
         {
             stream.reset();
