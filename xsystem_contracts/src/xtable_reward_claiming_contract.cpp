@@ -225,8 +225,6 @@ void xtop_table_reward_claiming_contract::add_voter_reward(uint64_t issuance_clo
     }
 }
 
-
-
 void xtop_table_reward_claiming_contract::claimVoterDividend() {
     XMETRICS_TIME_RECORD("sysContract_tableRewardClaiming_claim_voter_dividend");
 
@@ -252,6 +250,7 @@ void xtop_table_reward_claiming_contract::claimVoterDividend() {
          getpid());
     XMETRICS_PACKET_INFO("sysContract_tableRewardClaiming_claim_voter_dividend", "timer round", std::to_string(TIME()), "source address", account.c_str(), "reward", std::to_string(static_cast<uint64_t>(reward_record.unclaimed / REWARD_PRECISION)));
 
+    TRANSFER(account.to_string(), static_cast<uint64_t>(reward_record.unclaimed / REWARD_PRECISION));
     reward_record.unclaimed = reward_record.unclaimed % REWARD_PRECISION;
     reward_record.last_claim_time = cur_time;
     for (auto & node_reward : reward_record.node_rewards) {
@@ -259,7 +258,6 @@ void xtop_table_reward_claiming_contract::claimVoterDividend() {
         node_reward.last_claim_time = cur_time;
     }
     update_vote_reward_record(account, reward_record);
-    TRANSFER(account.to_string(), static_cast<uint64_t>(reward_record.unclaimed / REWARD_PRECISION));
 }
 
 void xtop_table_reward_claiming_contract::update_working_reward_record(common::xaccount_address_t const & account, xstake::xreward_node_record const & record) {
@@ -365,10 +363,11 @@ void xtop_table_reward_claiming_contract::claimNodeReward() {
 
     XMETRICS_PACKET_INFO("sysContract_tableRewardClaiming_claim_node_reward", "timer round", std::to_string(TIME()), "source address", account.c_str(), "reward", std::to_string(static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION)));
 
-    reward_record.m_unclaimed = reward_record.m_unclaimed % REWARD_PRECISION;
+    TRANSFER(account.to_string(), static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION));
+
+    reward_record.m_unclaimed -= reward_record.m_unclaimed / REWARD_PRECISION * REWARD_PRECISION;
     reward_record.m_last_claim_time = cur_time;
     update_working_reward_record(account, reward_record);
-    TRANSFER(account.to_string(), static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION));
 }
 
 int32_t xtop_table_reward_claiming_contract::get_working_reward_record(common::xaccount_address_t const & account, xstake::xreward_node_record & record) {
