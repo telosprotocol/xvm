@@ -1582,7 +1582,7 @@ void xzec_reward_contract::dispatch_all_reward_v3(const common::xlogic_time_t cu
         add_task(task_id, current_time, "", XTRANSFER_ACTION, std::string((char *)seo_stream.data(), seo_stream.size()));
         task_id++;
     }
-    xdbg("[xzec_reward_contract::dispatch_all_reward] actual issuance: %lu", issuance);
+    xinfo("[xzec_reward_contract::dispatch_all_reward] actual issuance: %lu", issuance);
     // dispatch community reward
     uint64_t common_funds = static_cast<uint64_t>(community_reward / REWARD_PRECISION);
     if (common_funds > 0) {
@@ -1594,11 +1594,12 @@ void xzec_reward_contract::dispatch_all_reward_v3(const common::xlogic_time_t cu
         seo_stream << issuances;
 
         add_task(task_id, current_time, "", XTRANSFER_ACTION, std::string((char *)seo_stream.data(), seo_stream.size()));
-        xdbg("[xzec_reward_contract::dispatch_all_reward] common_funds: %lu", common_funds);
+        task_id++;
+        xinfo("[xzec_reward_contract::dispatch_all_reward] common_funds: %lu", common_funds);
     }
     // generate tasks
     const int task_limit = 1000;
-    xdbg("[xzec_reward_contract::dispatch_all_reward] pid: %d, table_node_reward_detail size: %d\n", getpid(), table_node_reward_detail.size());
+    xinfo("[xzec_reward_contract::dispatch_all_reward] pid: %d, table_node_reward_detail size: %d\n", getpid(), table_node_reward_detail.size());
     for (auto & entity : table_node_reward_detail) {
         auto const & contract = entity.first;
         auto const & account_awards = entity.second;
@@ -1625,7 +1626,7 @@ void xzec_reward_contract::dispatch_all_reward_v3(const common::xlogic_time_t cu
             task_id++;
         }
     }
-    xdbg("[xzec_reward_contract::dispatch_all_reward] pid: %d, table_node_dividend_detail size: %d\n", getpid(), table_node_dividend_detail.size());
+    xinfo("[xzec_reward_contract::dispatch_all_reward] pid: %d, table_node_dividend_detail size: %d\n", getpid(), table_node_dividend_detail.size());
     for (auto const & entity : table_node_dividend_detail) {
         auto const & contract = entity.first;
         auto const & auditor_vote_rewards = entity.second;
