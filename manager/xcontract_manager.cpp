@@ -1596,13 +1596,13 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
             internal_ec.clear();
         }
         get_sharding_statistic_contract_property(contract_address.value(), xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, height, m_store, json, internal_ec);
-        if (internal_ec && !ec) {
+        if (internal_ec) {
             xdbg("table_statistic_contract, get xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY failed");
             ec = internal_ec;
             internal_ec.clear();
         }
         get_sharding_statistic_contract_property(contract_address.value(), xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, height, m_store, json, internal_ec);
-        if (internal_ec && !ec) {
+        if (internal_ec) {
             xdbg("table_statistic_contract, get xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY failed");
             ec = internal_ec;
             internal_ec.clear();
