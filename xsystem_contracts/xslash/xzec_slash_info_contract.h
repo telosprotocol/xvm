@@ -146,6 +146,13 @@ private:
      */
     uint64_t read_fulltable_height_of_table(uint32_t table_id);
 
+    /**
+     * @brief process reset data
+     *
+     * @param db_kv_131 the reset property data
+     */
+    void process_reset_data(std::vector<std::pair<std::string, std::string>> const& db_kv_131);
+
 
 };
 
