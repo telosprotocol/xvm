@@ -1,5 +1,6 @@
 #include "xvm/xsystem_contracts/xerror/xerror.h"
 
+#include <string>
 #include <type_traits>
 
 NS_BEG4(top, xvm, system_contracts, error)
