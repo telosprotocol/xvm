@@ -1422,6 +1422,7 @@ static void get_zec_slash_contract_property(std::string const & property_name,
     } else if (property_name == xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY) {
         auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
         if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
             return;
         }
 
@@ -1457,6 +1458,40 @@ static void get_zec_slash_contract_property(std::string const & property_name,
         }
 
         json[property_name]["accumulated_tableblock_count"] = summarize_tableblock_count;
+
+
+        // all table height
+        xJson::Value v;
+        for (auto table_id = 0; table_id < enum_vledger_const::enum_vbucket_has_tables_count; ++table_id) {
+            auto const it = result.find(std::to_string(table_id));
+
+            if (it == std::end(result)) {
+                continue;
+            }
+
+            auto const & value = it->second;
+            if (value.empty()) {
+                continue;
+            }
+
+            uint64_t height;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(value.data())), static_cast<uint32_t>(value.size()) };
+            try {
+                stream >> height;
+            } catch (top::error::xtop_error_t const & eh) {
+                ec = eh.code();
+                return;
+            } catch (enum_xerror_code const errc) {
+                ec = errc;
+                return;
+            }
+
+            v[std::to_string(table_id)] = (xJson::UInt64)height;
+
+        }
+
+        json[property_name]["table_heights"].append(v);
+
     }
 }
 
@@ -1813,6 +1848,54 @@ static void get_unqualified_node_map(common::xaccount_address_t const & contract
     }
 }
 
+
+static void get_tableblock_num(common::xaccount_address_t const & contract_address,
+                              std::string const & property_name,
+                              const xaccount_ptr_t unitstate,
+                              const xjson_format_t json_format,
+                              xJson::Value & json) {
+    std::map<std::string, std::string> tablenum_map;
+    if (!unitstate->map_get(property_name, tablenum_map) || tablenum_map.empty()) {
+        xdbg("[get_tableblock_num] contract_address: %s, property_name: %s, error", contract_address.to_string().c_str(), property_name.c_str());
+        return;
+    }
+
+
+    // all table height
+    xJson::Value v;
+    for (auto const& item: tablenum_map) {
+        if (item.first == "TABLEBLOCK_NUM") {
+            uint32_t summarize_tableblock_count;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(item.second.data())), static_cast<uint32_t>(item.second.size()) };
+            try {
+                stream >> summarize_tableblock_count;
+            } catch (...) {
+                xdbg("[get_tableblock_num] deserialize height error");
+                return;
+            }
+            json[property_name][item.first] = summarize_tableblock_count;
+        } else {
+
+            uint64_t height;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(item.second.data())), static_cast<uint32_t>(item.second.size()) };
+            try {
+                stream >> height;
+            } catch (...) {
+                xdbg("[get_tableblock_num] deserialize height error");
+                return;
+            }
+
+            if (height != 0) {
+                v[item.first] = (xJson::UInt64)height;
+            }
+        }
+    }
+
+    json[property_name]["table_heights"].append(v);
+
+
+}
+
 static void get_refunds(common::xaccount_address_t const & contract_address,
                               std::string const & property_name,
                               const xaccount_ptr_t unitstate,
@@ -2150,6 +2233,8 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         return get_accumulated_issuance_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
         return get_unqualified_node_map(contract_address, property_name, unitstate, json_format, json);
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY) {
+        return get_tableblock_num(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY) {
         return get_accumulated_issuance_yearly_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPROPERTY_CONTRACT_SLASH_INFO_KEY) {
