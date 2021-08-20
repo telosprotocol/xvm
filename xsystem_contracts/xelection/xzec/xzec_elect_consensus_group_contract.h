@@ -42,6 +42,17 @@ private:
 
     void elect(common::xzone_id_t const zone_id, common::xcluster_id_t const cluster_id, std::uint64_t const random_seed, common::xlogic_time_t const election_timestamp);
 
+    bool elect_inner(common::xzone_id_t const & zone_id,
+                     common::xcluster_id_t const & cluster_id,
+                     std::uint64_t const random_seed,
+                     common::xlogic_time_t const election_timestamp,
+                     common::xlogic_time_t const start_time,
+                     std::uint16_t actual_auditor_rotation_num,
+                     std::string const & election_association_property_result,
+                     std::string const & standby_property_result,
+                     std::unordered_map<common::xgroup_id_t, std::string> const & all_cluster_election_result_store_property_result,
+                     std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> & all_cluster_election_result_store);
+
     bool elect_auditor_validator(common::xzone_id_t const & zone_id,
                                  common::xcluster_id_t const & cluster_id,
                                  common::xgroup_id_t const & auditor_group_id,
