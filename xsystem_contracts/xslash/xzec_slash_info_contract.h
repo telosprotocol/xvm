@@ -57,6 +57,20 @@ public:
 
 private:
     /**
+     * @brief internal function to process summarize info
+     *
+     * @return true
+     * @return false
+     */
+
+    bool summarize_slash_info_internal(std::string const& slash_info, std::string const& summarize_info_str, std::string const& summarize_tableblock_count_str, uint64_t const summarized_height,
+                                      xunqualified_node_info_t& summarize_info,  uint32_t&  summarize_tableblock_count, std::uint64_t& cur_statistic_height);
+
+
+    bool do_unqualified_node_slash_internal(std::string const& last_slash_time_str, uint32_t summarize_tableblock_count, uint32_t punish_interval_table_block_param, uint32_t punish_interval_time_block_param , common::xlogic_time_t const timestamp,
+                                            xunqualified_node_info_t const & summarize_info, uint32_t slash_vote, uint32_t slash_persent, uint32_t award_vote, uint32_t award_persent, std::vector<xaction_node_info_t>& node_to_action);
+
+    /**
      * @brief print the summarize info
      *
      * @param summarize_slash_info   the current summarized slash info to print
@@ -85,7 +99,7 @@ private:
      * @return std::vector<data::xaction_node_info_t>  the node to slash or reward
      */
     std::vector<data::xaction_node_info_t>
-    filter_nodes(data::xunqualified_node_info_t const & summarize_info);
+    filter_nodes(data::xunqualified_node_info_t const & summarize_info, uint32_t slash_vote, uint32_t slash_persent, uint32_t award_vote, uint32_t award_persent);
 
     /**
      * @brief filter helper to filter out the slash node
@@ -136,7 +150,8 @@ private:
      *
      * @return bool  true means statisfy the slash condition
      */
-    bool slash_condition_check(uint32_t summarize_tableblock_count, common::xlogic_time_t const timestamp);
+    bool slash_condition_check(std::string const& last_slash_time_str, uint32_t summarize_tableblock_count, uint32_t punish_interval_table_block_param,
+                                uint32_t punish_interval_time_block_param , common::xlogic_time_t const timestamp);
 
     /**
      * @brief get fulltable height of table
