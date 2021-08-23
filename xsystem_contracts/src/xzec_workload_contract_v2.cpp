@@ -53,6 +53,13 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
 };
 
 void xzec_workload_contract_v2::on_receive_workload(std::string const & workload_str) {
+    std::string value_str = STRING_GET2(xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
+    handle_workload_str(workload_str, value_str);
+}
+
+void xzec_workload_contract_v2::handle_workload_str(std::string const & workload_str, std::string const & activation_record_str) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_receive_workload");
+    XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_receive_workload", 1);
     auto const & source_address = SOURCE_ADDRESS();
 
     std::string base_addr;
@@ -81,7 +88,13 @@ void xzec_workload_contract_v2::on_receive_workload(std::string const & workload
     // update system total tgas
     update_tgas(table_pledge_balance_change_tgas);
 
-    if (!is_mainnet_activated()) {
+    xactivation_record record;
+    if (!activation_record_str.empty()) {
+        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)activation_record_str.c_str(), (uint32_t)activation_record_str.size());
+        record.serialize_from(stream);
+    }
+    xdbg("[xzec_workload_contract_v2::is_mainnet_activated] activated: %d\n", record.activated);
+    if (!record.activated) {
         return;
     }
 
@@ -339,6 +352,14 @@ void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_
 }
 
 void xzec_workload_contract_v2::upload_workload(common::xlogic_time_t const timestamp) {
+    std::string call_contract_str{};
+    upload_workload_internal(timestamp, call_contract_str);
+    if (!call_contract_str.empty()) {
+        CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", call_contract_str);
+    }
+}
+
+void xzec_workload_contract_v2::upload_workload_internal(common::xlogic_time_t const timestamp, std::string & call_contract_str) {
     std::map<std::string, std::string> group_workload_str;
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload_upload;
 
@@ -379,7 +400,7 @@ void xzec_workload_contract_v2::upload_workload(common::xlogic_time_t const time
             xstream_t stream(xcontext_t::instance());
             stream << timestamp;
             stream << group_workload_upload_str;
-            CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
+            call_contract_str = std::string((char *)stream.data(), stream.size());
             group_workload_upload.clear();
         }
     }
@@ -392,6 +413,7 @@ void xzec_workload_contract_v2::clear_workload() {
 
 void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_timer");
+    XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_timer", 1);
     auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
     if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, TIME())) {
         upload_workload(timestamp);

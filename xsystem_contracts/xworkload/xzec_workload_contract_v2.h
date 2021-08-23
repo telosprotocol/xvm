@@ -52,6 +52,13 @@ public:
 
 private:
     /**
+     * @brief handle_workload_str
+     *
+     * @param workload_str workload
+     * @param activation_record_str is_mainnet_active
+     */
+    void handle_workload_str(std::string const & workload_str, std::string const & activation_record_str);
+    /**
      * @brief check if mainnet is activated
      *
      * @return int 0 - not activated, other - activated
@@ -102,6 +109,11 @@ private:
      * @brief upload_workload
      */
     void upload_workload(common::xlogic_time_t const timestamp);
+
+    /**
+     * @brief upload_workload_internal
+     */
+    void upload_workload_internal(common::xlogic_time_t const timestamp, std::string & call_contract_str);
 
     /**
      * @brief clear_workload

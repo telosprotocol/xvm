@@ -150,7 +150,7 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
             getpid());
     }
 
-    process_workload_statistic_data(statistic_data, tgas);
+    process_workload_data(node_service, statistic_data, tgas);
 }
 
 bool xtable_statistic_info_collection_contract::collect_slash_statistic_info(xstatistics_data_t const& statistic_data,  base::xvnodesrv_t * node_service, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
@@ -359,9 +359,12 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
 
 }
 
-std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_collection_contract::get_workload_from_data(xstatistics_data_t const & statistic_data) {
+void xtable_statistic_info_collection_contract::get_workload_from_data(const base::xvnodesrv_t * node_service,
+                                                                       const xstatistics_data_t & statistic_data,
+                                                                       const std::map<std::string, std::string> & workload_str,
+                                                                       std::map<std::string, std::string> & workload_str_new) {
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
-    auto node_service = contract::xcontract_manager_t::instance().get_node_service();
+    // auto node_service = contract::xcontract_manager_t::instance().get_node_service();
     auto workload_per_tableblock = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tableblock);
     auto workload_per_tx = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tx);
     for (auto const & static_item : statistic_data.detail) {
@@ -410,46 +413,31 @@ std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_coll
             }
         }
     }
-    return group_workload;
-}
 
-xgroup_workload_t xtable_statistic_info_collection_contract::get_workload(common::xgroup_address_t const & group_address) {
-    std::string group_address_str;
-    xstream_t stream(xcontext_t::instance());
-    stream << group_address;
-    group_address_str = std::string((const char *)stream.data(), stream.size());
-    xgroup_workload_t total_workload;
-    {
-        std::string value_str;
-        if (MAP_GET2(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_address_str, value_str)) {
-        xdbg("[xtable_statistic_info_collection_contract::update_workload] group not exist: %s", group_address.to_string().c_str());
-            total_workload.cluster_id = group_address_str;
-        } else {
-            xstream_t stream(xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
-            total_workload.serialize_from(stream);
-        }
-    }
-    return total_workload;
-}
-
-void xtable_statistic_info_collection_contract::set_workload(common::xgroup_address_t const & group_address, xgroup_workload_t const & group_workload) {
-    xstream_t key_stream(xcontext_t::instance());
-    key_stream << group_address;
-    std::string group_address_str = std::string((const char *)key_stream.data(), key_stream.size());
-    xstream_t stream(xcontext_t::instance());
-    group_workload.serialize_to(stream);
-    std::string value_str = std::string((const char *)stream.data(), stream.size());
-    MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_address_str, value_str);
-}
-
-void xtable_statistic_info_collection_contract::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
     for (auto const & one_group_workload : group_workload) {
         auto const & group_address = one_group_workload.first;
-        auto const & workload = one_group_workload.second;
+        auto const & add_workload = one_group_workload.second;
         // get
-        auto total_workload = get_workload(group_address);
+        // auto total_workload = get_workload(group_address);
+        std::string group_address_str;
+        {
+            xstream_t stream(xcontext_t::instance());
+            stream << group_address;
+            group_address_str = std::string((const char *)stream.data(), stream.size());
+        }
+        xgroup_workload_t total_workload;
+        {
+            auto it = workload_str.find(group_address_str);
+            if (it == workload_str.end()) {
+                total_workload.cluster_id = group_address_str;
+                xdbg("[xtable_statistic_info_collection_contract::update_workload] group not exist: %s", group_address.to_string().c_str());
+            } else {
+                xstream_t stream(xcontext_t::instance(), (uint8_t *)it->second.data(), it->second.size());
+                total_workload.serialize_from(stream);
+            }
+        }
         // update
-        for (auto const & leader_workload : workload.m_leader_count) {
+        for (auto const & leader_workload : add_workload.m_leader_count) {
             auto const & leader = leader_workload.first;
             auto const & count = leader_workload.second;
             total_workload.m_leader_count[leader] += count;
@@ -462,21 +450,18 @@ void xtable_statistic_info_collection_contract::update_workload(std::map<common:
                  total_workload.cluster_total_workload);
         }
         // set
-        set_workload(group_address, total_workload);
+        // set_workload(group_address, total_workload);
+        std::string str_new;
+        {
+            xstream_t stream(xcontext_t::instance());
+            total_workload.serialize_to(stream);
+            str_new = std::string((const char *)stream.data(), stream.size());
+            workload_str_new[group_address_str] = str_new;
+        }
     }
 }
 
-void xtable_statistic_info_collection_contract::update_tgas(int64_t table_pledge_balance_change_tgas) {
-    std::string pledge_tgas_str = STRING_GET2(XPORPERTY_CONTRACT_TGAS_KEY);
-    int64_t tgas = 0;
-    if (!pledge_tgas_str.empty()) {
-        tgas = xstring_utl::toint64(pledge_tgas_str);
-    }
-    tgas += table_pledge_balance_change_tgas;
-    STRING_SET(XPORPERTY_CONTRACT_TGAS_KEY, xstring_utl::tostring(tgas));
-}
-
-void xtable_statistic_info_collection_contract::upload_workload() {
+void xtable_statistic_info_collection_contract::upload_workload_internal(std::string & call_contract_str) {
     XMETRICS_TIME_RECORD("sysContractc_workload_report_statistic_info");
     std::map<std::string, std::string> group_workload_str;
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload_upload;
@@ -536,7 +521,7 @@ void xtable_statistic_info_collection_contract::upload_workload() {
         {
             xstream_t stream(xcontext_t::instance());
             stream << group_workload_upload_str;
-            CALL(common::xaccount_address_t{sys_contract_zec_workload_addr}, "on_receive_workload", std::string((char *)stream.data(), stream.size()));
+            call_contract_str = std::string((char *)stream.data(), stream.size());
             group_workload_upload.clear();
         }
 
@@ -545,14 +530,55 @@ void xtable_statistic_info_collection_contract::upload_workload() {
     }
 }
 
-void xtable_statistic_info_collection_contract::process_workload_statistic_data(xstatistics_data_t const & statistic_data, const int64_t tgas) {
+void xtable_statistic_info_collection_contract::upload_workload() {
+    XMETRICS_TIME_RECORD("sysContractc_workload_report_statistic_info");
+    std::string call_contract_str{};
+    upload_workload_internal(call_contract_str);
+    if (!call_contract_str.empty()) {
+        CALL(common::xaccount_address_t{sys_contract_zec_workload_addr}, "on_receive_workload", call_contract_str);
+    }
+}
+
+void xtable_statistic_info_collection_contract::process_workload_data_internal(const base::xvnodesrv_t * node_service,
+                                                                               const xstatistics_data_t & statistic_data,
+                                                                               const int64_t tgas,
+                                                                               const std::map<std::string, std::string> & workload_str,
+                                                                               const std::string & tgas_str,
+                                                                               std::map<std::string, std::string> & workload_str_new,
+                                                                               std::string & tgas_str_new) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_workload_statistic_info");
-    auto const & group_workload = get_workload_from_data(statistic_data);
-    if (!group_workload.empty()) {
-        update_workload(group_workload);
+    if (statistic_data.detail.size() > 0) {
+        get_workload_from_data(node_service, statistic_data, workload_str, workload_str_new);
     }
     if (tgas != 0) {
-        update_tgas(tgas);
+        int64_t total_tgas = 0;
+        if (!tgas_str.empty()) {
+            total_tgas = xstring_utl::toint64(tgas_str);
+        }
+        total_tgas += tgas;
+        tgas_str_new = xstring_utl::tostring(total_tgas);
+    }
+}
+
+void xtable_statistic_info_collection_contract::process_workload_data(const base::xvnodesrv_t * node_service, const xstatistics_data_t & statistic_data, const int64_t tgas) {
+    std::map<std::string, std::string> workload_str_new;
+    std::string tgas_str_new{};
+    {
+        std::map<std::string, std::string> workload_str;
+        try {
+            MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, workload_str);
+        } catch (std::runtime_error & e) {
+            xwarn("[xtable_statistic_info_collection_contract::on_collect_statistic_info] MAP COPY GET error:%s", e.what());
+        }
+        std::string tgas_str{STRING_GET2(XPORPERTY_CONTRACT_TGAS_KEY)};
+        process_workload_data_internal(node_service, statistic_data, tgas, workload_str, tgas_str, workload_str_new, tgas_str_new);
+    }
+
+    if (!tgas_str_new.empty()) {
+        STRING_SET(XPORPERTY_CONTRACT_TGAS_KEY, tgas_str_new);
+    }
+    for (auto it = workload_str_new.cbegin(); it != workload_str_new.cend(); it++) {
+        MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, it->first, it->second);
     }
 }
 
