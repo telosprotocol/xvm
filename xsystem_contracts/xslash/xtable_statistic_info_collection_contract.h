@@ -92,21 +92,18 @@ private:
     xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service);
 
     /**
-     * @brief process workload statistic data
-     *
-     * @param  xstatistics_data_t  statistic data
-     * @param  tgas tgas
-     *
-     */
-    void process_workload_statistic_data(xstatistics_data_t const & statistic_data, const int64_t tgas);
-
-    /**
      * @brief get_workload
      *
+     * @param  node_service node_service
      * @param  xstatistics_data_t  statistic data
+     * @param  worklaod_str worklaod_str
+     * @param  worklaod_str_new worklaod_str_new
      *
      */
-    std::map<common::xgroup_address_t, xstake::xgroup_workload_t> get_workload_from_data(xstatistics_data_t const & statistic_data);
+    void get_workload_from_data(const base::xvnodesrv_t * node_service,
+                                const xstatistics_data_t & statistic_data,
+                                const std::map<std::string, std::string> & workload_str,
+                                std::map<std::string, std::string> & workload_str_new);
 
     /**
      * @brief get_workload
@@ -133,6 +130,11 @@ private:
      *
      */
     void update_tgas(const int64_t table_pledge_balance_change_tgas);
+
+    /**
+     * @brief upload_workload_internal
+     */
+    void upload_workload_internal(std::string & call_contract_str);
 
     /**
      * @brief upload_workload

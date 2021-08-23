@@ -64,13 +64,14 @@ private:
                              const std::string & height_str,
                              std::map<std::string, std::string> & workload_str_new,
                              std::string & tgas_str_new);
+
     /**
      * @brief check if mainnet is activated
      *
      * @return int 0 - not activated, other - activated
      */
     bool is_mainnet_activated() const;
-    
+
     /**
      * @brief update tgas
      *
@@ -110,7 +111,7 @@ private:
      * @brief stash_workload
      */
     void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload);
-    
+
     void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload,
                          const std::map<std::string, std::string> & workload_str,
                          std::map<std::string, std::string> & workload_new);

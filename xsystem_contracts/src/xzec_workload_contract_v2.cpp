@@ -52,10 +52,12 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
     return static_cast<bool>(record.activated);
 };
 
+
 void xzec_workload_contract_v2::on_receive_workload(std::string const & table_info_str) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_receive_workload");
     XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_receive_workload", 1);
     XCONTRACT_ENSURE(!table_info_str.empty(), "workload_str empty");
+
 
     auto const & source_address = SOURCE_ADDRESS();
     std::string base_addr;
@@ -130,8 +132,9 @@ void xzec_workload_contract_v2::handle_workload_str(const std::string & activati
         base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)activation_record_str.c_str(), (uint32_t)activation_record_str.size());
         record.serialize_from(stream);
     }
+
+    xdbg("[xzec_workload_contract_v2::is_mainnet_activated] activated: %d\n", record.activated);
     if (!record.activated) {
-        xdbg("[xzec_workload_contract_v2::handle_workload_str] not activated: %d\n", record.activated);
         return;
     }
     update_workload(group_workload, workload_str, workload_str_new);
@@ -367,7 +370,7 @@ void xzec_workload_contract_v2::update_workload(const std::map<common::xgroup_ad
                                                 const std::map<std::string, std::string> & workload_str,
                                                 std::map<std::string, std::string> & workload_new) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "update_workload");
-    for (auto const & one_group_workload : group_workload) { 
+    for (auto const & one_group_workload : group_workload) {
         auto const & group_address = one_group_workload.first;
         auto const & workload = one_group_workload.second;
         // get
@@ -411,7 +414,7 @@ void xzec_workload_contract_v2::update_workload(const std::map<common::xgroup_ad
 
 void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
     // auto t1 = xtime_utl::time_now_ms();
-    for (auto const & one_group_workload : group_workload) { 
+    for (auto const & one_group_workload : group_workload) {
         auto const & group_address = one_group_workload.first;
         auto const & workload = one_group_workload.second;
         // get
