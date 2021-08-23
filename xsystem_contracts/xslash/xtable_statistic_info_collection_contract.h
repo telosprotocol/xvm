@@ -18,7 +18,7 @@ NS_BEG3(top, xvm, xcontract)
  * @brief the table slash contract
  *
  */
-class xtable_statistic_info_collection_contract final : public xcontract_base {
+class xtable_statistic_info_collection_contract : public xcontract_base {
     using xbase_t = xcontract_base;
 public:
     XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xtable_statistic_info_collection_contract);
@@ -59,6 +59,21 @@ public:
 
 private:
     /**
+     * @brief
+     *
+     * @param statistic_data
+     * @param node_service
+     * @param summarize_info_str
+     * @param summarize_fulltableblock_num_str
+     * @param summarize_info  in&out
+     * @param summarize_fulltableblock_num in&out
+     * @return true
+     * @return false
+     */
+    bool collect_slash_statistic_info(xstatistics_data_t const& statistic_data,  base::xvnodesrv_t * node_service, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
+                                        xunqualified_node_info_t& summarize_info, uint32_t& summarize_fulltableblock_num);
+
+    /**
      * @brief accumulate  node info
      *
      * @param  node_info  the node info to accumulate
@@ -71,6 +86,7 @@ private:
      * @brief process statistic data to get nodeinfo
      *
      * @param block_statistic_data  the statistic data of a fulltable block
+     * @param auditor_n
      * @return xunqualified_node_info_t  the node info from statistic data
      */
     xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service);
