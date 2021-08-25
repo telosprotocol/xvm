@@ -121,40 +121,16 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
 
     xunqualified_node_info_t summarize_info;
     uint32_t summarize_fulltableblock_num = 0;
-    if (collect_slash_statistic_info(statistic_data, node_service, summarize_info_str, summarize_fulltableblock_num_str,
-                                    summarize_info, summarize_fulltableblock_num)) {
-        {
-            XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_unqualified_node_key");
-            base::xstream_t stream(base::xcontext_t::instance());
-            summarize_info.serialize_to(stream);
-            MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
-        }
+    XCONTRACT_ENSURE(node_service != nullptr, "node service is empty!");
+    collect_slash_statistic_info(statistic_data, node_service, summarize_info_str, summarize_fulltableblock_num_str,
+                                    summarize_info, summarize_fulltableblock_num);
+    update_slash_statistic_info(summarize_info, summarize_fulltableblock_num, block_height);
 
-
-        {
-            XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_extended_function_key");
-            MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, base::xstring_utl::tostring(block_height));
-            summarize_fulltableblock_num++;
-            MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM, base::xstring_utl::tostring(summarize_fulltableblock_num));
-        }
-
-
-        xinfo("[xtable_statistic_info_collection_contract][on_collect_statistic_info] successfully summarize fulltableblock, current table num: %u, table_id: %u, pid: %d",
-            summarize_fulltableblock_num,
-            table_id,
-            getpid());
-
-    } else {
-         xinfo("[xtable_statistic_info_collection_contract][on_collect_statistic_info] summarize fulltableblock fail, current table num: %u, table_id: %u, pid: %d",
-            summarize_fulltableblock_num,
-            table_id,
-            getpid());
-    }
 
     process_workload_data(node_service, statistic_data, tgas);
 }
 
-bool xtable_statistic_info_collection_contract::collect_slash_statistic_info(xstatistics_data_t const& statistic_data,  base::xvnodesrv_t * node_service, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
+void xtable_statistic_info_collection_contract::collect_slash_statistic_info(xstatistics_data_t const& statistic_data,  base::xvnodesrv_t * node_service, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
                                                                                 xunqualified_node_info_t& summarize_info, uint32_t& summarize_fulltableblock_num) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_collect_slash_statistic_info");
 
@@ -174,7 +150,28 @@ bool xtable_statistic_info_collection_contract::collect_slash_statistic_info(xst
         summarize_fulltableblock_num = base::xstring_utl::touint32(summarize_fulltableblock_num_str);
     }
 
-    return true;
+}
+
+void  xtable_statistic_info_collection_contract::update_slash_statistic_info( xunqualified_node_info_t const& summarize_info, uint32_t summarize_fulltableblock_num, uint64_t block_height) {
+    {
+        XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_unqualified_node_key");
+        base::xstream_t stream(base::xcontext_t::instance());
+        summarize_info.serialize_to(stream);
+        MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
+    }
+
+
+    {
+        XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_extended_function_key");
+        MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, base::xstring_utl::tostring(block_height));
+        summarize_fulltableblock_num++;
+        MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM, base::xstring_utl::tostring(summarize_fulltableblock_num));
+    }
+
+
+    xinfo("[xtable_statistic_info_collection_contract][on_collect_statistic_info] successfully summarize fulltableblock, current table num: %u, pid: %d",
+        summarize_fulltableblock_num,
+        getpid());
 
 }
 
