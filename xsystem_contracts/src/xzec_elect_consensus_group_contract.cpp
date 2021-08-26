@@ -54,7 +54,7 @@ xtop_zec_elect_consensus_group_contract::xtop_zec_elect_consensus_group_contract
 
 // it will elect the first and only round consensus nodes as you want.
 bool executed_consensus{false};
-static uint64_t node_start_time{UINT64_MAX};
+
 void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_time_t const current_time) {
     uint64_t latest_height = get_blockchain_height(sys_contract_zec_elect_consensus_addr);
     xinfo("[consensus_start_nodes] get_latest_height: %" PRIu64, latest_height);
@@ -196,9 +196,6 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
 
 void xtop_zec_elect_consensus_group_contract::setup() {
     xelection_result_store_t election_result_store;
-#ifdef STATIC_CONSENSUS
-    node_start_time = base::xtime_utl::gmttime_ms();
-#endif
     auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
     for (auto const & property : property_names) {
         STRING_CREATE(property);
@@ -213,21 +210,11 @@ void xtop_zec_elect_consensus_group_contract::setup() {
 void xtop_zec_elect_consensus_group_contract::on_timer(common::xlogic_time_t const current_time) {
     XMETRICS_TIME_RECORD(XCONSENSUS_ELECT "on_timer_all_time");
 #ifdef STATIC_CONSENSUS
-    auto current_gmt_time = base::xtime_utl::gmttime_ms();
-    xinfo("[STATIC_CONSENSUS] node start gmt time: % " PRIu64 " current time % " PRIu64, node_start_time, current_gmt_time);
-    uint64_t set_waste_time{20};
-    top::config::xconfig_register_t::get_instance().get(std::string("static_waste_time"), set_waste_time);
-    if (current_gmt_time - node_start_time < (set_waste_time + 20) * 10000) {
-        return;
-    }
     if (!executed_consensus) {
         elect_config_nodes(current_time);
-    }
-#ifdef ELECT_WHEREAFTER
-    if (current_gmt_time - node_start_time < (set_waste_time + 40) * 10000) {
         return;
     }
-#else
+#ifndef ELECT_WHEREAFTER 
     return;
 #endif
 #endif

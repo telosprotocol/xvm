@@ -17,6 +17,10 @@
 #include "xstake/xstake_algorithm.h"
 #include "xvm/xserialization/xserialization.h"
 
+#ifdef STATIC_CONSENSUS
+#    include "xvm/xsystem_contracts/xelection/xstatic_election_center.h"
+#endif
+
 #ifndef XSYSCONTRACT_MODULE
 #    define XSYSCONTRACT_MODULE "sysContract_"
 #endif
@@ -57,6 +61,25 @@ void xtop_rec_standby_pool_contract::setup() {
 
         standby_result_store.result_of(network_id()).insert({node_id, seed_node_info});
     }
+
+#ifdef STATIC_CONSENSUS
+    auto const static_consensus_nodes_info = xstatic_election_center::instance().get_standby_config();
+    for (auto const & node_info : static_consensus_nodes_info) {
+        common::xnode_id_t node_id{node_info.node_id};
+        xstandby_node_info_t seed_node_info;
+        seed_node_info.consensus_public_key = node_info.pub_key;
+        for (auto const & _pair : node_info.type_stake_pair) {
+            common::xnode_type_t const & node_type = top::get<common::xnode_type_t>(_pair);
+            uint64_t stake = top::get<uint64_t>(_pair);
+            seed_node_info.stake_container.insert({node_type, stake});
+        }
+        seed_node_info.program_version = "1.1.0"; 
+        seed_node_info.is_genesis_node = false;
+
+        standby_result_store.result_of(network_id()).insert({node_id, seed_node_info});
+    }
+#endif
+
     STRING_CREATE(XPROPERTY_CONTRACT_STANDBYS_KEY);
     serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
 }
@@ -375,6 +398,10 @@ bool xtop_rec_standby_pool_contract::update_standby_result_store(std::map<common
 }
 
 void xtop_rec_standby_pool_contract::on_timer(common::xlogic_time_t const current_time) {
+#ifdef STATIC_CONSENSUS
+    // static_consensus won't sync registration contract data.
+    return;
+#endif
     XMETRICS_TIME_RECORD(XREC_STANDBY "on_timer_all_time");
     XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), "xrec_standby_pool_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_rec_standby_pool_addr, "xrec_standby_pool_contract_t instance is not triggled by xrec_standby_pool_contract_t");
