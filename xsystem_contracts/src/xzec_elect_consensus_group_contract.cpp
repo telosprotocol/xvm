@@ -20,6 +20,10 @@
 #include <cinttypes>
 #include <ratio>  // NOLINT
 
+#ifdef STATIC_CONSENSUS
+#    include "xvm/xsystem_contracts/xelection/xstatic_election_center.h"
+#endif
+
 #ifndef XSYSCONTRACT_MODULE
 #    define XSYSCONTRACT_MODULE "sysContract_"
 #endif
@@ -55,6 +59,79 @@ xtop_zec_elect_consensus_group_contract::xtop_zec_elect_consensus_group_contract
 // it will elect the first and only round consensus nodes as you want.
 bool executed_consensus{false};
 
+void xtop_zec_elect_consensus_group_contract::swap_election_result(common::xlogic_time_t const current_time) {
+    auto auditor_group_count = XGET_CONFIG(auditor_group_count);
+    auto validator_group_count = XGET_CONFIG(validator_group_count);
+    assert(auditor_group_count == 2 && validator_group_count == 4);
+    uint64_t latest_height = get_blockchain_height(sys_contract_zec_elect_consensus_addr);
+    if (latest_height <= 0) {
+        return;
+    }
+    uint8_t auditor_group_start_count = common::xauditor_group_id_begin.value();
+    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
+    std::unordered_map<top::common::xgroup_id_t, top::data::election::xelection_result_store_t> all_cluster_election_result_store;
+    for (auto const & property : property_names) {
+        auto election_result_store = serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, property);
+        all_cluster_election_result_store.insert({common::xgroup_id_t{auditor_group_start_count++}, election_result_store});
+    }
+
+    assert(all_cluster_election_result_store.size() == auditor_group_count);
+
+    // hard code swap node:
+    auto & sharding_1_result_store = all_cluster_election_result_store.at(common::xgroup_id_t{1});
+    auto & sharding_2_result_store = all_cluster_election_result_store.at(common::xgroup_id_t{2});
+
+    auto & adv_1 =
+        sharding_1_result_store.result_of(m_network_id).result_of(common::xnode_type_t::consensus_auditor).result_of(common::xdefault_cluster_id).result_of(common::xgroup_id_t{1});
+    auto & adv_2 =
+        sharding_2_result_store.result_of(m_network_id).result_of(common::xnode_type_t::consensus_auditor).result_of(common::xdefault_cluster_id).result_of(common::xgroup_id_t{2});
+
+    auto & con_64 = sharding_1_result_store.result_of(m_network_id)
+                        .result_of(common::xnode_type_t::consensus_validator)
+                        .result_of(common::xdefault_cluster_id)
+                        .result_of(common::xgroup_id_t{64});
+    auto & con_65 = sharding_1_result_store.result_of(m_network_id)
+                        .result_of(common::xnode_type_t::consensus_validator)
+                        .result_of(common::xdefault_cluster_id)
+                        .result_of(common::xgroup_id_t{65});
+    auto & con_66 = sharding_2_result_store.result_of(m_network_id)
+                        .result_of(common::xnode_type_t::consensus_validator)
+                        .result_of(common::xdefault_cluster_id)
+                        .result_of(common::xgroup_id_t{66});
+    auto & con_67 = sharding_2_result_store.result_of(m_network_id)
+                        .result_of(common::xnode_type_t::consensus_validator)
+                        .result_of(common::xdefault_cluster_id)
+                        .result_of(common::xgroup_id_t{67});
+
+#    define UPDATE_VERSION(group_result)                                                                                                                                           \
+        group_result.group_version(group_result.group_version().empty() ? common::xelection_round_t{0} : (group_result.group_version().increase()));                               \
+        group_result.election_committee_version(common::xelection_round_t{0});                                                                                                     \
+        group_result.timestamp(current_time);                                                                                                                                      \
+        group_result.start_time(current_time);
+
+    UPDATE_VERSION(adv_1);
+    UPDATE_VERSION(adv_2);
+    UPDATE_VERSION(con_64);
+    UPDATE_VERSION(con_65);
+    UPDATE_VERSION(con_66);
+    UPDATE_VERSION(con_67);
+
+#    undef UPDATE_VERSION
+    con_64.associated_group_version(adv_1.group_version());
+    con_65.associated_group_version(adv_1.group_version());
+    con_66.associated_group_version(adv_2.group_version());
+    con_67.associated_group_version(adv_2.group_version());
+
+    std::swap((*adv_1.begin()).second, (*adv_2.begin()).second);
+    std::swap((*con_64.begin()).second, (*con_66.begin()).second);
+    std::swap((*con_65.begin()).second, (*con_67.begin()).second);
+
+    auditor_group_start_count = common::xauditor_group_id_begin.value();
+    for (auto const & property : property_names) {
+        serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(
+            *this, property, all_cluster_election_result_store.at(common::xgroup_id_t{auditor_group_start_count++}));
+    }
+}
 void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_time_t const current_time) {
     uint64_t latest_height = get_blockchain_height(sys_contract_zec_elect_consensus_addr);
     xinfo("[consensus_start_nodes] get_latest_height: %" PRIu64, latest_height);
@@ -67,110 +144,85 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
     using top::data::election::xelection_result_store_t;
     using top::data::election::xstandby_node_info_t;
 
-    struct node_info {
-        common::xnode_id_t node_id;
-        std::uint64_t stake;
-        xpublic_key_t public_key;
-        node_info(common::xnode_id_t id, std::uint64_t _stake, xpublic_key_t pub_key) {
-            node_id = id;
-            stake = _stake;
-            public_key = pub_key;
-        }
-    };
+    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
 
-    auto & config_register = top::config::xconfig_register_t::get_instance();
-    std::string consensus_infos;
-    config_register.get(std::string("consensus_start_nodes"), consensus_infos);
-    xinfo("[consensus_start_nodes] read_all :%s", consensus_infos.c_str());
-    std::vector<std::string> group_string_value;
-    top::base::xstring_utl::split_string(consensus_infos, '|', group_string_value);
+    auto auditor_group_count = XGET_CONFIG(auditor_group_count);
+    auto validator_group_count = XGET_CONFIG(validator_group_count);
+    auto cluster_group_num = 1 + validator_group_count / auditor_group_count;
+    auto const pre_associate = XGET_CONFIG(validator_group_count) / XGET_CONFIG(auditor_group_count);
+
     uint8_t auditor_group_start_count = common::xauditor_group_id_begin.value();
     uint8_t validator_group_start_count = common::xvalidator_group_id_begin.value();
 
-    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
-    auto group_infos_iter = group_string_value.begin();
-    auto group_index = 0;
-
-    auto cluster_group_num = 1 + XGET_CONFIG(validator_group_count) / XGET_CONFIG(auditor_group_count);
+    // for association
     uint8_t auditor_group_id_start = common::xauditor_group_id_begin.value();
     uint8_t validator_group_id_start = common::xvalidator_group_id_begin.value();
 
     for (auto const & property : property_names) {
         auto election_result_store = serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, property);
-        while (group_infos_iter != group_string_value.end()) {
-            auto group_infos = *group_infos_iter;
-            // for (auto group_infos : group_string_value) {
-            if (group_index != cluster_group_num) {
-                group_index++;
-            } else {
-                group_index = 0;
-                break;
-            }
-            std::vector<std::string> group_type_and_nodes_infos;
-            top::base::xstring_utl::split_string(group_infos, ':', group_type_and_nodes_infos);
-            common::xnode_type_t node_type{};
-            common::xgroup_id_t group_id{};
-            // common::xrole_type_t role_type;
-            if (group_type_and_nodes_infos[0] == "auditor") {
-                node_type = common::xnode_type_t::consensus_auditor;
-                group_id = common::xgroup_id_t{auditor_group_start_count++};
-                // role_type = common::xrole_type_t::advance;
-            } else if (group_type_and_nodes_infos[0] == "validator") {
-                node_type = common::xnode_type_t::consensus_validator;
-                group_id = common::xgroup_id_t{validator_group_start_count++};
-                // role_type = common::xrole_type_t::validator;
-            }
-            xinfo("[consensus_start_nodes] type :%s", to_string(node_type).c_str());
 
-            std::vector<std::string> group_nodes_infos_str;
-            top::base::xstring_utl::split_string(group_type_and_nodes_infos[1], ',', group_nodes_infos_str);
-            std::vector<node_info> group_nodes_infos;
-            for (auto node_info_str : group_nodes_infos_str) {
-                std::vector<std::string> one_node_info;
-                top::base::xstring_utl::split_string(node_info_str, '.', one_node_info);
-                group_nodes_infos.push_back(
-                    node_info{common::xnode_id_t{one_node_info[0]}, static_cast<std::uint64_t>(std::atoi(one_node_info[1].c_str())), xpublic_key_t{one_node_info[2]}});
-                xinfo("[consensus_start_nodes] push_one_node: node_id:%s stake:%d pub_key:%s",
-                      group_nodes_infos.back().node_id.c_str(),
-                      group_nodes_infos.back().stake,
-                      group_nodes_infos.back().public_key.to_string().c_str());
-            }
+        // auditor:
+        common::xnode_type_t adv_node_type = common::xnode_type_t::consensus_auditor;
+        common::xgroup_id_t adv_group_id = common::xgroup_id_t{auditor_group_start_count++};
+        auto & adv_election_group_result = election_result_store.result_of(m_network_id).result_of(adv_node_type).result_of(common::xdefault_cluster_id).result_of(adv_group_id);
 
-            auto & election_group_result = election_result_store.result_of(m_network_id).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(group_id);
+        auto next_version = adv_election_group_result.group_version();
+        if (!next_version.empty()) {
+            next_version.increase();
+        } else {
+            next_version = common::xelection_round_t{0};
+        }
+        adv_election_group_result.group_version(next_version);
+        adv_election_group_result.election_committee_version(common::xelection_round_t{0});
+        adv_election_group_result.timestamp(current_time);
+        adv_election_group_result.start_time(current_time);
 
-            auto next_version = election_group_result.group_version();
+        // elect in:
+        auto adv_group_node_infos = xstatic_election_center::instance().get_static_consensus_election_nodes(adv_group_id.value());
+        for (auto node : adv_group_node_infos) {
+            xelection_info_t new_election_info{};
+            new_election_info.joined_version = next_version;
+            new_election_info.stake = node.stake;
+            new_election_info.comprehensive_stake = node.stake;
+            new_election_info.consensus_public_key = node.pub_key;
+
+            xelection_info_bundle_t election_info_bundle{};
+            election_info_bundle.node_id(node.node_id);
+            election_info_bundle.election_info(new_election_info);
+            adv_election_group_result.insert(std::move(election_info_bundle));
+        }
+
+        for (auto _index = 0; _index < pre_associate; ++_index) {
+            common::xnode_type_t val_node_type = common::xnode_type_t::consensus_validator;
+            common::xgroup_id_t val_group_id = common::xgroup_id_t{validator_group_start_count++};
+            auto & val_election_group_result =
+                election_result_store.result_of(m_network_id).result_of(val_node_type).result_of(common::xdefault_cluster_id).result_of(val_group_id);
+
+            auto next_version = val_election_group_result.group_version();
             if (!next_version.empty()) {
                 next_version.increase();
             } else {
                 next_version = common::xelection_round_t{0};
             }
-            election_group_result.group_version(next_version);
-            election_group_result.election_committee_version(common::xelection_round_t{0});
-            election_group_result.timestamp(current_time);
-            election_group_result.start_time(current_time);
+            val_election_group_result.group_version(next_version);
+            val_election_group_result.election_committee_version(common::xelection_round_t{0});
+            val_election_group_result.timestamp(current_time);
+            val_election_group_result.start_time(current_time);
 
-            // elect in:
-            for (auto node : group_nodes_infos) {
+            auto val_group_node_infos = xstatic_election_center::instance().get_static_consensus_election_nodes(val_group_id.value());
+            for (auto node : val_group_node_infos) {
                 xelection_info_t new_election_info{};
                 new_election_info.joined_version = next_version;
                 new_election_info.stake = node.stake;
                 new_election_info.comprehensive_stake = node.stake;
-                new_election_info.consensus_public_key = node.public_key;
+                new_election_info.consensus_public_key = node.pub_key;
 
                 xelection_info_bundle_t election_info_bundle{};
                 election_info_bundle.node_id(node.node_id);
                 election_info_bundle.election_info(new_election_info);
-                election_group_result.insert(std::move(election_info_bundle));
+                val_election_group_result.insert(std::move(election_info_bundle));
             }
-            xinfo("[consensus_start_nodes] group_id: %" PRIu16 " size: %zu, verison:%s",
-                  static_cast<std::uint16_t>(group_id.value()),
-                  election_group_result.size(),
-                  next_version.to_string().c_str());
-            group_infos_iter++;
         }
-
-        // set associate_relationship
-        auto const pre_associate = XGET_CONFIG(validator_group_count) / XGET_CONFIG(auditor_group_count);
 
         auto const & auditor_group = election_result_store.result_of(m_network_id)
                                          .result_of(common::xnode_type_t::consensus_auditor)
@@ -188,7 +240,6 @@ void xtop_zec_elect_consensus_group_contract::elect_config_nodes(common::xlogic_
         }
         auditor_group_id_start++;
 
-        xinfo("[consensus_start_nodes] update_prop: %s", property.c_str());
         serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, property, election_result_store);
     }
 }
@@ -210,13 +261,22 @@ void xtop_zec_elect_consensus_group_contract::setup() {
 void xtop_zec_elect_consensus_group_contract::on_timer(common::xlogic_time_t const current_time) {
     XMETRICS_TIME_RECORD(XCONSENSUS_ELECT "on_timer_all_time");
 #ifdef STATIC_CONSENSUS
-    if (!executed_consensus) {
-        elect_config_nodes(current_time);
+    if (xstatic_election_center::instance().if_allow_elect()) {
+        if (!executed_consensus) {
+            elect_config_nodes(current_time);
+            return;
+        }
+#    ifndef ELECT_WHEREAFTER
+        // only once static_consensus elect. return then.
+        return;
+#    endif
+#    ifdef CONSENSUS_SWAP
+        swap_election_result(current_time);
+        return;
+#    endif
+    } else {
         return;
     }
-#ifndef ELECT_WHEREAFTER 
-    return;
-#endif
 #endif
     XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), "xzec_elect_consensus_group_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_zec_elect_consensus_addr,

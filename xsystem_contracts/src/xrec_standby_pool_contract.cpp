@@ -78,6 +78,10 @@ void xtop_rec_standby_pool_contract::setup() {
 
         standby_result_store.result_of(network_id()).insert({node_id, seed_node_info});
     }
+    for (auto & standby_network_result_info : standby_result_store) {
+        auto & standby_network_storage_result = top::get<election::xstandby_network_storage_result_t>(standby_network_result_info);
+        standby_network_storage_result.set_activate_state(true);
+    }
 #endif
 
     STRING_CREATE(XPROPERTY_CONTRACT_STANDBYS_KEY);
