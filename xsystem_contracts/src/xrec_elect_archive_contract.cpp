@@ -20,6 +20,10 @@
 
 #include <inttypes.h>
 
+#ifdef STATIC_CONSENSUS
+#    include "xvm/xsystem_contracts/xelection/xstatic_election_center.h"
+#endif
+
 #ifndef XSYSCONTRACT_MODULE
 #    define XSYSCONTRACT_MODULE "sysContract_"
 #endif
@@ -44,7 +48,7 @@ bool executed_archive{false};
 // "archive_start_nodes":"T00000LNi53Ub726HcPXZfC4z6zLgTo5ks6GzTUp.0.pub_key,T00000LeXNqW7mCCoj23LEsxEmNcWKs8m6kJH446.0.pub_key,T00000LVpL9XRtVdU5RwfnmrCtJhvQFxJ8TB46gB.0.pub_key",
 //
 // it will elect the first and only round archive nodes as you want.
-static uint64_t node_start_time{UINT64_MAX};
+
 void xtop_rec_elect_archive_contract::elect_config_nodes(common::xlogic_time_t const current_time) {
     uint64_t latest_height = get_blockchain_height(sys_contract_rec_elect_archive_addr);
     xinfo("[archive_start_nodes] get_latest_height: %" PRIu64, latest_height);
@@ -58,29 +62,21 @@ void xtop_rec_elect_archive_contract::elect_config_nodes(common::xlogic_time_t c
     using top::data::election::xelection_result_store_t;
     using top::data::election::xstandby_node_info_t;
 
-    auto & config_register = top::config::xconfig_register_t::get_instance();
-    std::string consensus_infos;
-    config_register.get(std::string("archive_start_nodes"), consensus_infos);
-    xinfo("[archive_start_nodes] read_all :%s", consensus_infos.c_str());
-    std::vector<std::string> nodes_info;
-    top::base::xstring_utl::split_string(consensus_infos, ',', nodes_info);
-
     auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
     auto election_result_store =
         xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(common::xdefault_group_id));
     auto node_type = common::xnode_type_t::storage_archive;
     auto & election_group_result = election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(common::xdefault_group_id);
 
+    auto nodes_info = xstatic_election_center::instance().get_static_election_nodes("archive_start_nodes");
     for (auto nodes : nodes_info) {
-        xinfo("[archive_start_nodes] read :%s", nodes.c_str());
-        std::vector<std::string> one_node_info;
-        top::base::xstring_utl::split_string(nodes, '.', one_node_info);
         xelection_info_t new_election_info{};
-        new_election_info.consensus_public_key = xpublic_key_t{one_node_info[2]};
-        new_election_info.stake = static_cast<std::uint64_t>(std::atoi(one_node_info[1].c_str()));
+        new_election_info.consensus_public_key = nodes.pub_key;
+        new_election_info.stake = nodes.stake;
+        new_election_info.joined_version = common::xelection_round_t{0};
 
         xelection_info_bundle_t election_info_bundle{};
-        election_info_bundle.node_id(common::xnode_id_t{one_node_info[0]});
+        election_info_bundle.node_id(nodes.node_id);
         election_info_bundle.election_info(std::move(new_election_info));
 
         election_group_result.insert(std::move(election_info_bundle));
@@ -99,9 +95,6 @@ void xtop_rec_elect_archive_contract::elect_config_nodes(common::xlogic_time_t c
 
 void xtop_rec_elect_archive_contract::setup() {
     xelection_result_store_t election_result_store;
-#ifdef STATIC_CONSENSUS
-    node_start_time = base::xtime_utl::gmttime_ms();
-#endif
     auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
     for (auto const & property : property_names) {
         STRING_CREATE(property);
@@ -111,23 +104,17 @@ void xtop_rec_elect_archive_contract::setup() {
 
 void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
 #ifdef STATIC_CONSENSUS
-    auto current_gmt_time = base::xtime_utl::gmttime_ms();
-    xinfo("[STATIC_CONSENSUS] node start gmt time: % " PRIu64 " current time % " PRIu64, node_start_time, current_gmt_time);
-    uint64_t set_waste_time{20};
-    top::config::xconfig_register_t::get_instance().get(std::string("static_waste_time"), set_waste_time);
-    if (current_gmt_time - node_start_time < set_waste_time * 10000) {
-        return;
-    }
-    if (!executed_archive) {
-        elect_config_nodes(current_time);
-    }
-#ifdef ELECT_WHEREAFTER
-    if (current_gmt_time - node_start_time < (set_waste_time + 40) * 10000) {
-        return;
-    }
-#else
+    if (xstatic_election_center::instance().if_allow_elect()) {
+        if (!executed_archive) {
+            elect_config_nodes(current_time);
+            return;
+        }
+#ifndef ELECT_WHEREAFTER
     return;
 #endif
+    } else {
+        return;
+    }
 #endif
 
     XMETRICS_TIME_RECORD(XARCHIVE_ELECT "on_timer_all_time");

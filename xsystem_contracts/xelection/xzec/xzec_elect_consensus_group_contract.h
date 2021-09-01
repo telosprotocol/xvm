@@ -36,6 +36,7 @@ public:
 
 private:
 #ifdef STATIC_CONSENSUS
+    void swap_election_result(common::xlogic_time_t const current_time);
     void elect_config_nodes(common::xlogic_time_t const current_time);
 #endif
 
