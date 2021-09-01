@@ -368,11 +368,6 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
         xerror("xtop_contract_manager::setup_chain %s genesis block fail", contract_cluster_address.c_str());
         return;
     }
-    ret = blockstore->execute_block(_vaddr, block.get());
-    if (!ret) {
-        xerror("xtop_contract_manager::setup_chain execute genesis block fail");
-        return;
-    }
     xdbg("[xtop_contract_manager::setup_chain] setup %s, %s", contract_cluster_address.c_str(), ret ? "SUCC" : "FAIL");
 }
 
