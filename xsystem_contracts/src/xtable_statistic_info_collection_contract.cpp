@@ -85,8 +85,9 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
     }
 
 
-    xinfo("[xtable_statistic_info_collection_contract][on_collect_statistic_info] enter collect statistic data, fullblock height: %" PRIu64 ", contract addr: %s, table_id: %u, pid: %d",
+    xinfo("[xtable_statistic_info_collection_contract][on_collect_statistic_info] enter collect statistic data, fullblock height: %" PRIu64 ", tgas: %ld, contract addr: %s, table_id: %u, pid: %d",
         block_height,
+        tgas,
         source_addr.c_str(),
         table_id,
         getpid());
@@ -519,7 +520,10 @@ void xtable_statistic_info_collection_contract::upload_workload() {
             stream << tgas;
             stream << height;
             group_workload_upload_str = std::string((char *)stream.data(), stream.size());
-            xinfo("[xtable_statistic_info_collection_contract::upload_workload] upload workload to zec reward, group_workload_upload size: %d", group_workload_upload.size());
+            xinfo("[xtable_statistic_info_collection_contract::upload_workload] upload workload to zec reward, group_workload_upload size: %d, tgas: %ld, height: %lu",
+                  group_workload_upload.size(),
+                  tgas,
+                  height);
         }
         {
             xstream_t stream(xcontext_t::instance());
@@ -540,6 +544,7 @@ void xtable_statistic_info_collection_contract::process_workload_statistic_data(
         update_workload(group_workload);
     }
     if (tgas != 0) {
+        xinfo("[xtable_statistic_info_collection_contract::process_workload_statistic_data] update tgas: %lu", tgas);
         update_tgas(tgas);
     }
 }

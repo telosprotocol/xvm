@@ -52,6 +52,19 @@ public:
 
 private:
     /**
+     * @brief handle_workload_str
+     *
+     * @param workload_str workload
+     * @param activation_record_str is_mainnet_active
+     */
+    void handle_workload_str(const std::string & activation_record_str,
+                             const std::string & table_info_str,
+                             const std::map<std::string, std::string> & workload_str,
+                             const std::string & tgas_str,
+                             const std::string & height_str,
+                             std::map<std::string, std::string> & workload_str_new,
+                             std::string & tgas_str_new);
+    /**
      * @brief check if mainnet is activated
      *
      * @return int 0 - not activated, other - activated
@@ -97,11 +110,20 @@ private:
      * @brief stash_workload
      */
     void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload);
+    
+    void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload,
+                         const std::map<std::string, std::string> & workload_str,
+                         std::map<std::string, std::string> & workload_new);
 
     /**
      * @brief upload_workload
      */
     void upload_workload(common::xlogic_time_t const timestamp);
+
+    /**
+     * @brief upload_workload_internal
+     */
+    void upload_workload_internal(common::xlogic_time_t const timestamp, std::string & call_contract_str);
 
     /**
      * @brief clear_workload

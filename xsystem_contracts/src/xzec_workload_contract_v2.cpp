@@ -52,40 +52,89 @@ bool xzec_workload_contract_v2::is_mainnet_activated() const {
     return static_cast<bool>(record.activated);
 };
 
-void xzec_workload_contract_v2::on_receive_workload(std::string const & workload_str) {
-    auto const & source_address = SOURCE_ADDRESS();
+void xzec_workload_contract_v2::on_receive_workload(std::string const & table_info_str) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_receive_workload");
+    XMETRICS_COUNTER_INCREMENT(XWORKLOAD_CONTRACT "on_receive_workload", 1);
+    XCONTRACT_ENSURE(!table_info_str.empty(), "workload_str empty");
 
+    auto const & source_address = SOURCE_ADDRESS();
     std::string base_addr;
     uint32_t table_id;
     if (!data::xdatautil::extract_parts(source_address, base_addr, table_id) || sys_contract_sharding_statistic_info_addr != base_addr) {
         xwarn("[xzec_workload_contract_v2::on_receive_workload] invalid call from %s", source_address.c_str());
         return;
     }
+    xdbg("[xzec_workload_contract_v2::on_receive_workload] on_receive_workload call from %s, pid: %d, ", source_address.c_str(), getpid());
 
-    xstream_t stream(xcontext_t::instance(), (uint8_t *)workload_str.data(), workload_str.size());
+    std::string activation_str;
+    std::map<std::string, std::string> workload_str;
+    std::string tgas_str;
+    std::string height_str;
+    std::map<std::string, std::string> workload_str_new;
+    std::string tgas_str_new;
+    {
+        XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_receive_workload_map_get");
+        activation_str = STRING_GET2(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
+        MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, workload_str);
+        tgas_str = STRING_GET2(XPORPERTY_CONTRACT_TGAS_KEY);
+        MAP_GET2(XPORPERTY_CONTRACT_TABLEBLOCK_HEIGHT_KEY, std::to_string(table_id), height_str);
+    }
+
+    handle_workload_str(activation_str, table_info_str, workload_str, tgas_str, height_str, workload_str_new, tgas_str_new);
+
+    {
+        XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_receive_workload_map_set");
+        for (auto it = workload_str_new.cbegin(); it != workload_str_new.end(); it++) {
+            MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, it->first, it->second);
+        }
+        if (!tgas_str_new.empty() && tgas_str != tgas_str_new) {
+            STRING_SET(XPORPERTY_CONTRACT_TGAS_KEY, tgas_str_new);
+        }
+    }
+}
+
+void xzec_workload_contract_v2::handle_workload_str(const std::string & activation_record_str,
+                                                    const std::string & table_info_str,
+                                                    const std::map<std::string, std::string> & workload_str,
+                                                    const std::string & tgas_str,
+                                                    const std::string & height_str,
+                                                    std::map<std::string, std::string> & workload_str_new,
+                                                    std::string & tgas_str_new) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "handle_workload_str");
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
     int64_t table_pledge_balance_change_tgas = 0;
     uint64_t height = 0;
-
-    MAP_OBJECT_DESERIALZE2(stream, group_workload);
-    stream >> table_pledge_balance_change_tgas;
-    stream >> height;
-    xdbg("[xzec_workload_contract::on_receive_workload] pid:%d, SOURCE_ADDRESS: %s, group_workload size: %zu, table_pledge_balance_change_tgas: %lld\n", getpid(), source_address.c_str(), group_workload.size(), table_pledge_balance_change_tgas);
-
-    uint64_t last_read_height = get_table_height(table_id);
-    if (last_read_height >= height) {
-        xwarn("[xzec_workload_contract::on_receive_workload] table id: %u, zec_last_read_height: %lu >= table_previous_height: %lu, ignore!", table_id, last_read_height, height);
-        return;
+    {
+        xstream_t stream(xcontext_t::instance(), (uint8_t *)table_info_str.data(), table_info_str.size());
+        MAP_OBJECT_DESERIALZE2(stream, group_workload);
+        stream >> table_pledge_balance_change_tgas;
+        stream >> height;
     }
+    xinfo("[xzec_workload_contract::handle_workload_str] group_workload size: %zu, table_pledge_balance_change_tgas: %lld, height: %lu, last height: %lu\n",
+          group_workload.size(),
+          table_pledge_balance_change_tgas,
+          height,
+          xstring_utl::touint64(height_str));
+
+    XCONTRACT_ENSURE(xstring_utl::touint64(height_str) < height, "zec_last_read_height >= table_previous_height");
 
     // update system total tgas
-    update_tgas(table_pledge_balance_change_tgas);
+    int64_t tgas = 0;
+    if (!tgas_str.empty()) {
+        tgas = xstring_utl::toint64(tgas_str);
+    }
+    tgas_str_new = xstring_utl::tostring(tgas += table_pledge_balance_change_tgas);
 
-    if (!is_mainnet_activated()) {
+    xactivation_record record;
+    if (!activation_record_str.empty()) {
+        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)activation_record_str.c_str(), (uint32_t)activation_record_str.size());
+        record.serialize_from(stream);
+    }
+    if (!record.activated) {
+        xdbg("[xzec_workload_contract_v2::handle_workload_str] not activated: %d\n", record.activated);
         return;
     }
-
-    update_workload(group_workload);
+    update_workload(group_workload, workload_str, workload_str_new);
 }
 
 std::vector<xobject_ptr_t<data::xblock_t>> xzec_workload_contract_v2::get_fullblock(common::xlogic_time_t const timestamp, const uint32_t table_id) {
@@ -314,8 +363,54 @@ void xzec_workload_contract_v2::set_workload(common::xgroup_address_t const & gr
     MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, group_address_str, value_str);
 }
 
+void xzec_workload_contract_v2::update_workload(const std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload,
+                                                const std::map<std::string, std::string> & workload_str,
+                                                std::map<std::string, std::string> & workload_new) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "update_workload");
+    for (auto const & one_group_workload : group_workload) { 
+        auto const & group_address = one_group_workload.first;
+        auto const & workload = one_group_workload.second;
+        // get
+        std::string group_address_str;
+        {
+            xstream_t stream(xcontext_t::instance());
+            stream << group_address;
+            group_address_str = std::string((const char *)stream.data(), stream.size());
+        }
+        xgroup_workload_t total_workload;
+        {
+            auto it = workload_str.find(group_address_str);
+            if (it == workload_str.end()) {
+                xdbg("[xzec_workload_contract_v2::update_workload] group not exist: %s", group_address.to_string().c_str());
+            } else {
+                xstream_t stream(xcontext_t::instance(), (uint8_t *)it->second.data(), it->second.size());
+                total_workload.serialize_from(stream);
+            }
+        }
+        // update
+        for (auto const & leader_workload : workload.m_leader_count) {
+            auto const & leader = leader_workload.first;
+            auto const & count = leader_workload.second;
+            total_workload.m_leader_count[leader] += count;
+            total_workload.cluster_total_workload += count;
+            xdbg("[xzec_workload_contract_v2::update_workload] group: %u, leader: %s, count: %d, total_count: %d, total_workload: %d",
+                 group_address.group_id().value(),
+                 leader.c_str(),
+                 count,
+                 total_workload.m_leader_count[leader],
+                 total_workload.cluster_total_workload);
+        }
+        // set
+        {
+            xstream_t stream(xcontext_t::instance());
+            total_workload.serialize_to(stream);
+            workload_new.insert(std::make_pair(group_address_str, std::string((const char *)stream.data(), stream.size())));
+        }
+    }
+}
+
 void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
-    auto t1 = xtime_utl::time_now_ms();
+    // auto t1 = xtime_utl::time_now_ms();
     for (auto const & one_group_workload : group_workload) { 
         auto const & group_address = one_group_workload.first;
         auto const & workload = one_group_workload.second;
@@ -344,6 +439,14 @@ void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_
 void xzec_workload_contract_v2::upload_workload(common::xlogic_time_t const timestamp) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "upload_workload_time");
     XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "upload_workload_cpu_time");
+    std::string call_contract_str{};
+    upload_workload_internal(timestamp, call_contract_str);
+    if (!call_contract_str.empty()) {
+        CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", call_contract_str);
+    }
+}
+
+void xzec_workload_contract_v2::upload_workload_internal(common::xlogic_time_t const timestamp, std::string & call_contract_str) {
     std::map<std::string, std::string> group_workload_str;
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload_upload;
 
@@ -384,7 +487,7 @@ void xzec_workload_contract_v2::upload_workload(common::xlogic_time_t const time
             xstream_t stream(xcontext_t::instance());
             stream << timestamp;
             stream << group_workload_upload_str;
-            CALL(common::xaccount_address_t{sys_contract_zec_reward_addr}, "calculate_reward", std::string((char *)stream.data(), stream.size()));
+            call_contract_str = std::string((char *)stream.data(), stream.size());
             group_workload_upload.clear();
         }
     }
