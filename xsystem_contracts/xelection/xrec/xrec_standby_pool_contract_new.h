@@ -5,7 +5,7 @@
 #pragma once
 
 #include "xcontract_common/xproperties/xproperty_string.h"
-#include "xcontract_runtime/xsystem/xsystem_contract_runtime_helper.h"
+#include "xsystem_contract_runtime/xsystem_contract_runtime_helper.h"
 #include "xdata/xelection/xstandby_result_store.h"
 #include "xstake/xstake_algorithm.h"
 #include "xsystem_contracts/xbasic_system_contract.h"
