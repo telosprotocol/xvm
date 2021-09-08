@@ -289,8 +289,13 @@ void xrole_context_t::broadcast(const xblock_ptr_t & block_ptr, common::xnode_ty
 
     if (common::has<common::xnode_type_t::all>(types)) {
         common::xnode_address_t dest{common::xcluster_address_t{m_driver->network_id()}};
-        m_driver->broadcast_to(dest, message);
-        xdbg("[xrole_context_t] broadcast to ALL. block owner %s height %" PRIu64, block_ptr->get_block_owner().c_str(), block_ptr->get_height());
+        std::error_code ec;
+        m_driver->broadcast(common::xip2_t{m_driver->network_id()}, message, ec);
+        if (ec) {
+            xwarn("[xrole_context_t] broadcast to ALL failed. block owner %s height %" PRIu64, block_ptr->get_block_owner().c_str(), block_ptr->get_height());
+        } else {
+            xdbg("[xrole_context_t] broadcast to ALL. block owner %s height %" PRIu64, block_ptr->get_block_owner().c_str(), block_ptr->get_height());
+        }
     } else {
         if (common::has<common::xnode_type_t::committee>(types)) {
             common::xnode_address_t dest{common::build_committee_sharding_address(m_driver->network_id())};
