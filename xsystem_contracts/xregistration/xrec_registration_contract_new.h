@@ -16,16 +16,19 @@ NS_BEG2(top, system_contracts)
 class xtop_rec_registration_contract_new final : public xbasic_system_contract_t {
     using xbase_t = xbasic_system_contract_t;
 public:
-    xtop_rec_registration_contract_new() = default;
+    // xtop_rec_registration_contract_new() = default;
     xtop_rec_registration_contract_new(xtop_rec_registration_contract_new const &) = delete;
     xtop_rec_registration_contract_new & operator=(xtop_rec_registration_contract_new const &) = delete;
     xtop_rec_registration_contract_new(xtop_rec_registration_contract_new &&) = default;
     xtop_rec_registration_contract_new & operator=(xtop_rec_registration_contract_new &&) = default;
     ~xtop_rec_registration_contract_new() override = default;
 
+    explicit xtop_rec_registration_contract_new(const observer_ptr<contract_common::xcontract_execution_context_t> & context) : xbasic_system_contract_t(context) {}
+
     BEGIN_CONTRACT_API()
-        // DECLARE_API(xtop_rec_registration_contract_new::registerNode);
-        // DECLARE_API(xtop_rec_registration_contract_new::unregisterNode);
+        DECLARE_API(xtop_rec_registration_contract_new::setup);
+        DECLARE_API(xtop_rec_registration_contract_new::registerNode);
+        DECLARE_API(xtop_rec_registration_contract_new::unregisterNode);
         // DECLARE_API(xtop_rec_registration_contract_new::updateNodeInfo);
         // DECLARE_API(xtop_rec_registration_contract_new::setDividendRatio);
         // DECLARE_API(xtop_rec_registration_contract_new::setNodeName);
