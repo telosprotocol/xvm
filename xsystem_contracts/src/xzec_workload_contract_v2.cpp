@@ -435,8 +435,8 @@ void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_
         // set
         set_workload(group_address, total_workload);
     }
-    auto t2 = xtime_utl::time_now_ms();
-    XMETRICS_COUNTER_SET(XWORKLOAD_CONTRACT "update_workload_counter", t2 - t1);
+    // auto t2 = xtime_utl::time_now_ms();
+    // XMETRICS_COUNTER_SET(XWORKLOAD_CONTRACT "update_workload_counter", t2 - t1);
 }
 
 void xzec_workload_contract_v2::upload_workload(common::xlogic_time_t const timestamp) {
