@@ -38,6 +38,14 @@ NS_BEG2(top, system_contracts)
 #define TIMER_ADJUST_DENOMINATOR 10
 
 void xrec_registration_contract_new_t::setup() {
+    m_balance.create();
+    m_genesis_prop.create();
+    m_reg_prop.create();
+    m_tickets_prop.create();
+    m_refund_prop.create();
+    m_slash_prop.create();
+    m_votes_report_time_prop.create();
+
     std::vector<std::pair<std::string, std::string>> db_kv_101;
     xchain_data_processor_t::get_stake_map_property(address(), XPORPERTY_CONTRACT_REG_KEY, db_kv_101);
     for (auto const & _p : db_kv_101) {
@@ -178,7 +186,23 @@ void xrec_registration_contract_new_t::setup() {
     xreg_node_info node_info;
     {
         common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
-        const std::vector<node_info_t> & seed_nodes = xrootblock_t::get_seed_nodes();
+        // const std::vector<node_info_t> & seed_nodes = xrootblock_t::get_seed_nodes();
+        std::vector<node_info_t> const seed_nodes{
+            node_info_t{"T00000LNi53Ub726HcPXZfC4z6zLgTo5ks6GzTUp", "BNRHeRGw4YZnTHeNGxYtuAsvSslTV7THMs3A9RJM+1Vg63gyQ4XmK2i8HW+f3IaM7KavcH7JMhTPFzKtWp7IXW4="},
+            node_info_t{"T00000LeXNqW7mCCoj23LEsxEmNcWKs8m6kJH446", "BN9IQux1NQ0ByBCYAAVds5Si538gazH3gNIS5sODadNRA2zvvKDTSKhfwX5GNWtvb0nmoGHjQp9J9ElMyOUwBkk="},
+            node_info_t{"T00000LVpL9XRtVdU5RwfnmrCtJhvQFxJ8TB46gB", "BP+s96ilurhraFU7RD2Ua60rD8CpgDxCjWcp67yq7D500gf0ej5vBGiwqZ2GwoEWAcXFHqUlTQW8IqIWHCk5eKk="},
+            node_info_t{"T00000LLJ8AsN4hREDtCpuKAxJFwqka9LwiAon3M", "BDulJhE2hcVccX6ipiQQ7lerTjiiLOPHFRVIhFqFpFGEcgQlEH1lxMc2TxkVOmycwPkdaDJDyeMAoEWxFRkhB7o="},
+            node_info_t{"T00000LefzYnVUayJSgeX3XdKCgB4vk7BVUoqsum", "BPIMyevRyVoKNoghbcdMZurSNjHES5ltO0BhYMCToDOT4aBlLBu4SlVSgUGZdLor80KuZbu5CxTl9cefeFNSEfU="},
+            node_info_t{"T00000LXqp1NkfooMAw7Bty2iXTxgTCfsygMnxrT", "BFyhA6BP2mTbgOsmsQFjQ09r9iXn+f3fmceOb+O1aYmr6qDo7KwDv25iOMRV8nBOgunv6EUAtjDKidvME9YkuBQ="},
+            node_info_t{"T00000LaFmRAybSKTKjE8UXyf7at2Wcw8iodkoZ8", "BMpn9t4PDeHodoUeiamiipsS3bnNGT4Mbk/ynGJY1pnIuqv4nlEhVOv1CUZ5JbeNcWV/VNTin3xuvl/sOKNx1LU="},
+            node_info_t{"T00000LhCXUC5iQCREefnRPRFhxwDJTEbufi41EL", "BFyUBEG/eO5SomaDQZidofp7n0s0eq/9scRAxWp8w+fbb3CnOSffdN3CeNHzJKYgBBmK5anXtvXkkBYCmW7+tiU="},
+            node_info_t{"T00000LTSip8Xbjutrtm8RkQzsHKqt28g97xdUxg", "BETTgEv6HFFtxTVCQZBioXc5M2oXb5iPQgoO6qlXlPEzTPK4D2yuz4pAfQqfxwABRvi0nf1EY0CVy9Z3HJf2+CQ="},
+            node_info_t{"T00000LcNfcqFPH9vy3EYApkrcXLcQN2hb1ygZWE", "BC81J2PldKUM2+JjkgzmLWcHrAbQy7W9OZFYHdc3myToIMlrXYHuraEp+ncSfGEOkxw3BXYZQtAzp6gD7UKShDU="},
+            node_info_t{"T00000LUv7e8RZLNtnE1K9sEfE9SYe74rwYkzEub", "BF7e2Et86zY3PIJ2Bh/wgxcKTTdgxffuvaHJ3AbR99bQr9jAgUNKCyG9qbYDbgU74eUTDZFcoKycGWe7UF4ScFo="},
+            node_info_t{"T00000LKfBYfwTcNniDSQqj8fj5atiDqP8ZEJJv6", "BFFVnheBS2yJLwlb+q6xH/DL+RotbvRdd9YeJKug1tP+WppTdB36KzMOHxmHTsh5u9BKgPDgXppFvyBeqYUxoTU="},
+            node_info_t{"T00000LXRSDkzrUsseZmfJFnSSBsgm754XwV9SLw", "BDL1+u+QBTf15/susP8JHAr0cbrHrz8iXRnLfZ47izaFtc1ZGhD2OTuCEMUNO0cQC0LhnvZ6QhkaiiPuPb6tC58="},
+            node_info_t{"T00000Lgv7jLC3DQ3i3guTVLEVhGaStR4RaUJVwA", "BMmlycOO/y8Z/MDrCUw598nIU0GZlxAgYX+/3MEi6UvguDfnivjdULHO7L2yRkM9hWy3Ch3mKKyqMvIMG2W+Pyk="},
+        };
         for (size_t i = 0; i < seed_nodes.size(); i++) {
             node_info_t node_data = seed_nodes[i];
 
