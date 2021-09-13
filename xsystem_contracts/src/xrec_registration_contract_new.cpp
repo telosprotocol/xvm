@@ -277,10 +277,10 @@ void xrec_registration_contract_new_t::registerNode2(const std::string & role_ty
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
 
     // const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
-    XCONTRACT_ENSURE(action_type() == xaction_type_asset_out && !account.empty(),
+    XCONTRACT_ENSURE(source_action_type() == xaction_type_asset_out && !account.empty(),
                      "xrec_registration_contract::registerNode: source_action type must be xaction_type_asset_out and account must be not empty");
 
-    xstream_t stream(xcontext_t::instance(), (uint8_t *)action_data().data(), action_data().size());
+    xstream_t stream(xcontext_t::instance(), (uint8_t *)source_action_data().data(), source_action_data().size());
 
     data::xproperty_asset asset_out{0};
     stream >> asset_out.m_token_name;
@@ -324,7 +324,7 @@ void xrec_registration_contract_new_t::registerNode2(const std::string & role_ty
           ", min_deposit: %" PRIu64 ", account: %s"),
          getpid(),
          transaction_type(),
-         action_type(),
+         source_action_type(),
          asset_out.m_amount,
          min_deposit,
          account.c_str());

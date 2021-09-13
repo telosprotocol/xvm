@@ -60,7 +60,7 @@ void xtop_rec_standby_pool_contract_new::setup() {
         seed_node_info.is_genesis_node = true;
 
         // TODO: contract networkid get
-        standby_result_store.result_of(common::xnetwork_id_t{0}).insert({node_id, seed_node_info});
+        standby_result_store.result_of(common::xnetwork_id_t{base::enum_test_chain_id}).insert({node_id, seed_node_info});
     }
 
 #ifdef STATIC_CONSENSUS
@@ -77,7 +77,7 @@ void xtop_rec_standby_pool_contract_new::setup() {
         seed_node_info.program_version = "1.1.0"; 
         seed_node_info.is_genesis_node = false;
 
-        standby_result_store.result_of(common::xnetwork_id_t{0}).insert({node_id, seed_node_info});
+        standby_result_store.result_of(common::xnetwork_id_t{base::enum_test_chain_id}).insert({node_id, seed_node_info});
     }
     for (auto & standby_network_result_info : standby_result_store) {
         auto & standby_network_storage_result = top::get<election::xstandby_network_storage_result_t>(standby_network_result_info);
