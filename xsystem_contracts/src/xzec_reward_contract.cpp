@@ -89,6 +89,7 @@ void xzec_reward_contract::setup() {
 void xzec_reward_contract::on_timer(const common::xlogic_time_t onchain_timer_round) {
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "on_timer_Called", 1);
     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "on_timer_ExecutionTime");
+    XMETRICS_CPU_TIME_RECORD(XREWARD_CONTRACT "on_timer_cpu_time");
 
     std::string source_address = SOURCE_ADDRESS();
     if (SELF_ADDRESS().value() != source_address) {
@@ -178,6 +179,8 @@ void xzec_reward_contract::calculate_reward(common::xlogic_time_t current_time, 
 }
 
 void xzec_reward_contract::reward(const common::xlogic_time_t current_time, std::string const& workload_str) {
+    XMETRICS_TIME_RECORD(XREWARD_CONTRACT "reward_ExecutionTime");
+    XMETRICS_CPU_TIME_RECORD(XREWARD_CONTRACT "reward_cpu_time");
     xdbg("[xzec_reward_contract::reward] pid:%d\n", getpid());
     // step1 get related params
     common::xlogic_time_t activation_time;  // system activation time
@@ -281,6 +284,7 @@ void xzec_reward_contract::add_task(const uint32_t task_id,
 
 void xzec_reward_contract::execute_task() {
     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "execute_task_ExecutionTime");
+    XMETRICS_CPU_TIME_RECORD(XREWARD_CONTRACT "execute_task_cpu_time");
     std::map<std::string, std::string> dispatch_tasks;
     xreward_dispatch_task task;
 
