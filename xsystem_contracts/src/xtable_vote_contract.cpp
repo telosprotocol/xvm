@@ -95,8 +95,8 @@ void xtable_vote_contract::voteNode(vote_info_map_t const & vote_info) {
     xinfo("[xtable_vote_contract::voteNode] timer round: %" PRIu64 ", src_addr: %s, self addr: %s, pid: %d\n", TIME(), account.c_str(), SELF_ADDRESS().c_str(), getpid());
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
-    XCONTRACT_ENSURE(trans_ptr->get_tx_type() == xtransaction_type_vote && trans_ptr->get_source_action().get_action_type() == xaction_type_source_null,
-                     "xtable_vote_contract::voteNode: source_action type must be xaction_type_source_null and transaction_type must be xtransaction_type_vote");
+    XCONTRACT_ENSURE(trans_ptr->get_tx_type() == xtransaction_type_vote,
+                     "xtable_vote_contract::voteNode: transaction_type must be xtransaction_type_vote");
     XMETRICS_PACKET_INFO("sysContract_tableVote_vote_node", "timer round", std::to_string(TIME()), "voter address", account.to_string());
 
     set_vote_info(account, vote_info, true);
@@ -109,8 +109,8 @@ void xtable_vote_contract::unvoteNode(vote_info_map_t const & vote_info) {
     xinfo("[xtable_vote_contract::unvoteNode] timer round: %" PRIu64 ", src_addr: %s, self addr: %s, pid: %d\n", TIME(), account.c_str(), SELF_ADDRESS().c_str(), getpid());
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
-    XCONTRACT_ENSURE(trans_ptr->get_tx_type() == xtransaction_type_abolish_vote && trans_ptr->get_source_action().get_action_type() == xaction_type_source_null,
-                     "xtable_vote_contract::unvoteNode: source_action type must be xaction_type_source_null and transaction_type must be xtransaction_type_abolish_vote");
+    XCONTRACT_ENSURE(trans_ptr->get_tx_type() == xtransaction_type_abolish_vote,
+                     "xtable_vote_contract::unvoteNode: transaction_type must be xtransaction_type_abolish_vote");
     XMETRICS_PACKET_INFO("sysContract_tableVote_unvote_node", "timer round", std::to_string(TIME()), "unvoter address", account.to_string());
 
     set_vote_info(account, vote_info, false);

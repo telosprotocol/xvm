@@ -271,8 +271,8 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
-    XCONTRACT_ENSURE(trans_ptr->get_source_action().get_action_type() == xaction_type_asset_out && !account.empty(),
-                     "xrec_registration_contract::registerNode: source_action type must be xaction_type_asset_out and account must be not empty");
+    XCONTRACT_ENSURE(!account.empty(),
+                     "xrec_registration_contract::registerNode: account must be not empty");
 
     xstream_t stream(xcontext_t::instance(), (uint8_t *)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
 
@@ -395,8 +395,8 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
     uint64_t min_deposit = node_info.get_required_min_deposit();
     if (updateDepositType == 1) { // stake deposit
         const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
-        XCONTRACT_ENSURE(trans_ptr->get_source_action().get_action_type() == xaction_type_asset_out && !account.empty(),
-                         "xrec_registration_contract::updateNodeInfo: source_action type must be xaction_type_asset_out and account must be not empty");
+        XCONTRACT_ENSURE(!account.empty(),
+                         "xrec_registration_contract::updateNodeInfo: account must be not empty");
         if (trans_ptr->get_source_action().get_action_param().size() > 0) {
             xstream_t stream(xcontext_t::instance(), (uint8_t *)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
             data::xproperty_asset asset_out{0};
@@ -904,7 +904,7 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
     XCONTRACT_ENSURE(role_type != node_info.m_registered_role, "xrec_registration_contract::updateNodeType: node_types can not be same!");
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
-    XCONTRACT_ENSURE( trans_ptr->get_source_action().get_action_type() == xaction_type_asset_out && !account.empty(), "xrec_registration_contract::updateNodeType: source_action type must be xaction_type_asset_out and account must be not empty");
+    XCONTRACT_ENSURE(!account.empty(), "xrec_registration_contract::updateNodeType: account must be not empty");
 
     if (trans_ptr->get_source_action().get_action_param().size() > 0) {
         xstream_t stream(xcontext_t::instance(), (uint8_t*)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
