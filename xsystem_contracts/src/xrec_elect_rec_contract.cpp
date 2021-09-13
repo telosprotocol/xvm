@@ -71,6 +71,7 @@ void xtop_rec_elect_rec_contract::setup() {
 
 void xtop_rec_elect_rec_contract::on_timer(common::xlogic_time_t const current_time) {
     XMETRICS_TIME_RECORD(XREC_ELECT "on_timer_all_time");
+    XMETRICS_CPU_TIME_RECORD(XREC_ELECT "on_timer_cpu_time");
     XCONTRACT_ENSURE(SOURCE_ADDRESS() == SELF_ADDRESS().value(), "xtop_rec_elect_rec_contract instance is triggled by " + SOURCE_ADDRESS());
     XCONTRACT_ENSURE(SELF_ADDRESS().value() == sys_contract_rec_elect_rec_addr, u8"xtop_rec_elect_rec_contract instance is not triggled by sys_contract_rec_elect_rec_addr");
     // XCONTRACT_ENSURE(current_time <= TIME(), u8"xtop_rec_elect_rec_contract::on_timer current_time > consensus leader's time");
