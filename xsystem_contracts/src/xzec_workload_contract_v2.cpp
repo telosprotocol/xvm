@@ -186,6 +186,7 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
                                                                    const uint32_t end_table,
                                                                    std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "accumulate_total_time");
+    XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "accumulate_total_cpu_time");
     int64_t table_pledge_balance_change_tgas = 0;
     int64_t total_table_fullblock_num = 0;
     int64_t total_get_fullblock_time = 0;
@@ -244,6 +245,8 @@ void xzec_workload_contract_v2::accumulate_workload_with_fullblock(common::xlogi
 }
 
 void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "update_workload_time");
+    XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "update_workload_cpu_time");
     auto t1 = xtime_utl::time_now_ms();
     for (auto const & one_group_workload : group_workload) {
         auto const & group_address = one_group_workload.first;
@@ -294,6 +297,8 @@ void xzec_workload_contract_v2::update_workload(std::map<common::xgroup_address_
 }
 
 void xzec_workload_contract_v2::upload_workload(common::xlogic_time_t const timestamp) {
+    XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "upload_workload_time");
+    XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "upload_workload_cpu_time");
     std::map<std::string, std::string> group_workload_str;
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload_upload;
 
@@ -347,6 +352,7 @@ void xzec_workload_contract_v2::clear_workload() {
 
 void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_timer");
+    XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "on_timer_cpu_time");
     uint64_t t1 = xtime_utl::time_now_ms();
     // check address
     auto const & self_account = SELF_ADDRESS();
