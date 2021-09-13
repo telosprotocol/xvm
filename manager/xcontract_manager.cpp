@@ -793,7 +793,7 @@ static void get_zec_workload_map(observer_ptr<store::xstore_face_t const> store,
         workload.serialize_from(stream);
         xJson::Value jn;
         jn["cluster_total_workload"] = workload.cluster_total_workload;
-        auto const & key_str = workload.cluster_id;
+        auto const & key_str = m.first;
         common::xcluster_address_t cluster;
         xstream_t key_stream(xcontext_t::instance(), (uint8_t *)key_str.data(), key_str.size());
         key_stream >> cluster;
@@ -2168,15 +2168,15 @@ static void get_zec_workload_map(common::xaccount_address_t const & contract_add
         return;
     }
     for (auto m : workloads) {
-        auto detail = m.second;
+        auto const & group_id = m.first;
+        auto const & detail = m.second;
         base::xstream_t stream{xcontext_t::instance(), (uint8_t *)detail.data(), static_cast<uint32_t>(detail.size())};
         xstake::cluster_workload_t workload;
         workload.serialize_from(stream);
         xJson::Value jn;
         jn["cluster_total_workload"] = workload.cluster_total_workload;
-        auto const & key_str = workload.cluster_id;
         common::xcluster_address_t cluster;
-        xstream_t key_stream(xcontext_t::instance(), (uint8_t *)key_str.data(), key_str.size());
+        xstream_t key_stream(xcontext_t::instance(), (uint8_t *)group_id.data(), group_id.size());
         key_stream >> cluster;
         XSTD_PRINT("--------------------cluster: %s, size: %u\n", cluster.group_id().to_string().c_str(), static_cast<uint32_t>(workload.m_leader_count.size()));
         for (auto node : workload.m_leader_count) {
