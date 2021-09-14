@@ -12,6 +12,7 @@ std::map<common::xaccount_address_t, std::string> const sys_addr_to_metrics_enum
     {common::xaccount_address_t{sys_contract_rec_elect_edge_addr}, "election_rec_elect_edge_get_property_time"},
     {common::xaccount_address_t{sys_contract_rec_elect_zec_addr}, "election_rec_elect_zec_get_property_time"},
     {common::xaccount_address_t{sys_contract_rec_standby_pool_addr}, "rec_standby_pool_get_property_time"},
+    {common::xaccount_address_t{sys_contract_rec_parachain_registration_addr}, "rec_parachain_registration_get_property_time"},
     {common::xaccount_address_t{sys_contract_zec_elect_consensus_addr}, "election_zec_elect_consensus_get_property_time"},
     {common::xaccount_address_t{sys_contract_zec_group_assoc_addr}, "election_zec_group_association_get_property_time"}};
 
@@ -21,6 +22,7 @@ std::map<common::xaccount_address_t, std::string> const sys_addr_to_metrics_enum
     {common::xaccount_address_t{sys_contract_rec_elect_edge_addr}, "election_rec_elect_edge_set_property_time"},
     {common::xaccount_address_t{sys_contract_rec_elect_zec_addr}, "election_rec_elect_zec_set_property_time"},
     {common::xaccount_address_t{sys_contract_rec_standby_pool_addr}, "rec_standby_pool_set_property_time"},
+    {common::xaccount_address_t{sys_contract_rec_parachain_registration_addr}, "rec_parachain_registration_set_property_time"},
     {common::xaccount_address_t{sys_contract_zec_elect_consensus_addr}, "election_zec_elect_consensus_set_property_time"},
     {common::xaccount_address_t{sys_contract_zec_group_assoc_addr}, "election_zec_group_association_set_property_time"}};
 
@@ -30,6 +32,7 @@ std::map<common::xaccount_address_t, std::string> const sys_addr_to_metrics_enum
     {common::xaccount_address_t{sys_contract_rec_elect_edge_addr}, "election_rec_elect_edge_get_property_size"},
     {common::xaccount_address_t{sys_contract_rec_elect_zec_addr}, "election_rec_elect_zec_get_property_size"},
     {common::xaccount_address_t{sys_contract_rec_standby_pool_addr}, "rec_standby_pool_get_property_size"},
+    {common::xaccount_address_t{sys_contract_rec_parachain_registration_addr}, "rec_parachain_registration_get_property_size"},
     {common::xaccount_address_t{sys_contract_zec_elect_consensus_addr}, "election_zec_elect_consensus_get_property_size"},
     {common::xaccount_address_t{sys_contract_zec_group_assoc_addr}, "election_zec_group_association_get_property_size"}};
 
@@ -39,6 +42,7 @@ std::map<common::xaccount_address_t, std::string> const sys_addr_to_metrics_enum
     {common::xaccount_address_t{sys_contract_rec_elect_edge_addr}, "election_rec_elect_edge_set_property_size"},
     {common::xaccount_address_t{sys_contract_rec_elect_zec_addr}, "election_rec_elect_zec_set_property_size"},
     {common::xaccount_address_t{sys_contract_rec_standby_pool_addr}, "rec_standby_pool_set_property_size"},
+    {common::xaccount_address_t{sys_contract_rec_parachain_registration_addr}, "rec_parachain_registration_set_property_size"},
     {common::xaccount_address_t{sys_contract_zec_elect_consensus_addr}, "election_zec_elect_consensus_set_property_size"},
     {common::xaccount_address_t{sys_contract_zec_group_assoc_addr}, "election_zec_group_association_set_property_size"}};
 
