@@ -356,7 +356,7 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
 void xrole_context_t::on_fulltableblock_event(common::xaccount_address_t const& contract_name, std::string const& action_name, std::string const& action_params, uint64_t timestamp, uint16_t table_id) {
     auto const address = xcontract_address_map_t::calc_cluster_address(contract_name, table_id);
 
-    auto tx = make_object_ptr<xtransaction_t>();
+    auto tx = make_object_ptr<xtransaction_v2_t>();
     tx->make_tx_run_contract(action_name, action_params);
     tx->set_same_source_target_address(address.value());
     xaccount_ptr_t account = m_store->query_account(address.value());
