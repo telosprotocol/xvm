@@ -231,15 +231,27 @@ void xrec_registration_contract_new_t::registerNode(const std::string & role_typ
                                                     common::xaccount_address_t const & registration_account
 #endif
 ) {
-    std::set<common::xnetwork_id_t> network_ids;
-    common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
-    network_ids.insert(nid);
+    if (at_source_action_stage()) {
+
+    }
+
+    if (at_confirm_action_stage()) {
+
+    }
+
+    if (at_target_action_stage()) {
+
+
+        std::set<common::xnetwork_id_t> network_ids;
+        common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
+        network_ids.insert(nid);
 
 #if defined XENABLE_MOCK_ZEC_STAKE
-    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
+        registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
 #else
-    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids);
+        registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids);
 #endif
+    }
 }
 
 void xrec_registration_contract_new_t::registerNode2(const std::string & role_type_name,

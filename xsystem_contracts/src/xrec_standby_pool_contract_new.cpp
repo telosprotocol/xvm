@@ -96,6 +96,17 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
                                                           uint64_t const stake,
 #endif
                                                           std::string const & program_version) {
+    if (at_source_action_stage()) {
+
+    }
+
+    if (at_confirm_action_stage()) {
+
+    }
+
+    if (at_target_action_stage()) {
+
+
     XMETRICS_TIME_RECORD(XREC_STANDBY "add_node_all_time");
 #if !defined(XENABLE_MOCK_ZEC_STAKE)
 
@@ -231,6 +242,7 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
         m_standby_prop.update(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
     }
 #endif
+}
 }
 
 bool xtop_rec_standby_pool_contract_new::nodeJoinNetworkImpl(std::string const & program_version,
