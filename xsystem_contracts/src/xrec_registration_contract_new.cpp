@@ -4,19 +4,9 @@
 
 #include "xvm/xsystem_contracts/xregistration/xrec_registration_contract_new.h"
 
-// #include "secp256k1/secp256k1.h"
-// #include "secp256k1/secp256k1_recovery.h"
-// #include "xbase/xmem.h"
-// #include "xbase/xutl.h"
-// #include "xbasic/xutility.h"
 #include "xchain_upgrade/xchain_data_processor.h"
-// #include "xcommon/xrole_type.h"
-// #include "xdata/xgenesis_data.h"
-// #include "xdata/xproperty.h"
 #include "xdata/xrootblock.h"
-// #include "xdata/xslash.h"
 #include "xelect_common/elect_option.h"
-// #include "xmetrics/xmetrics.h"
 #include "xstore/xstore_error.h"
 #include "xsystem_contracts/xsystem_contract_addresses.h"
 
