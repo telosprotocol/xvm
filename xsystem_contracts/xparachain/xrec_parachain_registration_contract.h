@@ -9,7 +9,7 @@
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
 
-NS_BEG4(top, xvm, system_contract, rec)
+NS_BEG4(top, xvm, system_contracts, rec)
 
 class xtop_rec_parachain_registration_contract final : public xcontract::xcontract_base {
     using base_t = xcontract::xcontract_base;

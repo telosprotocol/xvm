@@ -8,7 +8,7 @@
 #include "xdata/xcodec/xmsgpack/xparachain_result_codec.hpp"
 #include "xvm/xserialization/xserialization.h"
 
-NS_BEG4(top, xvm, system_contract, rec)
+NS_BEG4(top, xvm, system_contracts, rec)
 
 #ifndef XSYSCONTRACT_MODULE
 #    define XSYSCONTRACT_MODULE "sysContract_"

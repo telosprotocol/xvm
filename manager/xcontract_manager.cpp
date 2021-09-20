@@ -22,6 +22,8 @@
 #include "xvm/manager/xmessage_ids.h"
 #include "xvm/xsystem_contracts/deploy/xcontract_deploy.h"
 #include "xvm/xsystem_contracts/tcc/xrec_proposal_contract.h"
+#include "xvm/xsystem_contracts/xregistration/xrec_registration_contract2.h"
+#include "xvm/xsystem_contracts/xregistration/xzec_registration_contract.h"
 #include "xvm/xsystem_contracts/xparachain/xrec_parachain_registration_contract.h"
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_elect_archive_contract.h"
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_elect_edge_contract.h"
@@ -67,7 +69,9 @@ xtop_contract_manager::~xtop_contract_manager() {
 void xtop_contract_manager::instantiate_sys_contracts() {
     common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
     XREGISTER_CONTRACT(top::xstake::xrec_registration_contract, sys_contract_rec_registration_addr, network_id);
-    XREGISTER_CONTRACT(top::xvm::system_contract::rec::xrec_parachain_registration_contract_t, sys_contract_rec_parachain_registration_addr, network_id);
+    XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_registration_contract2, sys_contract_rec_registration_addr2, network_id);
+    XREGISTER_CONTRACT(top::xvm::system_contracts::zec::xzec_registration_contract_t, sys_contract_zec_registration_addr, network_id);
+    XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_parachain_registration_contract_t, sys_contract_rec_parachain_registration_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::xzec_workload_contract_v2, sys_contract_zec_workload_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xzec_vote_contract, sys_contract_zec_vote_addr, network_id);
     XREGISTER_CONTRACT(top::xstake::xzec_reward_contract, sys_contract_zec_reward_addr, network_id);
