@@ -169,7 +169,7 @@ void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
                         }
 
                         int clock_interval = 1;
-                        clock_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tableStatistic_report_schedule_interval);
+                        clock_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(table_statistic_report_schedule_interval);
 
                         if (m_table_contract_schedule.find(m_contract_info->address) != m_table_contract_schedule.end()) {
                             auto& schedule_info = m_table_contract_schedule[m_contract_info->address];
