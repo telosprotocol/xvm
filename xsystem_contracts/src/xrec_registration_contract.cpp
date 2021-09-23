@@ -48,11 +48,11 @@ void xrec_registration_contract::setup() {
     for (auto const & _p : db_kv_101) {
         auto const & node_info_serialized = _p.second;
 
-        base::xstream_t stream{ base::xcontext_t::instance(), (uint8_t *)node_info_serialized.data(), (uint32_t)node_info_serialized.size() };
+        base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(node_info_serialized.data())), static_cast<uint32_t>(node_info_serialized.size()) };
         xreg_node_info node_info;
         node_info.serialize_from(stream);
 
-        auto old_role = static_cast<common::xold_role_type_t>(node_info.m_registered_role);
+        auto const old_role = static_cast<common::xold_role_type_t>(node_info.m_registered_role);
         switch (old_role) {
         case common::xold_role_type_t::advance:
             node_info.m_registered_role = common::xrole_type_t::advance;
@@ -190,31 +190,13 @@ void xrec_registration_contract::setup() {
             node_info.m_account             = node_data.m_account;
             node_info.m_account_mortgage    = 0;
             node_info.m_genesis_node        = true;
-            node_info.m_registered_role     = common::xrole_type_t::edge | common::xrole_type_t::advance | common::xrole_type_t::validator;
+            node_info.m_registered_role     = common::xrole_type_t::edge | common::xrole_type_t::advance | common::xrole_type_t::validator | common::xrole_type_t::archive;
             node_info.m_network_ids.insert(network_id);
             node_info.nickname              = std::string("bootnode") + std::to_string(i + 1);
             node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
             //xdbg("[xrec_registration_contract::setup] pid:%d,node account: %s, public key: %s\n", getpid(), node_data.m_account.c_str(), node_data.m_publickey.c_str());
             update_node_info(node_info);
         }
-        /*{
-            // test
-            for (auto i = 0; i < 700; i++) {
-                std::stringstream ss;
-                ss << std::setw(40) << std::setfill('0') << i;
-                auto key = ss.str();
-                node_info.m_account             = key;
-                node_info.m_account_mortgage    = 1000000000000;
-                node_info.m_genesis_node        = false;
-                node_info.m_registered_role     = common::xrole_type_t::advance;
-                node_info.m_network_ids.insert(network_id.value());
-                node_info.nickname              = std::string("testnode") + std::to_string(i + 1);
-                node_info.m_vote_amount         = 1000000;
-                //node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
-                //xdbg("[xrec_registration_contract::setup] pid:%d,node account: %s, public key: %s\n", getpid(), node_data.m_account.c_str(), node_data.m_publickey.c_str());
-                update_node_info(node_info);
-            }
-        }*/
     }
 }
 
@@ -222,19 +204,19 @@ void xrec_registration_contract::registerNode(const std::string & role_type_name
                                               const std::string & nickname,
                                               const std::string & signing_key,
                                               const uint32_t dividend_rate
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
                                             , common::xaccount_address_t const & registration_account
-#endif
+#endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
 ) {
     std::set<common::xnetwork_id_t> network_ids;
     common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
     network_ids.insert(nid);
 
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
     registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
-#else
+#else   // #if defined(XENABLE_MOCK_ZEC_STAKE)
     registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids);
-#endif
+#endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
 }
 
 void xrec_registration_contract::registerNode2(const std::string & role_type_name,
@@ -242,18 +224,18 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
                                                const std::string & signing_key,
                                                const uint32_t dividend_rate,
                                                const std::set<common::xnetwork_id_t> & network_ids
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
                                              , common::xaccount_address_t const & registration_account
-#endif
+#endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
 ) {
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registerNode_Called", 1);
     XMETRICS_TIME_RECORD(XREG_CONTRACT "registerNode_ExecutionTime");
 
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
     auto const & account = registration_account;
-#else
+#else   // #if defined(XENABLE_MOCK_ZEC_STAKE)
     auto const & account = common::xaccount_address_t{ SOURCE_ADDRESS() };
-#endif
+#endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
     xdbg("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, balance: %lld, account: %s, node_types: %s, signing_key: %s, dividend_rate: %u\n",
          getpid(),
          GET_BALANCE(),
@@ -265,7 +247,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     xreg_node_info node_info;
     auto ret = get_node_info(account.value(), node_info);
     XCONTRACT_ENSURE(ret != 0, "xrec_registration_contract::registerNode2: node exist!");
-    common::xrole_type_t role_type = common::to_role_type(role_type_name);
+    common::xrole_type_t const role_type = common::to_role_type(role_type_name);
     XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::registerNode: invalid nickname");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
@@ -274,7 +256,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     XCONTRACT_ENSURE(!account.empty(),
                      "xrec_registration_contract::registerNode: account must be not empty");
 
-    xstream_t stream(xcontext_t::instance(), (uint8_t *)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
+    xstream_t stream(xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(trans_ptr->get_source_action().get_action_param().data())), static_cast<uint32_t>(trans_ptr->get_source_action().get_action_param().size()));
 
     data::xproperty_asset asset_out{0};
     stream >> asset_out.m_token_name;
@@ -282,11 +264,11 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
 
     node_info.m_account = account;
     node_info.m_registered_role = role_type;
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
     node_info.m_account_mortgage = 100000000000000;
-#else
+#else   // #if defined(XENABLE_MOCK_ZEC_STAKE)
     node_info.m_account_mortgage += asset_out.m_amount;
-#endif
+#endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
     node_info.nickname                  = nickname;
     node_info.consensus_public_key      = xpublic_key_t{signing_key};
     node_info.m_support_ratio_numerator = dividend_rate;
@@ -303,17 +285,17 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
         node_info.m_network_ids = network_ids;
     }
 
-    if (node_info.is_validator_node()) {
+    if (node_info.could_be_validator()) {
         if (node_info.m_validator_credit_numerator == 0) {
             node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
         }
     }
-    if (node_info.is_auditor_node()) {
+    if (node_info.could_be_auditor()) {
         if (node_info.m_auditor_credit_numerator == 0) {
             node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
         }
     }
-    uint64_t min_deposit = node_info.get_required_min_deposit();
+    uint64_t const min_deposit = node_info.get_required_min_deposit();
     xdbg(("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, transaction_type:%d, source action type: %d, m_deposit: %" PRIu64
           ", min_deposit: %" PRIu64 ", account: %s"),
          getpid(),
@@ -386,13 +368,13 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::updateNodeInfo: invalid nickname");
     XCONTRACT_ENSURE(updateDepositType == 1 || updateDepositType == 2, "xrec_registration_contract::updateNodeInfo: invalid updateDepositType");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::updateNodeInfo: dividend_rate must be greater than or be equal to zero");
-    common::xrole_type_t role_type = common::to_role_type(node_types);
+    common::xrole_type_t const role_type = common::to_role_type(node_types);
     XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
 
     node_info.nickname          = nickname;
     node_info.m_registered_role = role_type;
 
-    uint64_t min_deposit = node_info.get_required_min_deposit();
+    uint64_t const min_deposit = node_info.get_required_min_deposit();
     if (updateDepositType == 1) { // stake deposit
         const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
         XCONTRACT_ENSURE(!account.empty(),
@@ -426,12 +408,12 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
         node_info.m_last_update_time = cur_time;
     }
     node_info.consensus_public_key = xpublic_key_t{node_sign_key};
-    if (node_info.is_validator_node()) {
+    if (node_info.could_be_validator()) {
         if (node_info.m_validator_credit_numerator == 0) {
             node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
         }
     }
-    if (node_info.is_auditor_node()) {
+    if (node_info.could_be_auditor()) {
         if (node_info.m_auditor_credit_numerator == 0) {
             node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
         }
@@ -532,27 +514,6 @@ void xrec_registration_contract::updateNodeSignKey(const std::string & node_sign
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "updateNodeSignKey_Executed", 1);
 }
 
-// void xrec_registration_contract::update_node_credit(std::set<std::string> const& accounts) {
-//     std::string source_address = SOURCE_ADDRESS();
-//     if (sys_contract_zec_workload_addr != source_address) {
-//         xwarn("[xrec_registration_contract::update_node_credit] invalid call from %s", source_address.c_str());
-//         return;
-//     }
-
-//     xreg_node_info node_info;
-
-//     for (auto & account : accounts) {
-//         auto ret = get_node_info(account, node_info);
-//         if (ret != 0) {
-//             xdbg("[xrec_registration_contract::update_node_credit] get_node_info error, account: %s\n", account.c_str());
-//             continue;
-//         }
-//         node_info.update_credit_score();
-//         // node_info.calc_stake();
-//         update_node_info(node_info);
-//     }
-// }
-
 void xrec_registration_contract::update_node_info(xreg_node_info & node_info) {
     base::xstream_t stream(base::xcontext_t::instance());
     node_info.serialize_to(stream);
@@ -569,8 +530,6 @@ void xrec_registration_contract::delete_node_info(std::string const & account) {
 }
 
 int32_t xrec_registration_contract::get_node_info(const std::string & account, xreg_node_info & node_info) {
-    // xdbg("[xrec_registration_contract] get_node_info account(%s) pid:%d\n", account.c_str(), getpid());
-
     std::string value_str;
     {
         XMETRICS_TIME_RECORD(XREG_CONTRACT "XPORPERTY_CONTRACT_REG_KEY_GetExecutionTime");
@@ -720,7 +679,7 @@ void xrec_registration_contract::update_batch_stake(std::map<std::string, std::s
         xreg_node_info reg_node_info;
         reg_node_info.serialize_from(stream);
 
-        if (!reg_node_info.is_auditor_node()) {
+        if (!reg_node_info.could_be_auditor()) {
             continue;
         }
 
@@ -922,12 +881,12 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
         min_deposit, account.c_str(), node_info.m_account_mortgage);
     XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::updateNodeType: deposit not enough");
 
-    if (node_info.is_validator_node()) {
+    if (node_info.could_be_validator()) {
         if (node_info.m_validator_credit_numerator == 0) {
             node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
         }
     }
-    if (node_info.is_auditor_node()) {
+    if (node_info.could_be_auditor()) {
         if (node_info.m_auditor_credit_numerator == 0) {
             node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
         }
