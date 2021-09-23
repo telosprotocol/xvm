@@ -126,6 +126,13 @@ void xtop_zec_elect_consensus_group_contract::swap_election_result(common::xlogi
     std::swap((*con_64.begin()).second, (*con_66.begin()).second);
     std::swap((*con_65.begin()).second, (*con_67.begin()).second);
 
+    adv_1.begin()->second.election_info().joined_version = adv_1.group_version();
+    adv_2.begin()->second.election_info().joined_version = adv_2.group_version();
+    con_64.begin()->second.election_info().joined_version = con_64.group_version();
+    con_65.begin()->second.election_info().joined_version = con_65.group_version();
+    con_66.begin()->second.election_info().joined_version = con_66.group_version();
+    con_67.begin()->second.election_info().joined_version = con_67.group_version();
+
     auditor_group_start_count = common::xauditor_group_id_begin.value();
     for (auto const & property : property_names) {
         serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(

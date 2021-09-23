@@ -289,23 +289,40 @@ void xrole_context_t::broadcast(const xblock_ptr_t & block_ptr, common::xnode_ty
 
     if (common::has<common::xnode_type_t::all>(types)) {
         common::xnode_address_t dest{common::xcluster_address_t{m_driver->network_id()}};
-        m_driver->broadcast_to(dest, message);
-        xdbg("[xrole_context_t] broadcast to ALL. block owner %s height %" PRIu64, block_ptr->get_block_owner().c_str(), block_ptr->get_height());
+        std::error_code ec;
+        m_driver->broadcast(common::xip2_t{m_driver->network_id()}, message, ec);
+        if (ec) {
+            xerror("[xrole_context_t] broadcast to ALL failed. block owner %s height %" PRIu64, block_ptr->get_block_owner().c_str(), block_ptr->get_height());
+        } else {
+            xdbg("[xrole_context_t] broadcast to ALL. block owner %s height %" PRIu64, block_ptr->get_block_owner().c_str(), block_ptr->get_height());
+        }
     } else {
         if (common::has<common::xnode_type_t::committee>(types)) {
             common::xnode_address_t dest{common::build_committee_sharding_address(m_driver->network_id())};
-            m_driver->forward_broadcast_message(message, dest);
-            xdbg("[xrole_context_t] broadcast to beacon. block owner %s", block_ptr->get_block_owner().c_str());
+            //m_driver->forward_broadcast_message(message, dest);
+            std::error_code ec;
+            m_driver->broadcast(dest.xip2(), message, ec);
+            if (ec) {
+                xerror("[xrole_context_t] broadcast to rec failed. block owner %s", block_ptr->get_block_owner().c_str());
+            } else {
+                xdbg("[xrole_context_t] broadcast to beacon. block owner %s", block_ptr->get_block_owner().c_str());
+            }
         }
 
         if (common::has<common::xnode_type_t::zec>(types)) {
             common::xnode_address_t dest{common::build_zec_sharding_address(m_driver->network_id())};
-            if (m_driver->address().cluster_address() == dest.cluster_address()) {
-                m_driver->broadcast(message);
+            //if (m_driver->address().cluster_address() == dest.cluster_address()) {
+            //    m_driver->broadcast(message);
+            //} else {
+            //    m_driver->forward_broadcast_message(message, dest);
+            //}
+            std::error_code ec;
+            m_driver->broadcast(dest.xip2(), message, ec);
+            if (ec) {
+                xerror("[xrole_context_t] broadcast to zec failed. block owner %s", block_ptr->get_block_owner().c_str());
             } else {
-                m_driver->forward_broadcast_message(message, dest);
+                xdbg("[xrole_context_t] broadcast to zec. block owner %s", block_ptr->get_block_owner().c_str());
             }
-            xdbg("[xrole_context_t] broadcast to zec. block owner %s", block_ptr->get_block_owner().c_str());
         }
 
         if (common::has<common::xnode_type_t::storage>(types)) {
@@ -313,9 +330,16 @@ void xrole_context_t::broadcast(const xblock_ptr_t & block_ptr, common::xnode_ty
                 common::xnode_address_t dest{
                     common::build_archive_sharding_address(archive_gid, m_driver->network_id()),
                 };
-                m_driver->forward_broadcast_message(message, dest);
+                //m_driver->forward_broadcast_message(message, dest);
+                std::error_code ec;
+                m_driver->broadcast(dest.xip2(), message, ec);
+                if (ec) {
+                    xerror("[xrole_context_t] broadcast to archive failed. block owner %s", block_ptr->get_block_owner().c_str());
+                } else {
+                    xdbg("[xrole_context_t] broadcast to archive. block owner %s", block_ptr->get_block_owner().c_str());
+                }
             }
-            xdbg("[xrole_context_t] broadcast to archive. block owner %s", block_ptr->get_block_owner().c_str());
+            //xdbg("[xrole_context_t] broadcast to archive. block owner %s", block_ptr->get_block_owner().c_str());
         }
     }
 }
