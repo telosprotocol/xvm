@@ -28,6 +28,10 @@ std::string sys_contract_addr_to_string(common::xaccount_address_t const & sys_c
         return "rec_registration";
     } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_zec_registration_addr}) {
         return "zec_registration";
+    } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_rec_standby_pool_addr2}) {
+        return "rec_standby";
+    } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_zec_standby_pool_addr2}) {
+        return "zec_standby";
     } else {
         assert(false);
     }

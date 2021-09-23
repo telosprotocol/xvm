@@ -30,6 +30,7 @@
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_elect_rec_contract.h"
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_elect_zec_contract.h"
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_standby_pool_contract.h"
+#include "xvm/xsystem_contracts/xelection/xrec/xrec_standby_pool_contract2.h"
 #include "xvm/xsystem_contracts/xelection/xzec/xzec_elect_consensus_group_contract.h"
 #include "xvm/xsystem_contracts/xelection/xzec/xzec_group_association_contract.h"
 #include "xvm/xsystem_contracts/xelection/xzec/xzec_standby_pool_contract.h"
@@ -70,6 +71,7 @@ void xtop_contract_manager::instantiate_sys_contracts() {
     common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
     XREGISTER_CONTRACT(top::xstake::xrec_registration_contract, sys_contract_rec_registration_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_registration_contract2, sys_contract_rec_registration_addr2, network_id);
+    XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_standby_pool_contract2_t, sys_contract_rec_standby_pool_addr2, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::zec::xzec_registration_contract_t, sys_contract_zec_registration_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_parachain_registration_contract_t, sys_contract_rec_parachain_registration_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::xzec_workload_contract_v2, sys_contract_zec_workload_addr, network_id);
