@@ -135,19 +135,20 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
     XCONTRACT_ENSURE(nid == joined_network_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched");
     network_ids.insert(nid);
 
-    bool rec = common::has<common::xrole_type_t::advance>(role_type);
-    bool zec = common::has<common::xrole_type_t::advance>(role_type);
-    bool auditor = common::has<common::xrole_type_t::advance>(role_type);
-    bool validator = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::validator>(role_type);
-    bool edge = common::has<common::xrole_type_t::edge>(role_type);
-    bool archive = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::archive>(role_type);
-    bool full_node = common::has<common::xrole_type_t::full_node>(role_type);
+    bool const rec = common::has<common::xrole_type_t::advance>(role_type);
+    bool const zec = common::has<common::xrole_type_t::advance>(role_type);
+    bool const auditor = common::has<common::xrole_type_t::advance>(role_type);
+    bool const validator = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::validator>(role_type);
+    bool const edge = common::has<common::xrole_type_t::edge>(role_type);
+    bool const archive = common::has<common::xrole_type_t::advance>(role_type) || common::has<common::xrole_type_t::archive>(role_type);
+    bool const full_node = common::has<common::xrole_type_t::full_node>(role_type);
 
-    std::string role_type_string = common::to_string(role_type);
-    assert(role_type_string == common::XNODE_TYPE_EDGE      ||
-           role_type_string == common::XNODE_TYPE_ADVANCE   ||
-           role_type_string == common::XNODE_TYPE_VALIDATOR ||
-           role_type_string == common::XNODE_TYPE_FULL_NODE);
+    std::string const role_type_string = common::to_string(role_type);
+    assert(role_type_string == common::XMINER_TYPE_EDGE      ||
+           role_type_string == common::XMINER_TYPE_ADVANCE   ||
+           role_type_string == common::XMINER_TYPE_VALIDATOR ||
+           role_type_string == common::XMINER_TYPE_ARCHIVE   ||
+           role_type_string == common::XMINER_TYPE_FULL_NODE);
 
     top::base::xstream_t param_stream(base::xcontext_t::instance());
     std::string nickname{"nickname"};
@@ -233,7 +234,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
 
     auto consensus_public_key = node.consensus_public_key;
     uint64_t rec_stake{ 0 }, zec_stake{ 0 }, auditor_stake{ 0 }, validator_stake{ 0 }, edge_stake{ 0 }, archive_stake{ 0 }, full_node_stake{ 0 };
-    bool rec{ node.rec() }, zec{ node.zec() }, auditor{ node.auditor() }, validator{ node.validator() }, edge{ node.edge() }, archive{ node.archive() }, full_node{ node.full_node() };
+    bool const rec{ node.rec() }, zec{ node.zec() }, auditor{ node.auditor() }, validator{ node.validator() }, edge{ node.edge() }, archive{ node.archive() }, full_node{ node.full_node() };
     if (rec) {
         rec_stake = node.rec_stake();
     }
@@ -262,7 +263,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
         full_node_stake = node.full_node_stake();
     }
 
-    auto role_type = node.get_role_type();
+    auto const role_type = node.get_role_type();
     XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
     XCONTRACT_ENSURE(node.get_required_min_deposit() <= node.m_account_mortgage,
                      "[xrec_standby_pool_contract_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() + ", role_type : " + common::to_string(role_type));
