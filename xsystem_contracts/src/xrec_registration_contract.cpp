@@ -195,24 +195,6 @@ void xrec_registration_contract::setup() {
             //xdbg("[xrec_registration_contract::setup] pid:%d,node account: %s, public key: %s\n", getpid(), node_data.m_account.c_str(), node_data.m_publickey.c_str());
             update_node_info(node_info);
         }
-        /*{
-            // test
-            for (auto i = 0; i < 700; i++) {
-                std::stringstream ss;
-                ss << std::setw(40) << std::setfill('0') << i;
-                auto key = ss.str();
-                node_info.m_account             = key;
-                node_info.m_account_mortgage    = 1000000000000;
-                node_info.m_genesis_node        = false;
-                node_info.m_registered_role     = common::xrole_type_t::advance;
-                node_info.m_network_ids.insert(network_id.value());
-                node_info.nickname              = std::string("testnode") + std::to_string(i + 1);
-                node_info.m_vote_amount         = 1000000;
-                //node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
-                //xdbg("[xrec_registration_contract::setup] pid:%d,node account: %s, public key: %s\n", getpid(), node_data.m_account.c_str(), node_data.m_publickey.c_str());
-                update_node_info(node_info);
-            }
-        }*/
     }
 }
 
@@ -263,7 +245,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     xreg_node_info node_info;
     auto ret = get_node_info(account.value(), node_info);
     XCONTRACT_ENSURE(ret != 0, "xrec_registration_contract::registerNode2: node exist!");
-    common::xrole_type_t role_type = common::to_role_type(role_type_name);
+    common::xrole_type_t const role_type = common::to_role_type(role_type_name);
     XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::registerNode: invalid nickname");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
@@ -378,7 +360,7 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::updateNodeInfo: invalid nickname");
     XCONTRACT_ENSURE(updateDepositType == 1 || updateDepositType == 2, "xrec_registration_contract::updateNodeInfo: invalid updateDepositType");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::updateNodeInfo: dividend_rate must be greater than or be equal to zero");
-    common::xrole_type_t role_type = common::to_role_type(node_types);
+    common::xrole_type_t const role_type = common::to_role_type(node_types);
     XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
 
     node_info.nickname          = nickname;
