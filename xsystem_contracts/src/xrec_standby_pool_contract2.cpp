@@ -133,7 +133,8 @@ bool xtop_rec_standby_pool_contract2::update_standby_result_store(data::registra
         for (auto node_iter = _standby_chain_result.begin(); node_iter != _standby_chain_result.end();) {
             auto const & _node_id = top::get<const common::xnode_id_t>(*node_iter);
             auto registration_info_iter = _registration_chain_result.find(_node_id);
-            if (registration_info_iter == _registration_chain_result.end() || registration_info_iter->second.m_registration_type != common::xregistration_type_t::senior) {
+            if (registration_info_iter == _registration_chain_result.end() ||
+                (!common::has<common::xregistration_type_t::senior>(registration_info_iter->second.m_registration_type))) {
                 XMETRICS_PACKET_INFO(XREC_STANDBY "nodeLeaveNetwork", "node_id", _node_id.to_string(), "reason", "dereg");
                 node_iter = _standby_chain_result.erase(node_iter);
                 updated |= true;
