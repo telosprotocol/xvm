@@ -13,8 +13,6 @@
 
 NS_BEG3(top, xvm, system_contracts)
 
-using xgroup_workload_t = top::xstake::cluster_workload_t;
-
 class xzec_workload_contract_v2 : public xcontract::xcontract_base
 {
     using xbase_t = xcontract::xcontract_base;
@@ -40,18 +38,40 @@ public:
      */
     void on_timer(common::xlogic_time_t const timestamp);
 
+    /**
+     * @brief process on receiving workload
+     *
+     * @param workload_str workload
+     */
+    void on_receive_workload(std::string const & workload_str);
+
     BEGIN_CONTRACT_WITH_PARAM(xzec_workload_contract_v2)
+    CONTRACT_FUNCTION_PARAM(xzec_workload_contract_v2, on_receive_workload);
     CONTRACT_FUNCTION_PARAM(xzec_workload_contract_v2, on_timer);
     END_CONTRACT_WITH_PARAM
 
 private:
+    /**
+     * @brief handle_workload_str
+     *
+     * @param workload_str workload
+     * @param activation_record_str is_mainnet_active
+     */
+    void handle_workload_str(const std::string & activation_record_str,
+                             const std::string & table_info_str,
+                             const std::map<std::string, std::string> & workload_str,
+                             const std::string & tgas_str,
+                             const std::string & height_str,
+                             std::map<std::string, std::string> & workload_str_new,
+                             std::string & tgas_str_new);
+
     /**
      * @brief check if mainnet is activated
      *
      * @return int 0 - not activated, other - activated
      */
     bool is_mainnet_activated() const;
-    
+
     /**
      * @brief update tgas
      *
@@ -67,7 +87,7 @@ private:
     /**
      * @brief add_workload_with_fullblock
      */
-    void accumulate_workload(xstatistics_data_t const & stat_data, std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload);
+    void accumulate_workload(xstatistics_data_t const & stat_data, std::map<common::xgroup_address_t, xstake::xgroup_workload_t> & group_workload);
 
     /**
      * @brief add_workload_with_fullblock
@@ -75,17 +95,36 @@ private:
     void accumulate_workload_with_fullblock(common::xlogic_time_t const timestamp,
                                             const uint32_t start_table,
                                             const uint32_t end_table,
-                                            std::map<common::xgroup_address_t, xgroup_workload_t> & group_workload);
+                                            std::map<common::xgroup_address_t, xstake::xgroup_workload_t> & group_workload);
+
+    /**
+     * @brief get_workload
+     */
+    xstake::xgroup_workload_t get_workload(common::xgroup_address_t const & group_address);
+
+    /**
+     * @brief set_workload
+     */
+    void set_workload(common::xgroup_address_t const & group_address, xstake::xgroup_workload_t const & group_workload);
 
     /**
      * @brief stash_workload
      */
-    void update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload);
+    void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload);
+
+    void update_workload(std::map<common::xgroup_address_t, xstake::xgroup_workload_t> const & group_workload,
+                         const std::map<std::string, std::string> & workload_str,
+                         std::map<std::string, std::string> & workload_new);
 
     /**
      * @brief upload_workload
      */
     void upload_workload(common::xlogic_time_t const timestamp);
+
+    /**
+     * @brief upload_workload_internal
+     */
+    void upload_workload_internal(common::xlogic_time_t const timestamp, std::string & call_contract_str);
 
     /**
      * @brief clear_workload

@@ -34,6 +34,15 @@ public:
     setup();
 
     /**
+     * @brief summarize the slash info from table slash contract
+     *
+     * @param slash_info  the table slash info
+     */
+    void
+    summarize_slash_info(std::string const& slash_info);
+
+
+    /**
      * @brief do slash according the summarized slash info
      *
      * @param timestamp  the logic time to do the slash
@@ -42,10 +51,25 @@ public:
     do_unqualified_node_slash(common::xlogic_time_t const timestamp);
 
     BEGIN_CONTRACT_WITH_PARAM(xzec_slash_info_contract)
+        CONTRACT_FUNCTION_PARAM(xzec_slash_info_contract, summarize_slash_info);
         CONTRACT_FUNCTION_PARAM(xzec_slash_info_contract, do_unqualified_node_slash);
     END_CONTRACT_WITH_PARAM
 
 private:
+    /**
+     * @brief internal function to process summarize info
+     *
+     * @return true
+     * @return false
+     */
+
+    bool summarize_slash_info_internal(std::string const& slash_info, std::string const& summarize_info_str, std::string const& summarize_tableblock_count_str, uint64_t const summarized_height,
+                                      xunqualified_node_info_t& summarize_info,  uint32_t&  summarize_tableblock_count, std::uint64_t& cur_statistic_height);
+
+
+    bool do_unqualified_node_slash_internal(std::string const& last_slash_time_str, uint32_t summarize_tableblock_count, uint32_t punish_interval_table_block_param, uint32_t punish_interval_time_block_param , common::xlogic_time_t const timestamp,
+                                            xunqualified_node_info_t const & summarize_info, uint32_t slash_vote, uint32_t slash_persent, uint32_t award_vote, uint32_t award_persent, std::vector<xaction_node_info_t>& node_to_action);
+
     /**
      * @brief print the summarize info
      *
@@ -75,7 +99,7 @@ private:
      * @return std::vector<data::xaction_node_info_t>  the node to slash or reward
      */
     std::vector<data::xaction_node_info_t>
-    filter_nodes(data::xunqualified_node_info_t const & summarize_info);
+    filter_nodes(data::xunqualified_node_info_t const & summarize_info, uint32_t slash_vote, uint32_t slash_persent, uint32_t award_vote, uint32_t award_persent);
 
     /**
      * @brief filter helper to filter out the slash node
@@ -126,7 +150,23 @@ private:
      *
      * @return bool  true means statisfy the slash condition
      */
-    bool slash_condition_check(uint32_t summarize_tableblock_count, common::xlogic_time_t const timestamp);
+    bool slash_condition_check(std::string const& last_slash_time_str, uint32_t summarize_tableblock_count, uint32_t punish_interval_table_block_param,
+                                uint32_t punish_interval_time_block_param , common::xlogic_time_t const timestamp);
+
+    /**
+     * @brief get fulltable height of table
+     *
+     * @param table_id
+     * @return uint64_t
+     */
+    uint64_t read_fulltable_height_of_table(uint32_t table_id);
+
+    /**
+     * @brief process reset data
+     *
+     * @param db_kv_131 the reset property data
+     */
+    void process_reset_data(std::vector<std::pair<std::string, std::string>> const& db_kv_131);
 
 
 };

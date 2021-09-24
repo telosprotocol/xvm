@@ -37,6 +37,7 @@
 #include "xvm/xsystem_contracts/xreward/xzec_reward_contract.h"
 #include "xvm/xsystem_contracts/xreward/xzec_vote_contract.h"
 #include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
+#include "xvm/xsystem_contracts/xslash/xtable_statistic_info_collection_contract.h"
 #include "xvm/xsystem_contracts/xworkload/xzec_workload_contract_v2.h"
 #include "xvm/xvm_service.h"
 #include "xmetrics/xmetrics.h"
@@ -82,6 +83,8 @@ void xtop_contract_manager::instantiate_sys_contracts() {
     XREGISTER_CONTRACT(top::xvm::system_contracts::zec::xgroup_association_contract_t, sys_contract_zec_group_assoc_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::xcontract::xzec_slash_info_contract, sys_contract_zec_slash_info_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::reward::xtable_reward_claiming_contract_t, sys_contract_sharding_reward_claiming_addr, network_id);
+    XREGISTER_CONTRACT(top::xvm::xcontract::xtable_statistic_info_collection_contract, sys_contract_sharding_statistic_info_addr, network_id);
+
 }
 
 #undef XREGISTER_CONTRACT
@@ -790,7 +793,7 @@ static void get_zec_workload_map(observer_ptr<store::xstore_face_t const> store,
         workload.serialize_from(stream);
         xJson::Value jn;
         jn["cluster_total_workload"] = workload.cluster_total_workload;
-        auto const & key_str = workload.cluster_id;
+        auto const & key_str = m.first;
         common::xcluster_address_t cluster;
         xstream_t key_stream(xcontext_t::instance(), (uint8_t *)key_str.data(), key_str.size());
         key_stream >> cluster;
@@ -1182,6 +1185,172 @@ static void get_other_map(observer_ptr<store::xstore_face_t const> store,
     }
 }
 
+
+static void get_sharding_statistic_contract_property(std::string const & sharding_contract_addr,
+                                                    std::string const & property_name,
+                                                    uint64_t const height,
+                                                    observer_ptr<store::xstore_face_t> store,
+                                                    xJson::Value & json,
+                                                    std::error_code & ec
+                                                    ) {
+
+    assert(!ec);
+    assert(store != nullptr);
+
+    std::map<std::string, std::string> result;
+    if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
+        auto error = store->get_map_property(sharding_contract_addr, height, property_name, result);
+        if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_fail_to_get_block;
+            return;
+        }
+
+#if defined(DEBUG)
+        xdbg("get_table_statistic_contract_property #131, height: %" PRIu64 ", map size: %zu", height, result.size());
+        for (auto const & p : result) {
+            xdbg("get_table_statistic_contract_property, key: %s; value: %s", p.first.c_str(), p.second.c_str());
+        }
+#endif
+
+        auto const it = result.find("UNQUALIFIED_NODE");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        auto const & value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        xunqualified_node_info_t data;
+        base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(value.data())), static_cast<uint32_t>(value.size()) };
+        try {
+            data.serialize_from(stream);
+        } catch (top::error::xtop_error_t const & eh) {
+            ec = eh.code();
+            return;
+        } catch (enum_xerror_code const errc) {
+            ec = errc;
+            return;
+        }
+
+        for (auto const & auditor_data : data.auditor_info) {
+            xJson::Value v;
+            auto const & unqualified_data = top::get<xnode_vote_percent_t>(auditor_data);
+
+            v["account"] = top::get<common::xaccount_address_t const>(auditor_data).value();
+            v["block_count"] = unqualified_data.block_count;
+            v["subset_count"] = unqualified_data.subset_count;
+
+            json[property_name]["auditor"].append(v);
+        }
+
+        for (auto const & validator_data : data.validator_info) {
+            xJson::Value v;
+            auto const & unqualified_data = top::get<xnode_vote_percent_t>(validator_data);
+
+            v["account"] = top::get<common::xaccount_address_t const>(validator_data).value();
+            v["block_count"] = unqualified_data.block_count;
+            v["subset_count"] = unqualified_data.subset_count;
+
+            json[property_name]["validator"].append(v);
+        }
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY) {
+        auto error = store->get_map_property(sharding_contract_addr, height, property_name, result);
+        if (error) {
+            return;
+        }
+
+#if defined(DEBUG)
+        xdbg("get_table_statistic_contract_property #134, height: %" PRIu64 ", map size: %zu", height, result.size());
+        for (auto const & p : result) {
+            xdbg("get_table_statistic_contract_property, key: %s; value: %s", p.first.c_str(), p.second.c_str());
+        }
+#endif
+
+        auto it = result.find("FULLTABLE_NUM");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        auto& value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        uint32_t summarize_fulltableblock_count = xstring_utl::touint32(value);
+        json[property_name]["fulltableblock_count"] = summarize_fulltableblock_count;
+
+
+        it = result.find("FULLTABLE_HEIGHT");
+        if (it == std::end(result)) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
+            return;
+        }
+
+        value = it->second;
+        if (value.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        uint32_t summarize_fulltableblock_height = xstring_utl::touint32(value);
+        json[property_name]["fulltableblock_height"] = summarize_fulltableblock_height;
+
+
+    } else if (property_name == xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY) {
+        auto error = store->get_map_property(sharding_contract_addr, height, property_name, result);
+        if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_fail_to_get_block;
+            return;
+        }
+
+#if defined(DEBUG)
+        for (auto const & p : result) {
+            xdbg("table_statistic_contract: key : %s; value size %zu", p.first.c_str(), p.second.size());
+        }
+#endif
+        if (result.empty()) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_empty;
+            return;
+        }
+
+        for (auto const & m : result) {
+            xJson::Value jm;
+            auto const & detail = m.second;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(detail.data())), static_cast<uint32_t>(detail.size()) };
+            xstake::cluster_workload_t workload;
+            try {
+                workload.serialize_from(stream);
+            } catch (top::error::xtop_error_t const & eh) {
+                ec = eh.code();
+                return;
+            } catch (enum_xerror_code const errc) {
+                ec = errc;
+                return;
+            }
+            {
+                xJson::Value jn;
+                jn["cluster_total_workload"] = workload.cluster_total_workload;
+                auto const & key_str = workload.cluster_id;
+                common::xcluster_address_t cluster;
+                base::xstream_t key_stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(key_str.data())), static_cast<uint32_t>(key_str.size()) };
+                key_stream >> cluster;
+                for (auto const & node : workload.m_leader_count) {
+                    jn[node.first] = node.second;
+                }
+                jm[cluster.group_id().to_string()] = jn;
+            }
+            json["auditor_workload"].append(jm);
+        }
+
+    }
+}
+
 static void get_zec_slash_contract_property(std::string const & property_name,
                                             uint64_t const height,
                                             observer_ptr<store::xstore_face_t> store,
@@ -1253,6 +1422,7 @@ static void get_zec_slash_contract_property(std::string const & property_name,
     } else if (property_name == xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY) {
         auto error = store->get_map_property(sys_contract_zec_slash_info_addr, height, property_name, result);
         if (error) {
+            ec = xvm::enum_xvm_error_code::query_contract_data_property_missing;
             return;
         }
 
@@ -1288,6 +1458,40 @@ static void get_zec_slash_contract_property(std::string const & property_name,
         }
 
         json[property_name]["accumulated_tableblock_count"] = summarize_tableblock_count;
+
+
+        // all table height
+        xJson::Value v;
+        for (auto table_id = 0; table_id < enum_vledger_const::enum_vbucket_has_tables_count; ++table_id) {
+            auto const it = result.find(std::to_string(table_id));
+
+            if (it == std::end(result)) {
+                continue;
+            }
+
+            auto const & value = it->second;
+            if (value.empty()) {
+                continue;
+            }
+
+            uint64_t height;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(value.data())), static_cast<uint32_t>(value.size()) };
+            try {
+                stream >> height;
+            } catch (top::error::xtop_error_t const & eh) {
+                ec = eh.code();
+                return;
+            } catch (enum_xerror_code const errc) {
+                ec = errc;
+                return;
+            }
+
+            v[std::to_string(table_id)] = (xJson::UInt64)height;
+
+        }
+
+        json[property_name]["table_heights"].append(v);
+
     }
 }
 
@@ -1418,7 +1622,28 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
                                               xJson::Value & json,
                                               std::error_code & ec) const {
     assert(!ec);
-    if (contract_address == xaccount_address_t{ sys_contract_zec_slash_info_addr }) {
+    if (contract_address.value().find(sys_contract_sharding_statistic_info_addr) != std::string::npos ) {
+        std::error_code internal_ec;
+        get_sharding_statistic_contract_property(contract_address.value(), xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, height, m_store, json, internal_ec);
+        if (internal_ec) {
+            xdbg("table_statistic_contract, get xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+        get_sharding_statistic_contract_property(contract_address.value(), xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, height, m_store, json, internal_ec);
+        if (internal_ec) {
+            xdbg("table_statistic_contract, get xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+        get_sharding_statistic_contract_property(contract_address.value(), xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, height, m_store, json, internal_ec);
+        if (internal_ec) {
+            xdbg("table_statistic_contract, get xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY failed");
+            ec = internal_ec;
+            internal_ec.clear();
+        }
+
+    } else if (contract_address == xaccount_address_t{ sys_contract_zec_slash_info_addr }) {
         std::error_code internal_ec;
         get_zec_slash_contract_property(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, height, m_store, json, internal_ec);
         if (internal_ec) {
@@ -1621,6 +1846,54 @@ static void get_unqualified_node_map(common::xaccount_address_t const & contract
         jvn["validator"] = jvn_validator;
         json["unqualified_node"] = jvn;
     }
+}
+
+
+static void get_tableblock_num(common::xaccount_address_t const & contract_address,
+                              std::string const & property_name,
+                              const xaccount_ptr_t unitstate,
+                              const xjson_format_t json_format,
+                              xJson::Value & json) {
+    std::map<std::string, std::string> tablenum_map;
+    if (!unitstate->map_get(property_name, tablenum_map) || tablenum_map.empty()) {
+        xdbg("[get_tableblock_num] contract_address: %s, property_name: %s, error", contract_address.to_string().c_str(), property_name.c_str());
+        return;
+    }
+
+
+    // all table height
+    xJson::Value v;
+    for (auto const& item: tablenum_map) {
+        if (item.first == "TABLEBLOCK_NUM") {
+            uint32_t summarize_tableblock_count;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(item.second.data())), static_cast<uint32_t>(item.second.size()) };
+            try {
+                stream >> summarize_tableblock_count;
+            } catch (...) {
+                xdbg("[get_tableblock_num] deserialize height error");
+                return;
+            }
+            json[property_name][item.first] = summarize_tableblock_count;
+        } else {
+
+            uint64_t height;
+            base::xstream_t stream{ base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(item.second.data())), static_cast<uint32_t>(item.second.size()) };
+            try {
+                stream >> height;
+            } catch (...) {
+                xdbg("[get_tableblock_num] deserialize height error");
+                return;
+            }
+
+            if (height != 0) {
+                v[item.first] = (xJson::UInt64)height;
+            }
+        }
+    }
+
+    json[property_name]["table_heights"].append(v);
+
+
 }
 
 static void get_refunds(common::xaccount_address_t const & contract_address,
@@ -1895,15 +2168,15 @@ static void get_zec_workload_map(common::xaccount_address_t const & contract_add
         return;
     }
     for (auto m : workloads) {
-        auto detail = m.second;
+        auto const & group_id = m.first;
+        auto const & detail = m.second;
         base::xstream_t stream{xcontext_t::instance(), (uint8_t *)detail.data(), static_cast<uint32_t>(detail.size())};
         xstake::cluster_workload_t workload;
         workload.serialize_from(stream);
         xJson::Value jn;
         jn["cluster_total_workload"] = workload.cluster_total_workload;
-        auto const & key_str = workload.cluster_id;
         common::xcluster_address_t cluster;
-        xstream_t key_stream(xcontext_t::instance(), (uint8_t *)key_str.data(), key_str.size());
+        xstream_t key_stream(xcontext_t::instance(), (uint8_t *)group_id.data(), group_id.size());
         key_stream >> cluster;
         XSTD_PRINT("--------------------cluster: %s, size: %u\n", cluster.group_id().to_string().c_str(), static_cast<uint32_t>(workload.m_leader_count.size()));
         for (auto node : workload.m_leader_count) {
@@ -1960,6 +2233,8 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         return get_accumulated_issuance_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY) {
         return get_unqualified_node_map(contract_address, property_name, unitstate, json_format, json);
+    } else if (property_name == xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY) {
+        return get_tableblock_num(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY) {
         return get_accumulated_issuance_yearly_map(contract_address, property_name, unitstate, json_format, json);
     } else if (property_name == xstake::XPROPERTY_CONTRACT_SLASH_INFO_KEY) {
