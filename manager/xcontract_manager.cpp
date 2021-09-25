@@ -6,6 +6,7 @@
 
 #include "xbase/xmem.h"
 #include "xchain_upgrade/xchain_data_processor.h"
+#include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xcodec/xmsgpack_codec.hpp"
 #include "xcommon/xip.h"
 #include "xconfig/xconfig_register.h"
@@ -18,6 +19,7 @@
 #include "xdata/xtransaction_v2.h"
 #include "xmbus/xevent_store.h"
 #include "xmbus/xevent_timer.h"
+#include "xmetrics/xmetrics.h"
 #include "xvledger/xvblock.h"
 #include "xvm/manager/xcontract_address_map.h"
 #include "xvm/manager/xmessage_ids.h"
@@ -36,11 +38,10 @@
 #include "xvm/xsystem_contracts/xreward/xtable_vote_contract.h"
 #include "xvm/xsystem_contracts/xreward/xzec_reward_contract.h"
 #include "xvm/xsystem_contracts/xreward/xzec_vote_contract.h"
-#include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
 #include "xvm/xsystem_contracts/xslash/xtable_statistic_info_collection_contract.h"
+#include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
 #include "xvm/xsystem_contracts/xworkload/xzec_workload_contract_v2.h"
 #include "xvm/xvm_service.h"
-#include "xmetrics/xmetrics.h"
 
 #include <cinttypes>
 
@@ -252,6 +253,12 @@ void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
         xdbg("[xtop_contract_manager::do_on_block] on timer block=%s, map size %d", event->time_block->dump().c_str(), m_map.size());
         for (auto & pair : m_map) { // m_map : std::unordered_map<common::xaccount_address_t, xrole_map_t *>
             // auto const & account_address = top::get<common::xaccount_address_t const>(pair);
+            if (pair.first == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) {
+                auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
+                if (!chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, height)) {
+                    continue;
+                }
+            }
             for (auto & pr : *(pair.second)) {  // using xrole_map_t = std::unordered_map<xvnetwork_driver_face_t *, xrole_context_t *>;
                 pr.second->on_block_timer(e);
             }
