@@ -32,6 +32,10 @@ std::string sys_contract_addr_to_string(common::xaccount_address_t const & sys_c
         return "rec_standby";
     } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_zec_standby_pool_addr2}) {
         return "zec_standby";
+    } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_zec_elect_archive_addr}) {
+        return "election_zec_elect_archive";
+    } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_zec_elect_edge_addr}) {
+        return "election_zec_elect_edge";
     } else {
         assert(false);
     }
