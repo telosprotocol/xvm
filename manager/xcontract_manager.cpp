@@ -6,7 +6,6 @@
 
 #include "xbase/xmem.h"
 #include "xchain_upgrade/xchain_data_processor.h"
-#include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xcodec/xmsgpack_codec.hpp"
 #include "xcommon/xip.h"
 #include "xconfig/xconfig_register.h"
@@ -252,13 +251,6 @@ void xtop_contract_manager::do_on_block(const xevent_ptr_t & e) {
         m_latest_timer = height;  // record
         xdbg("[xtop_contract_manager::do_on_block] on timer block=%s, map size %d", event->time_block->dump().c_str(), m_map.size());
         for (auto & pair : m_map) { // m_map : std::unordered_map<common::xaccount_address_t, xrole_map_t *>
-            // auto const & account_address = top::get<common::xaccount_address_t const>(pair);
-            if (pair.first == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) {
-                auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
-                if (!chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, height)) {
-                    continue;
-                }
-            }
             for (auto & pr : *(pair.second)) {  // using xrole_map_t = std::unordered_map<xvnetwork_driver_face_t *, xrole_context_t *>;
                 pr.second->on_block_timer(e);
             }
