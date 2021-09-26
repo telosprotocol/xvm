@@ -150,6 +150,12 @@ void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
             uint64_t onchain_timer_round{0};
             if (info->type == enum_monitor_type_t::timer) {
                 xdbg("==== timer monitor");
+                if (m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) {
+                    auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
+                    if (!chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_height())) {
+                        return;
+                    }
+                }
                 xtimer_block_monitor_info_t * timer_info = dynamic_cast<xtimer_block_monitor_info_t *>(info);
                 assert(timer_info);
                 auto time_interval = timer_info->get_interval();
@@ -368,6 +374,11 @@ void xrole_context_t::on_fulltableblock_event(common::xaccount_address_t const& 
     tx->set_len();
 
 
+    auto const & driver_ids = m_driver->table_ids();
+    auto result = find(driver_ids.begin(), driver_ids.end(), table_id);
+    if (result == driver_ids.end( )) {
+        return;
+    }
     int32_t r = m_unit_service->request_transaction_consensus(tx, true);
     xinfo("[xrole_context_t::fulltableblock_event] call_contract in consensus mode with return code : %d, %s, %s %s %ld, %lld",
             r,
