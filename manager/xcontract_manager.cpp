@@ -15,7 +15,7 @@
 #include "xdata/xcodec/xmsgpack/xstandby_result_store_codec.hpp"
 #include "xdata/xelection/xelection_result_property.h"
 #include "xdata/xgenesis_data.h"
-#include "xdata/xtransaction_v2.h"
+#include "xdata/xtransaction_v1.h"
 #include "xmbus/xevent_store.h"
 #include "xmbus/xevent_timer.h"
 #include "xmetrics/xmetrics.h"
@@ -344,7 +344,7 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     }
     xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block not exist", contract_cluster_address.c_str());
 
-    xtransaction_ptr_t tx = make_object_ptr<xtransaction_v2_t>();
+    xtransaction_ptr_t tx = make_object_ptr<xtransaction_v1_t>();
     data::xproperty_asset asset_out{0};
     tx->make_tx_run_contract(asset_out, "setup", "");
     tx->set_same_source_target_address(contract_cluster_address.value());
