@@ -28,14 +28,19 @@ void xtable_statistic_info_collection_contract_new::setup() {
     m_workload_prop.create();
     m_slash_prop.create();
     m_extend_func_prop.create();
+    m_extend_func_prop.add(FULLTABLE_NUM, "0");
+    m_extend_func_prop.add(FULLTABLE_HEIGHT, "0");
     m_tgas_prop.create();
+    m_tgas_prop.update("0");
+
+
 
 }
 
 void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(std::string const& statistic_info, std::string const& statistic_accounts_str, uint64_t block_height, int64_t tgas) {
-    // XMETRICS_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
-    // XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
-    // XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_exec_fullblock, 1);
+    XMETRICS_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
+    XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
+    XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_exec_fullblock, 1);
 
     // auto const & source_addr = SOURCE_ADDRESS();
     // auto const & account = SELF_ADDRESS();
@@ -92,32 +97,33 @@ void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(st
     xfulltableblock_statistic_accounts statistic_accounts;
     statistic_accounts.deserialize_based_on<base::xstream_t>({ std::begin(statistic_accounts_str), std::end(statistic_accounts_str) });
     std::string summarize_info_str;
-    // try {
-    //     XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
-    //     if (MAP_FIELD_EXIST(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE"))
-    //         summarize_info_str = MAP_GET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE");
-    // } catch (std::runtime_error const & e) {
-    //     xwarn("[xtable_statistic_info_collection_contract_new][on_collect_statistic_info] read summarized slash info error:%s", e.what());
-    //     throw;
-    // }
+    try {
+        XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
+        if (m_slash_prop.exist("UNQUALIFIED_NODE"))
+            summarize_info_str = m_slash_prop.query("UNQUALIFIED_NODE");
+    } catch (std::runtime_error const & e) {
+        xwarn("[xtable_statistic_info_collection_contract_new][on_collect_statistic_info] read summarized slash info error:%s", e.what());
+        throw;
+    }
+
 
     std::string summarize_fulltableblock_num_str;
-    // try {
-    //     XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_tableblock_num_key");
-    //     if (MAP_FIELD_EXIST(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM)) {
-    //         summarize_fulltableblock_num_str = MAP_GET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM);
-    //     }
-    // } catch (std::runtime_error & e) {
-    //     xwarn("[xtable_statistic_info_collection_contract_new][on_collect_statistic_info] read summarized tableblock num error:%s", e.what());
-    //     throw;
-    // }
+    try {
+        XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_tableblock_num_key");
+        if (m_extend_func_prop.exist(FULLTABLE_NUM)) {
+            summarize_fulltableblock_num_str = m_extend_func_prop.query(FULLTABLE_NUM);
+        }
+    } catch (std::runtime_error & e) {
+        xwarn("[xtable_statistic_info_collection_contract_new][on_collect_statistic_info] read summarized tableblock num error:%s", e.what());
+        throw;
+    }
 
 
     xunqualified_node_info_t summarize_info;
     uint32_t summarize_fulltableblock_num = 0;
     collect_slash_statistic_info(statistic_data, statistic_accounts, summarize_info_str, summarize_fulltableblock_num_str,
                                     summarize_info, summarize_fulltableblock_num);
-    // update_slash_statistic_info(summarize_info, summarize_fulltableblock_num, block_height);
+    update_slash_statistic_info(summarize_info, summarize_fulltableblock_num, block_height);
 
 
     // process_workload_statistic_data(statistic_data, statistic_accounts, tgas);
@@ -146,21 +152,20 @@ void xtable_statistic_info_collection_contract_new::collect_slash_statistic_info
 
 }
 
-#if 0
 void  xtable_statistic_info_collection_contract_new::update_slash_statistic_info( xunqualified_node_info_t const& summarize_info, uint32_t summarize_fulltableblock_num, uint64_t block_height) {
     {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_unqualified_node_key");
         base::xstream_t stream(base::xcontext_t::instance());
         summarize_info.serialize_to(stream);
-        MAP_SET(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, "UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
+        m_slash_prop.update("UNQUALIFIED_NODE", std::string((char *)stream.data(), stream.size()));
     }
 
 
     {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_extended_function_key");
-        MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_HEIGHT, base::xstring_utl::tostring(block_height));
+        m_extend_func_prop.update(FULLTABLE_HEIGHT, base::xstring_utl::tostring(block_height));
         summarize_fulltableblock_num++;
-        MAP_SET(xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, FULLTABLE_NUM, base::xstring_utl::tostring(summarize_fulltableblock_num));
+        m_extend_func_prop.update(FULLTABLE_NUM, base::xstring_utl::tostring(summarize_fulltableblock_num));
     }
 
 
@@ -169,7 +174,6 @@ void  xtable_statistic_info_collection_contract_new::update_slash_statistic_info
         getpid());
 
 }
-#endif
 
 void  xtable_statistic_info_collection_contract_new::accumulate_node_info(xunqualified_node_info_t const&  node_info, xunqualified_node_info_t& summarize_info) {
     for (auto const & item : node_info.auditor_info) {
