@@ -27,7 +27,7 @@ public:
      * @param election_timestamp Timestamp that triggers the election
      * @param start_time The time that this election result starts to work
      * @param group_size_range Maximum and minimum values for the group
-     * @param standby_network_result Standby pool
+     * @param simple_standby_result Standby pool
      * @param election_network_result Election result
      * @return true election successful
      * @return false election failed
@@ -38,7 +38,7 @@ public:
                      common::xlogic_time_t const election_timestamp,
                      common::xlogic_time_t const start_time,
                      xrange_t<config::xgroup_size_t> const & group_size_range,
-                     data::election::xstandby_network_result_t & standby_network_result,
+                     data::standby::xsimple_standby_result_t const & simple_standby_result,
                      data::election::xelection_network_result_t & election_network_result) override;
 
 protected:

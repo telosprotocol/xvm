@@ -24,8 +24,8 @@ using namespace top::data;
 
 NS_BEG4(top, xvm, system_contracts, rec)
 
-using data::standby::xrec_standby_chain_result_t;
-using data::standby::xrec_standby_node_info_t;
+using data::standby::xsimple_standby_result_t;
+using data::standby::xsimple_standby_node_info_t;
 using data::standby::xrec_standby_result_store_t;
 
 xtop_rec_standby_pool_contract2::xtop_rec_standby_pool_contract2(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {
@@ -39,9 +39,9 @@ void xtop_rec_standby_pool_contract2::setup() {
 
         common::xnode_id_t node_id{node_data.m_account};
 
-        xrec_standby_node_info_t seed_node_info;
+        xsimple_standby_node_info_t seed_node_info;
         seed_node_info.public_key = xpublic_key_t{node_data.m_publickey};
-        seed_node_info.ec_stake = 0;
+        seed_node_info.stake = 0;
         seed_node_info.program_version = "1.1.0";
         seed_node_info.is_genesis_node = true;
 
@@ -89,16 +89,16 @@ void xtop_rec_standby_pool_contract2::nodeJoinNetwork(common::xaccount_address_t
 bool xtop_rec_standby_pool_contract2::nodeJoinNetworkImpl(common::xaccount_address_t const & node_id,
                                                           std::string const & program_version,
                                                           data::registration::xrec_registration_node_info_t const & registration_node_info,
-                                                          data::standby::xrec_standby_chain_result_t & standby_chain_result) {
+                                                          data::standby::xsimple_standby_result_t & standby_chain_result) {
     XCONTRACT_ENSURE(common::has<common::xregistration_type_t::senior>(registration_node_info.m_registration_type),
                      "[xtop_rec_standby_pool_contract2::nodeJoinNetworkImpl] registration_type should has senior type");
 
     // might add some minimum stake require.
     // XCONTRACT_ENSURE(registration_node_info.m_account_mortgage > xxx , "");
 
-    data::standby::xrec_standby_node_info_t standby_node_info;
+    data::standby::xsimple_standby_node_info_t standby_node_info;
 
-    standby_node_info.ec_stake = registration_node_info.m_account_mortgage;
+    standby_node_info.stake = registration_node_info.m_account_mortgage;
     standby_node_info.is_genesis_node = false;
     standby_node_info.program_version = program_version;
     standby_node_info.public_key = registration_node_info.m_public_key;
@@ -107,11 +107,11 @@ bool xtop_rec_standby_pool_contract2::nodeJoinNetworkImpl(common::xaccount_addre
 }
 
 bool xtop_rec_standby_pool_contract2::update_node_info(data::registration::xrec_registration_node_info_t const & registration_node_info,
-                                                       data::standby::xrec_standby_node_info_t & standby_node_info) const {
+                                                       data::standby::xsimple_standby_node_info_t & standby_node_info) const {
     bool updated{false};
 
-    if (standby_node_info.ec_stake != registration_node_info.m_account_mortgage) {
-        standby_node_info.ec_stake = registration_node_info.m_account_mortgage;
+    if (standby_node_info.stake != registration_node_info.m_account_mortgage) {
+        standby_node_info.stake = registration_node_info.m_account_mortgage;
         updated |= true;
     }
     if (standby_node_info.public_key != registration_node_info.m_public_key) {
@@ -128,7 +128,7 @@ bool xtop_rec_standby_pool_contract2::update_standby_result_store(data::registra
 
     for (auto & chain_pair : standby_result_store) {
         auto const & _network_id = top::get<const common::xnetwork_id_t>(chain_pair);
-        auto & _standby_chain_result = top::get<data::standby::xrec_standby_chain_result_t>(chain_pair);
+        auto & _standby_chain_result = top::get<data::standby::xsimple_standby_result_t>(chain_pair);
         auto & _registration_chain_result = registration_result_store.result_of(_network_id);
         for (auto node_iter = _standby_chain_result.begin(); node_iter != _standby_chain_result.end();) {
             auto const & _node_id = top::get<const common::xnode_id_t>(*node_iter);
@@ -139,7 +139,7 @@ bool xtop_rec_standby_pool_contract2::update_standby_result_store(data::registra
                 node_iter = _standby_chain_result.erase(node_iter);
                 updated |= true;
             } else {
-                auto & _standby_node_info = top::get<data::standby::xrec_standby_node_info_t>(*node_iter);
+                auto & _standby_node_info = top::get<data::standby::xsimple_standby_node_info_t>(*node_iter);
                 auto const & registration_node_info = top::get<data::registration::xrec_registration_node_info_t>(*registration_info_iter);
                 updated |= update_node_info(registration_node_info, _standby_node_info);
             }

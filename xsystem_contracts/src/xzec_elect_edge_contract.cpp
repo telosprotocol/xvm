@@ -34,8 +34,7 @@ NS_BEG4(top, xvm, system_contracts, zec)
 
 using common::xnode_id_t;
 using data::election::xelection_result_store_t;
-using data::election::xstandby_node_info_t;
-using data::election::xstandby_result_store_t;
+using data::standby::xzec_standby_result_t;
 
 xtop_zec_elect_edge_contract::xtop_zec_elect_edge_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {
 }
@@ -142,10 +141,10 @@ void xtop_zec_elect_edge_contract::on_timer(const uint64_t current_time) {
     auto zec_standby_result = xvm::serialization::xmsgpack_t<data::standby::xzec_standby_result_t>::deserialize_from_string_prop(
         *this, sys_contract_zec_standby_pool_addr2, data::XPROPERTY_ZEC_STANDBY_KEY);
 
-    auto standby_network_result = data::standby::to_standby_network_result(zec_standby_result);
-
     auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
     for (auto const & property : property_names) {
+        auto standby_network_result = data::standby::select_standby_nodes(zec_standby_result, common::xnode_type_t::edge);
+
         auto election_result_store = xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, property);
         auto & election_network_result = election_result_store.result_of(network_id());
         if (elect_group(common::xedge_zone_id,

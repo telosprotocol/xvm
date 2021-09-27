@@ -42,14 +42,14 @@ private:
     bool nodeJoinNetworkImpl(common::xaccount_address_t const & node_id,
                              std::string const & program_version,
                              data::registration::xrec_registration_node_info_t const & registration_node_info,
-                             data::standby::xrec_standby_chain_result_t & standby_chain_result);
+                             data::standby::xsimple_standby_result_t & standby_chain_result);
 
     void on_timer(common::xlogic_time_t const current_time);
 
     bool update_standby_result_store(data::registration::xregistration_result_store_t const & registration_result_store,
                                      data::standby::xrec_standby_result_store_t & standby_result_store) const;
 
-    bool update_node_info(data::registration::xrec_registration_node_info_t const & registration_node_info, data::standby::xrec_standby_node_info_t & standby_node_info) const;
+    bool update_node_info(data::registration::xrec_registration_node_info_t const & registration_node_info, data::standby::xsimple_standby_node_info_t & standby_node_info) const;
 };
 using xrec_standby_pool_contract2_t = xtop_rec_standby_pool_contract2;
 

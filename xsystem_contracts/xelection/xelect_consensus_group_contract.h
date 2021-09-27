@@ -101,7 +101,7 @@ protected:
      * @param start_time The time that this election result starts to work
      * @param random_seed Random seed for FTS algorithm internally used by election process
      * @param group_size_range Maximum and minimum values for the group
-     * @param standby_network_result Standby pool
+     * @param simple_standby_result Standby pool
      * @param election_network_result Election result
      * @return true election successful
      * @return false election failed
@@ -113,7 +113,7 @@ protected:
                      common::xlogic_time_t const start_time,
                      std::uint64_t const random_seed,
                      xrange_t<config::xgroup_size_t> const & group_size_range,
-                     data::election::xstandby_network_result_t const & standby_network_result,
+                     data::standby::xsimple_standby_result_t const & simple_standby_result,
                      data::election::xelection_network_result_t & election_network_result) override;
 
     /**
@@ -157,7 +157,7 @@ protected:
                             common::xrole_type_t const role_type,
                             std::uint64_t const random_seed,
                             xrange_t<config::xgroup_size_t> const & group_size_range,
-                            data::election::xstandby_result_t const & standby_result,
+                            data::standby::xsimple_standby_result_t const & standby_result,
                             data::election::xelection_group_result_t & current_group_nodes);
 
     /**
@@ -180,7 +180,7 @@ protected:
                             common::xnode_type_t const node_type,
                             std::uint64_t const random_seed,
                             std::size_t shrink_size,
-                            data::election::xstandby_result_t const & standby_result,
+                            data::standby::xsimple_standby_result_t const & standby_result,
                             data::election::xelection_group_result_t & current_group_nodes) const;
 };
 using xelect_consensus_group_contract_t = xtop_elect_consensus_group_contract;

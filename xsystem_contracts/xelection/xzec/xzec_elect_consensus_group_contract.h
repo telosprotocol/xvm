@@ -49,7 +49,7 @@ private:
                                  common::xlogic_time_t const election_timestamp,
                                  common::xlogic_time_t const start_time,
                                  data::election::xelection_association_result_store_t const & association_result_store,
-                                 data::election::xstandby_network_result_t const & standby_network_result,
+                                 data::standby::xzec_standby_result_t const & zec_standby_result,
                                  std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> & all_cluster_election_result_store);
 
     bool elect_auditor(common::xzone_id_t const & zid,
@@ -58,7 +58,7 @@ private:
                        common::xlogic_time_t const election_timestamp,
                        common::xlogic_time_t const start_time,
                        std::uint64_t const random_seed,
-                       data::election::xstandby_network_result_t const & standby_network_result,
+                       data::standby::xsimple_standby_result_t const & simple_standby_result,
                        data::election::xelection_network_result_t & election_network_result);
 
     bool elect_validator(common::xzone_id_t const & zid,
@@ -68,7 +68,7 @@ private:
                          common::xlogic_time_t const election_timestamp,
                          common::xlogic_time_t const start_time,
                          std::uint64_t const random_seed,
-                         data::election::xstandby_network_result_t const & standby_network_result,
+                         data::standby::xsimple_standby_result_t const & simple_standby_result,
                          data::election::xelection_network_result_t & election_network_result);
 
     bool genesis_elected() const;

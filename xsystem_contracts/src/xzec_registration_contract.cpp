@@ -49,6 +49,7 @@ void xtop_zec_registration_contract::setup() {
         zec_node_info.m_rec_registration_node_info = node_info;
         zec_node_info.m_nickname = std::string("bootnode") + std::to_string(i + 1);
         zec_node_info.m_role_type = common::xrole_type_t::edge | common::xrole_type_t::advance | common::xrole_type_t::validator;
+        zec_node_info.m_vote_amount = 0;
 
         zec_registration_result_store.insert({node_id, zec_node_info});
     }

@@ -35,8 +35,6 @@ NS_BEG4(top, xvm, system_contracts, zec)
 
 using common::xnode_id_t;
 using data::election::xelection_result_store_t;
-using data::election::xstandby_node_info_t;
-using data::election::xstandby_result_store_t;
 
 xtop_zec_elect_archive_contract::xtop_zec_elect_archive_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
@@ -132,15 +130,6 @@ void xtop_zec_elect_archive_contract::on_timer(const uint64_t current_time) {
     auto zec_standby_result = xvm::serialization::xmsgpack_t<data::standby::xzec_standby_result_t>::deserialize_from_string_prop(
         *this, sys_contract_zec_standby_pool_addr2, data::XPROPERTY_ZEC_STANDBY_KEY);
 
-    auto standby_network_result = data::standby::to_standby_network_result(zec_standby_result);
-
-#if defined(DEBUG)
-    for (auto const & r : standby_network_result) {
-        auto const node_type = top::get<common::xnode_type_t const>(r);
-        xdbg("xzec_elect_archive_contract_t::archive_elect seeing %s", common::to_string(node_type).c_str());
-    }
-#endif
-
     std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> all_archive_election_result_store;
     for (auto index = 0; index < XGET_CONFIG(archive_group_count); ++index) {
         top::common::xgroup_id_t archive_gid{ static_cast<top::common::xgroup_id_t::value_type>(common::xarchive_group_id_value_begin + index) };
@@ -157,6 +146,16 @@ void xtop_zec_elect_archive_contract::on_timer(const uint64_t current_time) {
         if (archive_gid == common::xfull_node_group_id) {
             range = full_node_group_range;
         }
+
+        // todo add mainnet activated bool
+        auto standby_network_result = data::standby::select_standby_nodes(zec_standby_result, standby_type(common::xarchive_zone_id, common::xdefault_cluster_id, archive_gid));
+
+#if defined(DEBUG)
+        for (auto const & r : standby_network_result) {
+            auto const node_id = top::get<common::xnode_id_t const>(r);
+            xdbg("xzec_elect_archive_contract_t::archive_elect seeing %s", node_id.c_str());
+        }
+#endif
 
         if (elect_group(common::xarchive_zone_id,
                         common::xdefault_cluster_id,

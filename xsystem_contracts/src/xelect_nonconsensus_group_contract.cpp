@@ -25,7 +25,7 @@ using common::xnode_id_t;
 using data::election::xelection_info_bundle_t;
 using data::election::xelection_info_t;
 using data::election::xelection_result_store_t;
-using data::election::xstandby_node_info_t;
+using data::standby::xsimple_standby_node_info_t;
 
 xtop_elect_nonconsensus_group_contract::xtop_elect_nonconsensus_group_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
@@ -35,7 +35,7 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
                                                          common::xlogic_time_t const election_timestamp,
                                                          common::xlogic_time_t const start_time,
                                                          xrange_t<config::xgroup_size_t> const & group_size_range,
-                                                         data::election::xstandby_network_result_t & standby_network_result,
+                                                         data::standby::xsimple_standby_result_t const & simple_standby_result,
                                                          data::election::xelection_network_result_t & election_network_result) {
     assert(!broadcast(cid) && !broadcast(gid));
     auto const log_prefix = "[elect non-consensus group contract] zone " + zid.to_string() + " cluster " + cid.to_string() + " group " + gid.to_string() + ":";
@@ -47,8 +47,8 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
     assert(node_type != common::xnode_type_t::invalid);
     assert(max_elect_group_size);
 
-    auto & standby_result = standby_network_result.result_of(node_type);
-    if (standby_result.size() < min_elect_group_size) {
+    // auto & standby_result = standby_network_result.result_of(node_type);
+    if (simple_standby_result.size() < min_elect_group_size) {
         xwarn("%s start electing but no enough standby nodes available", log_prefix.c_str());
         return false;
     }
@@ -59,13 +59,13 @@ bool xtop_elect_nonconsensus_group_contract::elect_group(common::xzone_id_t cons
     bool node_change{false};
     size_t elect_node_size{0};
 
-    for (auto & new_node_info : standby_result) {
+    for (auto & new_node_info : simple_standby_result) {
         auto const & node_id = top::get<xnode_id_t const>(new_node_info);
-        auto const & node_standby_info = top::get<xstandby_node_info_t>(new_node_info);
+        auto const & node_standby_info = top::get<xsimple_standby_node_info_t>(new_node_info);
 
         xelection_info_t new_election_info{};
-        new_election_info.consensus_public_key = node_standby_info.consensus_public_key;
-        new_election_info.stake = node_standby_info.stake(node_type);
+        new_election_info.consensus_public_key = node_standby_info.public_key;
+        new_election_info.stake = node_standby_info.stake;
 
         xelection_info_bundle_t election_info_bundle{};
         election_info_bundle.node_id(node_id);

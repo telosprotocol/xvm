@@ -1,7 +1,7 @@
 // Copyright (c) 2017-2018 Telos Foundation & contributors
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+#if 0
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_elect_archive_contract.h"
 
 #include "xbasic/xutility.h"
@@ -193,3 +193,4 @@ common::xnode_type_t xtop_rec_elect_archive_contract::standby_type(common::xzone
 }
 
 NS_END4
+#endif
