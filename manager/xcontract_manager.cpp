@@ -759,7 +759,7 @@ static void get_rec_nodes_map(observer_ptr<store::xstore_face_t const> store,
         j["account_addr"] = reg_node_info.m_account.value();
         j["node_deposit"] = static_cast<unsigned long long>(reg_node_info.m_account_mortgage);
         if (reg_node_info.m_genesis_node) {
-            j["registered_node_type"] = std::string{"advance,validator,edge"};
+            j["registered_node_type"] = std::string{"advance,validator,edge,archive"};
         } else {
             j["registered_node_type"] = common::to_string(reg_node_info.m_registered_role);
         }
