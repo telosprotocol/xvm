@@ -36,6 +36,12 @@ void xtop_contract_deploy::deploy_sys_contracts() {
            enum_broadcast_policy_t::normal,
            std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xrec_standby_pool_update_interval_onchain_goverance_parameter_t::name);
 
+    deploy(common::xaccount_address_t{sys_contract_rec_elect_ec_addr},
+           xnode_type_t::committee,
+           "all",
+           enum_broadcast_policy_t::normal,
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xzec_election_interval_onchain_goverance_parameter_t::name);
+
     deploy(common::xaccount_address_t{sys_contract_zec_standby_pool_addr2},
            xnode_type_t::zec,
            "all",
