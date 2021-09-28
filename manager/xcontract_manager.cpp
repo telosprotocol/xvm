@@ -83,7 +83,7 @@ void xtop_contract_manager::instantiate_sys_contracts() {
     XREGISTER_CONTRACT(top::xvm::system_contracts::zec::xgroup_association_contract_t, sys_contract_zec_group_assoc_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::xcontract::xzec_slash_info_contract, sys_contract_zec_slash_info_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::reward::xtable_reward_claiming_contract_t, sys_contract_sharding_reward_claiming_addr, network_id);
-    XREGISTER_CONTRACT(top::xvm::xcontract::xtable_statistic_info_collection_contract, sys_contract_sharding_statistic_info_addr, network_id);
+    // XREGISTER_CONTRACT(top::xvm::xcontract::xtable_statistic_info_collection_contract, sys_contract_sharding_statistic_info_addr, network_id);
 
 }
 

@@ -35,7 +35,7 @@ public:
      * @param block_height the fullblock height
      */
     void
-    on_collect_statistic_info(std::string const& statistic_info, std::string const& statistic_accounts_str, uint64_t block_height, int64_t tgas);
+    on_collect_statistic_info(xstatistics_data_t const& statistic_data,  xfulltableblock_statistic_accounts const& statistic_accounts, uint64_t block_height, int64_t tgas);
 
     /**
      * @brief report the summarized statistic info
@@ -147,7 +147,7 @@ private:
 
     contract_common::properties::xmap_property_t<std::string, std::string> m_workload_prop{xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, this};
     contract_common::properties::xmap_property_t<std::string, std::string> m_slash_prop{xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, std::string> m_extend_func_prop{xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_extend_func_prop{xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, this};
 
     contract_common::properties::xstring_property_t m_tgas_prop{xstake::XPORPERTY_CONTRACT_TGAS_KEY, this};
 };

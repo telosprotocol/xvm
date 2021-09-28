@@ -24,6 +24,7 @@ NS_BEG2(top, system_contracts)
 
 
 void xtable_statistic_info_collection_contract_new::setup() {
+    xdbg("xtable_statistic_info_collection_contract_new::setup here1");
     // initialize map key
     m_workload_prop.create();
     m_slash_prop.create();
@@ -32,12 +33,12 @@ void xtable_statistic_info_collection_contract_new::setup() {
     m_extend_func_prop.add(FULLTABLE_HEIGHT, "0");
     m_tgas_prop.create();
     m_tgas_prop.update("0");
-
+    xdbg("xtable_statistic_info_collection_contract_new::setup here2");
 
 
 }
 
-void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(std::string const& statistic_info, std::string const& statistic_accounts_str, uint64_t block_height, int64_t tgas) {
+void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xstatistics_data_t const& statistic_data,  xfulltableblock_statistic_accounts const& statistic_accounts, uint64_t block_height, int64_t tgas) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
     XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
     XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_exec_fullblock, 1);
@@ -92,10 +93,10 @@ void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(st
 
 
 
-    xstatistics_data_t statistic_data;
-    statistic_data.deserialize_based_on<base::xstream_t>({ std::begin(statistic_info), std::end(statistic_info) });
-    xfulltableblock_statistic_accounts statistic_accounts;
-    statistic_accounts.deserialize_based_on<base::xstream_t>({ std::begin(statistic_accounts_str), std::end(statistic_accounts_str) });
+    // xstatistics_data_t statistic_data;
+    // statistic_data.deserialize_based_on<base::xstream_t>({ std::begin(statistic_info), std::end(statistic_info) });
+    // xfulltableblock_statistic_accounts statistic_accounts;
+    // statistic_accounts.deserialize_based_on<base::xstream_t>({ std::begin(statistic_accounts_str), std::end(statistic_accounts_str) });
     std::string summarize_info_str;
     try {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
