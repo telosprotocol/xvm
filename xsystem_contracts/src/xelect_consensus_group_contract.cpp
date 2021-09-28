@@ -21,9 +21,7 @@ using top::data::election::xelection_group_result_t;
 using top::data::election::xelection_info_bundle_t;
 using top::data::election::xelection_info_t;
 using top::data::election::xelection_network_result_t;
-using top::data::election::xstandby_network_result_t;
-using top::data::election::xstandby_node_info_t;
-using top::data::election::xstandby_result_t;
+using top::data::standby::xsimple_standby_node_info_t;
 
 #ifndef XSYSCONTRACT_MODULE
 #    define XSYSCONTRACT_MODULE "sysContract_"
@@ -162,7 +160,7 @@ bool xtop_elect_consensus_group_contract::elect_group(common::xzone_id_t const &
                                                       common::xlogic_time_t const start_time,
                                                       std::uint64_t const random_seed,
                                                       xrange_t<config::xgroup_size_t> const & group_size_range,
-                                                      data::election::xstandby_network_result_t const & standby_network_result,
+                                                      data::standby::xsimple_standby_result_t const & simple_standby_result,
                                                       data::election::xelection_network_result_t & election_network_result) {
     assert(!broadcast(zid));
     assert(!broadcast(cid));
@@ -232,16 +230,16 @@ bool xtop_elect_consensus_group_contract::elect_group(common::xzone_id_t const &
         current_group_nodes.start_time(start_time);
 
         // read standby nodes.
-        auto const & standby_result = standby_network_result.result_of(node_type);  // standbys in the pool
-        if (standby_result.empty()) {
+        // auto const & standby_result = standby_network_result.result_of(node_type);  // standbys in the pool
+        if (simple_standby_result.empty()) {
             xwarn("%s starts electing, but no standby nodes available", log_prefix.c_str());
             return false;
         }
 
         if (current_group_nodes.size() > max_group_size) {
-            return do_shrink_election(zid, cid, gid, node_type, random_seed, current_group_nodes.size() - max_group_size, standby_result, current_group_nodes);
+            return do_shrink_election(zid, cid, gid, node_type, random_seed, current_group_nodes.size() - max_group_size, simple_standby_result, current_group_nodes);
         } else {
-            return do_normal_election(zid, cid, gid, node_type, role_type, random_seed, group_size_range, standby_result, current_group_nodes);
+            return do_normal_election(zid, cid, gid, node_type, role_type, random_seed, group_size_range, simple_standby_result, current_group_nodes);
         }
     } catch (top::error::xtop_error_t const & eh) {
         xerror("%s xtop_error_t exception caught. category: %s msg: %s", log_prefix.c_str(), eh.code().category().name(), eh.what());
@@ -351,9 +349,9 @@ bool xtop_elect_consensus_group_contract::do_normal_election(common::xzone_id_t 
                                                              common::xgroup_id_t const & gid,
                                                              common::xnode_type_t const node_type,
                                                              common::xrole_type_t const role_type,
-                                                              std::uint64_t const random_seed,
+                                                             std::uint64_t const random_seed,
                                                              xrange_t<config::xgroup_size_t> const & group_size_range,
-                                                             data::election::xstandby_result_t const & standby_result,
+                                                             data::standby::xsimple_standby_result_t const & standby_result,
                                                              data::election::xelection_group_result_t & current_group_nodes) {
     auto const log_prefix = "[elect consensus group contract - normal] zone " + zid.to_string() + " cluster " + cid.to_string() + " group " + gid.to_string() + ":";
     auto const min_group_size = group_size_range.begin;
@@ -363,9 +361,9 @@ bool xtop_elect_consensus_group_contract::do_normal_election(common::xzone_id_t 
     effective_standby_result.reserve(standby_result.size());
     for (auto const & standby_info : standby_result) {
         effective_standby_result.emplace_back(top::get<common::xnode_id_t const>(standby_info),
-                                              top::get<xstandby_node_info_t>(standby_info).stake(node_type),
+                                              top::get<xsimple_standby_node_info_t>(standby_info).stake,
                                               minimum_comprehensive_stake,
-                                              top::get<xstandby_node_info_t>(standby_info).consensus_public_key);
+                                              top::get<xsimple_standby_node_info_t>(standby_info).public_key);
     }
 
     normalize_stake(role_type, effective_standby_result);
@@ -559,7 +557,7 @@ bool xtop_elect_consensus_group_contract::do_shrink_election(common::xzone_id_t 
                                                              common::xnode_type_t const node_type,
                                                              std::uint64_t const random_seed,
                                                              std::size_t shrink_size,
-                                                             data::election::xstandby_result_t const & standby_result,
+                                                             data::standby::xsimple_standby_result_t const & standby_result,
                                                              data::election::xelection_group_result_t & current_group_nodes) const {
     auto const log_prefix = "[elect consensus group contract - shrink] zone " + zid.to_string() + " cluster " + cid.to_string() + " group " + gid.to_string() + ":";
     std::size_t unqualified_node_count{0};

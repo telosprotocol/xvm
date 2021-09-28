@@ -29,8 +29,7 @@
 NS_BEG4(top, xvm, system_contracts, rec)
 
 using data::election::xelection_result_store_t;
-using data::election::xstandby_node_info_t;
-using data::election::xstandby_result_store_t;
+using data::standby::xrec_standby_result_store_t;
 
 xtop_rec_elect_zec_contract::xtop_rec_elect_zec_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
@@ -138,9 +137,9 @@ void xtop_rec_elect_zec_contract::on_timer(common::xlogic_time_t const current_t
     auto const min_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_election_committee_size);
     auto const max_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_election_committee_size);
 
-    auto standby_result_store =
-        serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, sys_contract_rec_standby_pool_addr, data::XPROPERTY_CONTRACT_STANDBYS_KEY);
-    auto standby_network_result = standby_result_store.result_of(network_id()).network_result();
+    auto standby_result_store = serialization::xmsgpack_t<data::standby::xrec_standby_result_store_t>::deserialize_from_string_prop(
+        *this, sys_contract_rec_standby_pool_addr2, data::XPROPERTY_BEACON_STANDBY_KEY);
+    auto beacon_standby_result = standby_result_store.result_of(network_id());
 
     auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
     for (auto const & property : property_names) {
@@ -161,7 +160,7 @@ void xtop_rec_elect_zec_contract::on_timer(common::xlogic_time_t const current_t
                                             start_time,
                                             random_seed,
                                             xrange_t<config::xgroup_size_t>{min_election_committee_size, max_election_committee_size},
-                                            standby_network_result,
+                                            beacon_standby_result,
                                             election_network_result);
         if (successful) {
             serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, property, election_result_store);

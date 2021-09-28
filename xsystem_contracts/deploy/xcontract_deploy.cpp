@@ -23,11 +23,48 @@ void xtop_contract_deploy::deploy_sys_contracts() {
     xdbg("[xtop_contract_deploy::deploy_sys_contracts]");
     deploy(common::xaccount_address_t{sys_contract_rec_registration_addr}, xnode_type_t::committee, "all", enum_broadcast_policy_t::normal);
 
+    deploy(common::xaccount_address_t{sys_contract_rec_registration_addr2}, xnode_type_t::committee, "all", enum_broadcast_policy_t::normal);
+    deploy(common::xaccount_address_t{sys_contract_zec_registration_addr},
+           xnode_type_t::zec,
+           "all",
+           enum_broadcast_policy_t::normal,
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xzec_registration_on_timer_interval_onchain_goverance_parameter_t::name);
+
+    deploy(common::xaccount_address_t{sys_contract_rec_standby_pool_addr2},
+           xnode_type_t::committee,
+           "all",
+           enum_broadcast_policy_t::normal,
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xrec_standby_pool_update_interval_onchain_goverance_parameter_t::name);
+
+    deploy(common::xaccount_address_t{sys_contract_zec_standby_pool_addr2},
+           xnode_type_t::zec,
+           "all",
+           enum_broadcast_policy_t::normal,
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xzec_standby_pool_update_interval_onchain_goverance_parameter_t::name);
+
+    deploy(common::xaccount_address_t{sys_contract_zec_elect_edge_addr},
+           xnode_type_t::zec,
+           "all",
+           enum_broadcast_policy_t::normal,
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xedge_election_interval_onchain_goverance_parameter_t::name);
+
+    deploy(common::xaccount_address_t{sys_contract_zec_elect_archive_addr},
+           xnode_type_t::zec,
+           "all",
+           enum_broadcast_policy_t::normal,
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xarchive_election_interval_onchain_goverance_parameter_t::name);
+
+    deploy(common::xaccount_address_t{sys_contract_rec_parachain_registration_addr},
+           xnode_type_t::committee,
+           "all",
+           enum_broadcast_policy_t::normal,
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xrec_parachain_registration_on_timer_interval_onchain_goverance_parameter_t::name);
+
     deploy(common::xaccount_address_t{sys_contract_rec_standby_pool_addr},
            xnode_type_t::committee,
            "all",
            enum_broadcast_policy_t::normal,
-           std::string{sys_contract_beacon_timer_addr} + u8",on_timer,C," + config::xrec_standby_pool_update_interval_onchain_goverance_parameter_t::name);
+           std::string{sys_contract_beacon_timer_addr} + ",on_timer,C," + config::xrec_standby_pool_update_interval_onchain_goverance_parameter_t::name);
 
     deploy(common::xaccount_address_t{sys_contract_zec_workload_addr},
            xnode_type_t::zec,
@@ -45,17 +82,17 @@ void xtop_contract_deploy::deploy_sys_contracts() {
 
     deploy(common::xaccount_address_t{sys_contract_rec_tcc_addr}, xnode_type_t::committee, "all", enum_broadcast_policy_t::normal);
 
-    deploy(common::xaccount_address_t{sys_contract_rec_elect_edge_addr},
-           xnode_type_t::committee,
-           "all",
-           enum_broadcast_policy_t::normal,
-           std::string(sys_contract_beacon_timer_addr) + ",on_timer,C," + config::xedge_election_interval_onchain_goverance_parameter_t::name);
+    // deploy(common::xaccount_address_t{sys_contract_rec_elect_edge_addr},
+    //        xnode_type_t::committee,
+    //        "all",
+    //        enum_broadcast_policy_t::normal,
+    //        std::string(sys_contract_beacon_timer_addr) + ",on_timer,C," + config::xedge_election_interval_onchain_goverance_parameter_t::name);
 
-    deploy(common::xaccount_address_t{sys_contract_rec_elect_archive_addr},
-           xnode_type_t::committee,
-           "all",
-           enum_broadcast_policy_t::normal,
-           std::string(sys_contract_beacon_timer_addr) + ",on_timer,C," + config::xarchive_election_interval_onchain_goverance_parameter_t::name);
+    // deploy(common::xaccount_address_t{sys_contract_rec_elect_archive_addr},
+    //        xnode_type_t::committee,
+    //        "all",
+    //        enum_broadcast_policy_t::normal,
+    //        std::string(sys_contract_beacon_timer_addr) + ",on_timer,C," + config::xarchive_election_interval_onchain_goverance_parameter_t::name);
 
     deploy(common::xaccount_address_t{sys_contract_rec_elect_rec_addr},
            xnode_type_t::committee,

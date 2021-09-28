@@ -36,10 +36,7 @@ using top::data::election::xelection_info_bundle_t;
 using top::data::election::xelection_info_t;
 using top::data::election::xelection_network_result_t;
 using top::data::election::xelection_result_store_t;
-using top::data::election::xstandby_network_result_t;
-using top::data::election::xstandby_node_info_t;
-using top::data::election::xstandby_result_store_t;
-using top::data::election::xstandby_result_t;
+using top::data::standby::xzec_standby_result_t;
 
 NS_BEG4(top, xvm, system_contracts, zec)
 
@@ -302,6 +299,7 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
                                                     common::xcluster_id_t const cluster_id,
                                                     std::uint64_t const random_seed,
                                                     common::xlogic_time_t const election_timestamp) {
+#if 0
     uint64_t read_height =
         static_cast<std::uint64_t>(std::stoull(STRING_GET2(data::XPROPERTY_LAST_READ_REC_STANDBY_POOL_CONTRACT_BLOCK_HEIGHT, sys_contract_zec_standby_pool_addr)));
 
@@ -339,8 +337,13 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
     auto const & standby_result_store = codec::msgpack_decode<xstandby_result_store_t>({std::begin(result), std::end(result)});
 
     auto const standby_network_result = standby_result_store.result_of(network_id()).network_result();
+#endif
+    auto const zec_standby_result = xvm::serialization::xmsgpack_t<data::standby::xzec_standby_result_t>::deserialize_from_string_prop(
+        *this, sys_contract_zec_standby_pool_addr2, data::XPROPERTY_ZEC_STANDBY_KEY);
 
-    if (standby_network_result.empty()) {
+    // auto standby_network_result = data::standby::to_standby_network_result(zec_standby_result);
+
+    if (zec_standby_result.empty()) {
         xwarn("[zec contract][elect_non_genesis] no standby nodes");
         return;
     }
@@ -355,10 +358,10 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
 #if defined DEBUG
 
     std::string log;
-    for (auto const & standby_result : standby_network_result.results()) {
-        log += " " + common::to_string(standby_result.first) + ": ";
-        for (auto const & result : standby_result.second.results()) {
-            log += result.first.to_string() + "|";
+    for (auto const & standby_result : zec_standby_result.results()) {
+        log += " " + standby_result.first.to_string() + ": ";
+        for (auto const & result : standby_result.second.stake_container.results()) {
+            log += common::to_string(result.first) + "|";
         }
     }
 
@@ -432,14 +435,13 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
                                     election_timestamp,
                                     genesis_elected() ? election_timestamp + cluster_election_interval / 2 : election_timestamp,
                                     election_association_result_store,
-                                    standby_network_result,
+                                    zec_standby_result,
                                     all_cluster_election_result_store)) {
             ++auditor_rotation_num;
-            xwarn("[zec contract][elect_non_genesis] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : success. read_height: %" PRIu64,
+            xwarn("[zec contract][elect_non_genesis] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : success. ",
                   static_cast<std::uint16_t>(zone_id.value()),
                   static_cast<std::uint16_t>(cluster_id.value()),
-                  static_cast<std::uint16_t>(auditor_group_id.value()),
-                  read_height);
+                  static_cast<std::uint16_t>(auditor_group_id.value()));
 
             serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, data::election::get_property_by_group_id(auditor_group_id), election_result_store);
 #if defined DEBUG
@@ -450,11 +452,10 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
 #endif
 
         } else {
-            xwarn("[zec contract][elect_non_genesis] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : failed. read_height: %" PRIu64,
+            xwarn("[zec contract][elect_non_genesis] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : failed. ",
                   static_cast<std::uint16_t>(zone_id.value()),
                   static_cast<std::uint16_t>(cluster_id.value()),
-                  static_cast<std::uint16_t>(auditor_group_id.value()),
-                  read_height);
+                  static_cast<std::uint16_t>(auditor_group_id.value()));
         }
     }
     if (!genesis_elected()) {
@@ -488,7 +489,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
                                                                       common::xlogic_time_t const election_timestamp,
                                                                       common::xlogic_time_t const start_time,
                                                                       data::election::xelection_association_result_store_t const & association_result_store,
-                                                                      data::election::xstandby_network_result_t const & standby_network_result,
+                                                                      data::standby::xzec_standby_result_t const & zec_standby_result,
                                                                       std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> & all_cluster_election_result_store) {
     std::string log_prefix = "[zec contract][elect_auditor_validator] zone " + zone_id.to_string() + u8" cluster " + cluster_id.to_string() + " group " + auditor_group_id.to_string();
     bool election_success{false};
@@ -508,8 +509,10 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
     assert(!associated_validator_group_ids.empty());
 
     // clean up the auditor standby pool by filtering out the nodes that are currently in the validator group.
-    auto effective_standby_network_result = standby_network_result;
-    auto & effective_auditor_standbys = effective_standby_network_result.result_of(common::xnode_type_t::consensus_auditor);
+    // auto effective_standby_network_result = standby_network_result;
+    // auto & effective_auditor_standbys = effective_standby_network_result.result_of(common::xnode_type_t::consensus_auditor);
+    // todo add bool only_genesis?
+    auto effective_auditor_standbys = data::standby::select_standby_nodes(zec_standby_result, common::xnode_type_t::consensus_auditor);
     auto & election_network_result = all_cluster_election_result_store.at(auditor_group_id).result_of(network_id());
     xwarn("%s begins to filter auditor standbys (standby size %zu)", log_prefix.c_str(), effective_auditor_standbys.size());
     for (auto const & assoc_validator_group_id : associated_validator_group_ids) {
@@ -560,7 +563,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
 
     xwarn("%s stops to filter auditor standbys (standby size %zu)", log_prefix.c_str(), effective_auditor_standbys.size());
 
-    if (!elect_auditor(zone_id, cluster_id, auditor_group_id, election_timestamp, start_time, random_seed, effective_standby_network_result, election_network_result)) {
+    if (!elect_auditor(zone_id, cluster_id, auditor_group_id, election_timestamp, start_time, random_seed, effective_auditor_standbys, election_network_result)) {
         xwarn("%s election failed at logic time %" PRIu64 " and random nonce %" PRIu64,
               log_prefix.c_str(),
               static_cast<std::uint16_t>(zone_id.value()),
@@ -582,8 +585,10 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
          (all_validator_group_id.end() - 1)->to_string().c_str());
 
     for (auto const & validator_group_id : associated_validator_group_ids) {
-        auto effective_standby_network_result = standby_network_result;
-        auto & effective_validator_standbys = effective_standby_network_result.result_of(common::xnode_type_t::consensus_validator);
+        // auto effective_standby_network_result = standby_network_result;
+        // auto & effective_validator_standbys = effective_standby_network_result.result_of(common::xnode_type_t::consensus_validator);
+        // todo add bool only_genesis?
+        auto effective_validator_standbys = data::standby::select_standby_nodes(zec_standby_result, common::xnode_type_t::consensus_validator);
 
         xwarn("%s begins to filter validator standbys (standby size %zu)", log_prefix.c_str(), effective_validator_standbys.size());
         // for electing validator, filter the standby nodes whose account (node id) is already in the associated auditor
@@ -634,7 +639,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor_validator(common::xz
                              election_timestamp,
                              start_time,
                              random_seed,
-                             effective_standby_network_result,
+                             effective_validator_standbys,
                              election_network_result)) {
             xwarn("%s election is not executed under auditor group %" PRIu16, log_prefix.c_str(), static_cast<std::uint16_t>(auditor_group_id.value()));
 
@@ -685,7 +690,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor(common::xzone_id_t c
                                                             common::xlogic_time_t const election_timestamp,
                                                             common::xlogic_time_t const start_time,
                                                             std::uint64_t const random_seed,
-                                                            xstandby_network_result_t const & standby_network_result,
+                                                            data::standby::xsimple_standby_result_t const & simple_standby_result,
                                                             xelection_network_result_t & election_network_result) {
     auto const min_auditor_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_auditor_group_size);
     auto const max_auditor_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_auditor_group_size);
@@ -716,7 +721,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_auditor(common::xzone_id_t c
                        start_time,
                        random_seed,
                        xrange_t<config::xgroup_size_t>{min_auditor_group_size, max_auditor_group_size},
-                       standby_network_result,
+                       simple_standby_result,
                        election_network_result);
 }
 
@@ -727,7 +732,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_validator(common::xzone_id_t
                                                               common::xlogic_time_t const election_timestamp,
                                                               common::xlogic_time_t const start_time,
                                                               std::uint64_t const random_seed,
-                                                              xstandby_network_result_t const & standby_network_result,
+                                                              data::standby::xsimple_standby_result_t const & simple_standby_result,
                                                               xelection_network_result_t & election_network_result) {
     auto const min_validator_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_validator_group_size);
     auto const max_validator_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_validator_group_size);
@@ -757,7 +762,7 @@ bool xtop_zec_elect_consensus_group_contract::elect_validator(common::xzone_id_t
                        start_time,
                        random_seed,
                        xrange_t<config::xgroup_size_t>{min_validator_group_size, max_validator_group_size},
-                       standby_network_result,
+                       simple_standby_result,
                        election_network_result);
 }
 
