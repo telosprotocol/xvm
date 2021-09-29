@@ -229,7 +229,7 @@ bool xrole_context_t::runtime_stand_alone(const uint64_t timer_round, common::xa
                                                                 //  common::xaccount_address_t{sys_contract_rec_elect_archive_addr},
                                                                  common::xaccount_address_t{ sys_contract_zec_elect_edge_addr },
                                                                  common::xaccount_address_t{ sys_contract_zec_elect_archive_addr },
-                                                                 common::xaccount_address_t{sys_contract_rec_elect_zec_addr},
+                                                                 common::xaccount_address_t{sys_contract_rec_elect_ec_addr},
                                                                  common::xaccount_address_t{sys_contract_zec_elect_consensus_addr}};
 
     if (std::find(std::begin(sys_addr_list), std::end(sys_addr_list), sys_addr) == std::end(sys_addr_list)) {
