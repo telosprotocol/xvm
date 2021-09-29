@@ -5,7 +5,7 @@
 #pragma once
 
 #include "xdata/xelection/xelection_association_result_store.h"
-#include "xdata/xelection/xelection_result_store.h"
+#include "xdata/xelection/xelection_data_struct.h"
 #include "xdata/xelection/xstandby_result_store.h"
 #include "xvm/xcontract/xcontract_exec.h"
 #include "xvm/xsystem_contracts/xelection/xelect_consensus_group_contract.h"

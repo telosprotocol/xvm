@@ -11,7 +11,6 @@
 #include "xconfig/xconfig_register.h"
 #include "xdata/xblocktool.h"
 #include "xdata/xcodec/xmsgpack/xelection_association_result_store_codec.hpp"
-#include "xdata/xcodec/xmsgpack/xelection_result_store_codec.hpp"
 #include "xdata/xcodec/xmsgpack/xstandby_result_store_codec.hpp"
 #include "xdata/xelection/xelection_result_property.h"
 #include "xdata/xgenesis_data.h"
@@ -33,6 +32,7 @@
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_elect_zec_contract.h"
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_standby_pool_contract.h"
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_standby_pool_contract2.h"
+#include "xvm/xsystem_contracts/xelection/xrec/xrec_elect_ec_contract.h"
 #include "xvm/xsystem_contracts/xelection/xzec/xzec_elect_consensus_group_contract.h"
 #include "xvm/xsystem_contracts/xelection/xzec/xzec_group_association_contract.h"
 #include "xvm/xsystem_contracts/xelection/xzec/xzec_standby_pool_contract.h"
@@ -77,6 +77,7 @@ void xtop_contract_manager::instantiate_sys_contracts() {
     XREGISTER_CONTRACT(top::xstake::xrec_registration_contract, sys_contract_rec_registration_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_registration_contract2, sys_contract_rec_registration_addr2, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_standby_pool_contract2_t, sys_contract_rec_standby_pool_addr2, network_id);
+    XREGISTER_CONTRACT(top::xvm::system_contracts::rec::xrec_elect_ec_contract_t, sys_contract_rec_elect_ec_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::zec::xzec_registration_contract_t, sys_contract_zec_registration_addr, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::zec::xzec_standby_pool_contract2_t, sys_contract_zec_standby_pool_addr2, network_id);
     XREGISTER_CONTRACT(top::xvm::system_contracts::zec::xzec_elect_archive_contract_t, sys_contract_zec_elect_archive_addr, network_id);

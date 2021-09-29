@@ -36,6 +36,8 @@ std::string sys_contract_addr_to_string(common::xaccount_address_t const & sys_c
         return "election_zec_elect_archive";
     } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_zec_elect_edge_addr}) {
         return "election_zec_elect_edge";
+    } else if (sys_contract_addr == common::xaccount_address_t{sys_contract_rec_elect_ec_addr}) {
+        return "election_rec_elect_ec";
     }
     assert(false);
 
