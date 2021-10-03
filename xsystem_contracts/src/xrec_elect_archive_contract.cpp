@@ -62,34 +62,50 @@ void xtop_rec_elect_archive_contract::elect_config_nodes(common::xlogic_time_t c
     using top::data::election::xelection_result_store_t;
     using top::data::election::xstandby_node_info_t;
 
-    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
-    auto election_result_store =
-        xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(common::xdefault_group_id));
-    auto node_type = common::xnode_type_t::storage_archive;
-    auto & election_group_result = election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(common::xdefault_group_id);
+    for (auto index = 0; index < XGET_CONFIG(archive_group_count); ++index) {
+        top::common::xgroup_id_t archive_gid{static_cast<top::common::xgroup_id_t::value_type>(common::xarchive_group_id_value_begin + index)};
 
-    auto nodes_info = xstatic_election_center::instance().get_static_election_nodes("archive_start_nodes");
-    for (auto nodes : nodes_info) {
-        xelection_info_t new_election_info{};
-        new_election_info.consensus_public_key = nodes.pub_key;
-        new_election_info.stake = nodes.stake;
-        new_election_info.joined_version = common::xelection_round_t{0};
+        auto election_result_store =
+            xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(archive_gid));
+        auto & election_network_result = election_result_store.result_of(network_id());
+        auto node_type = common::xnode_type_t::archive;
+        std::string static_node_str = "";
+        if (archive_gid.value() == common::xarchive_group_id_value) {
+            node_type = common::xnode_type_t::storage_archive;
+            static_node_str = "archive_start_nodes";
+        } else if (archive_gid.value() == common::xfull_node_group_id_value) {
+            node_type = common::xnode_type_t::storage_full_node;
+            static_node_str = "fullnode_start_nodes";
+        } else {
+            xassert(false);
+        }
+        auto nodes_info = xstatic_election_center::instance().get_static_election_nodes(static_node_str);
+        if (nodes_info.empty()) {
+            xinfo("[archive_start_nodes] get empty node_info: %s gid: %d", static_node_str.c_str(), archive_gid.value());
+            continue;
+        }
+        auto & election_group_result = election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(archive_gid);
+        for (auto nodes : nodes_info) {
+            xelection_info_t new_election_info{};
+            new_election_info.consensus_public_key = nodes.pub_key;
+            new_election_info.stake = nodes.stake;
+            new_election_info.joined_version = common::xelection_round_t{0};
 
-        xelection_info_bundle_t election_info_bundle{};
-        election_info_bundle.node_id(nodes.node_id);
-        election_info_bundle.election_info(std::move(new_election_info));
+            xelection_info_bundle_t election_info_bundle{};
+            election_info_bundle.node_id(nodes.node_id);
+            election_info_bundle.election_info(std::move(new_election_info));
 
-        election_group_result.insert(std::move(election_info_bundle));
+            election_group_result.insert(std::move(election_info_bundle));
+        }
+        election_group_result.election_committee_version(common::xelection_round_t{0});
+        election_group_result.timestamp(current_time);
+        election_group_result.start_time(current_time);
+        if (election_group_result.group_version().empty()) {
+            election_group_result.group_version(common::xelection_round_t::max());
+        }
+        xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, data::election::get_property_by_group_id(archive_gid), election_result_store);
     }
 
-    election_group_result.election_committee_version(common::xelection_round_t{0});
-    election_group_result.timestamp(current_time);
-    election_group_result.start_time(current_time);
-    if (election_group_result.group_version().empty()) {
-        election_group_result.group_version(common::xelection_round_t::max());
-    }
-    xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(
-        *this, data::election::get_property_by_group_id(common::xdefault_group_id), election_result_store);
 }
 #endif
 
