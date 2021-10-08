@@ -39,12 +39,12 @@ private:
                           data::standby::xsimple_standby_result_t const & zec_standby_result,
                           data::election::xelection_network_result_t & zec_election_result);
 
-    bool elect_parachain_genesis(common::xlogic_time_t const current,
+    bool elect_parachain_genesis(common::xlogic_time_t const current_time,
                                  uint32_t chain_id,
                                  data::standby::xsimple_standby_result_t const & zec_standby_result,
                                  data::election::xelection_network_result_t & zec_election_result);
 
-    bool elect_parachain_ec(common::xlogic_time_t const current,
+    bool elect_parachain_ec(common::xlogic_time_t const current_time,
                             uint32_t chain_id,
                             data::standby::xsimple_standby_result_t const & zec_standby_result,
                             data::election::xelection_network_result_t & zec_election_result);

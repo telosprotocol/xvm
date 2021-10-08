@@ -71,7 +71,11 @@ void xtop_rec_elect_ec_contract::on_timer(common::xlogic_time_t const current_ti
         if (election_result_store.find(common::xnetwork_id_t{chain_id}) == election_result_store.end()) {
             auto & parachain_election_result = election_result_store.result_of(common::xnetwork_id_t{chain_id});
             // use mainnet ec node create node proxy.
-            update |= elect_parachain_genesis(current_time, chain_id, rec_standby_result_store.result_of(network_id()), parachain_election_result);
+            auto mainnetzec_standby_result = rec_standby_result_store.result_of(network_id());
+            for (auto & _p : mainnetzec_standby_result) {
+                top::get<standby::xsimple_standby_node_info_t>(_p).stake = 0;
+            }
+            update |= elect_parachain_genesis(current_time, chain_id, mainnetzec_standby_result, parachain_election_result);
         } else {
             // ? might be some with elect mainnet_ec
             auto & parachain_election_result = election_result_store.result_of(common::xnetwork_id_t{chain_id});
@@ -119,21 +123,73 @@ bool xtop_rec_elect_ec_contract::elect_mainnet_ec(common::xlogic_time_t const cu
                        zec_election_result);
 }
 
-bool xtop_rec_elect_ec_contract::elect_parachain_genesis(common::xlogic_time_t const current,
+bool xtop_rec_elect_ec_contract::elect_parachain_genesis(common::xlogic_time_t const current_time,
                                                          uint32_t chain_id,
                                                          data::standby::xsimple_standby_result_t const & zec_standby_result,
                                                          data::election::xelection_network_result_t & zec_election_result) {
-    bool update{false};
+    std::uint64_t random_seed;
+    try {
+        auto seed = m_contract_helper->get_random_seed();
+        random_seed = utl::xxh64_t::digest(seed);
+    } catch (std::exception const & eh) {
+        xwarn("[xtop_rec_elect_ec_contract::elect_parachain_genesis] get random seed failed: %s", eh.what());
+        return false;
+    }
+    xinfo("[xtop_rec_elect_ec_contract::elect_parachain_genesis] random seed %" PRIu64, random_seed);
 
-    return update;
+    // ? parachain ec genesis round size might be some other tcc params. Use this anyway.
+    auto const min_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_election_committee_size);
+    auto const max_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_election_committee_size);
+
+    auto start_time = current_time;
+    auto const & current_group_nodes = zec_election_result.result_of(common::xnode_type_t::zec).result_of(common::xcommittee_cluster_id).result_of(common::xcommittee_group_id);
+    if (!current_group_nodes.empty()) {
+        auto const zec_election_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(zec_election_interval);
+        start_time += zec_election_interval / 2;
+    }
+    return elect_group(common::xzec_zone_id,
+                       common::xcommittee_cluster_id,
+                       common::xcommittee_group_id,
+                       current_time,
+                       start_time,
+                       random_seed,
+                       xrange_t<config::xgroup_size_t>{min_election_committee_size, max_election_committee_size},
+                       zec_standby_result,
+                       zec_election_result);
 }
 
-bool xtop_rec_elect_ec_contract::elect_parachain_ec(common::xlogic_time_t const current,
+bool xtop_rec_elect_ec_contract::elect_parachain_ec(common::xlogic_time_t const current_time,
                                                     uint32_t chain_id,
                                                     data::standby::xsimple_standby_result_t const & zec_standby_result,
                                                     data::election::xelection_network_result_t & zec_election_result) {
-    bool update{false};
+    std::uint64_t random_seed;
+    try {
+        auto seed = m_contract_helper->get_random_seed();
+        random_seed = utl::xxh64_t::digest(seed);
+    } catch (std::exception const & eh) {
+        xwarn("[xtop_rec_elect_ec_contract::elect_mainnet_ec] get random seed failed: %s", eh.what());
+        return false;
+    }
+    xinfo("[xtop_rec_elect_ec_contract::elect_mainnet_ec] random seed %" PRIu64, random_seed);
 
-    return update;
+    // ? might need define new params
+    auto const min_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_election_committee_size);
+    auto const max_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_election_committee_size);
+
+    auto start_time = current_time;
+    auto const & current_group_nodes = zec_election_result.result_of(common::xnode_type_t::zec).result_of(common::xcommittee_cluster_id).result_of(common::xcommittee_group_id);
+    if (!current_group_nodes.empty()) {
+        auto const zec_election_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(zec_election_interval);
+        start_time += zec_election_interval / 2;
+    }
+    return elect_group(common::xzec_zone_id,
+                       common::xcommittee_cluster_id,
+                       common::xcommittee_group_id,
+                       current_time,
+                       start_time,
+                       random_seed,
+                       xrange_t<config::xgroup_size_t>{min_election_committee_size, max_election_committee_size},
+                       zec_standby_result,
+                       zec_election_result);
 }
 NS_END4
