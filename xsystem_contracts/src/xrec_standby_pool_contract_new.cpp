@@ -114,8 +114,8 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     // std::map<std::string, std::string> map_nodes;
 
     // MAP_COPY_GET(top::xstake::XPORPERTY_CONTRACT_REG_KEY, map_nodes, sys_contract_rec_registration_addr);
-    contract_common::properties::xmap_property_t<std::string, std::string> reg_node_prop{XPORPERTY_CONTRACT_REG_KEY, this};
-    auto map_nodes = reg_node_prop.query(common::xaccount_address_t{sys_contract_rec_registration_addr}.to_string());
+    properties::xmap_property_t<std::string, xbytes_t> reg_node_prop{XPORPERTY_CONTRACT_REG_KEY, this};
+    auto map_nodes = reg_node_prop.get(std::string{sys_contract_rec_registration_addr});
     XCONTRACT_ENSURE(map_nodes.size() != 0, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: did not get the MAP");
 
     //auto iter = map_nodes.find(node_id.value());

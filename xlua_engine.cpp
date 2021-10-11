@@ -4,6 +4,7 @@
 
 #include "xbase/xcontext.h"
 #include "xbase/xmem.h"
+#include "xbasic/xerror/xerror.h"
 #include "xbasic/xscope_executer.h"
 #include "xerror/xvm_error.h"
 #include "xvm/xvm_context.h"
