@@ -28,7 +28,7 @@ NS_BEG2(top, system_contracts)
 #define TIMER_ADJUST_DENOMINATOR 10
 
 void xrec_registration_contract_new_t::setup() {
-    m_balance.create();
+    // m_balance.create();
     m_genesis_prop.create();
     m_reg_prop.create();
     m_tickets_prop.create();
