@@ -995,7 +995,8 @@ static void get_reward_detail(common::xaccount_address_t const & contract_addres
         return;
     }
     xstake::xissue_detail issue_detail;
-    issue_detail.from_string(serialized_value);
+    std::error_code ec;
+    issue_detail.from_string(serialized_value, ec);
     xJson::Value jv;
     jv["onchain_timer_round"] = (xJson::UInt64)issue_detail.onchain_timer_round;
     jv["zec_vote_contract_height"] = (xJson::UInt64)issue_detail.m_zec_vote_contract_height;

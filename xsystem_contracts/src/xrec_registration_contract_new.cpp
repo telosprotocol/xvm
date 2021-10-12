@@ -68,19 +68,19 @@ void xrec_registration_contract_new_t::setup() {
         }
         stream.reset();
         node_info.serialize_to(stream);
-        m_reg_prop.update(_p.first, xbytes_t{stream.data(), stream.data() + static_cast<size_t>(stream.size())});
+        m_reg_prop.update(_p.first, {reinterpret_cast<char *>(stream.data()), static_cast<size_t>(stream.size())});
     }
 
     std::vector<std::pair<std::string, std::string>> db_kv_128;
     xchain_data_processor_t::get_stake_map_property(address(), XPORPERTY_CONTRACT_REFUND_KEY, db_kv_128);
     for (auto const & _p : db_kv_128) {
-        m_refund_prop.update(_p.first, xbytes_t{_p.second.begin(), _p.second.end()});
+        m_refund_prop.update(_p.first, _p.second);
     }
 
     std::vector<std::pair<std::string, std::string>> db_kv_132;
     xchain_data_processor_t::get_stake_map_property(address(), XPROPERTY_CONTRACT_SLASH_INFO_KEY, db_kv_132);
     for (auto const & _p : db_kv_132) {
-        m_slash_prop.update(_p.first, {_p.second.begin(), _p.second.end()});
+        m_slash_prop.update(_p.first, _p.second);
     }
 
     std::string db_kv_129;
@@ -155,7 +155,7 @@ void xrec_registration_contract_new_t::setup() {
     // auto const & source_address = sender().to_string();
     // MAP_CREATE(XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY);
     // MAP_SET(XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY, source_address, base::xstring_utl::tostring(0));
-    m_votes_report_time_prop.update(sender().to_string(), xbytes_t(1, static_cast<xbyte_t>('0')));
+    m_votes_report_time_prop.update(sender().to_string(), "0");
 
 #ifdef MAINNET_ACTIVATED
     xactivation_record record;
@@ -653,7 +653,7 @@ int32_t xrec_registration_contract_new_t::get_refund(const std::string & account
         return xaccount_property_not_exist;
     }
 
-    base::xstream_t stream(base::xcontext_t::instance(), value_str.data(), (uint32_t)value_str.size());
+    base::xstream_t stream(base::xcontext_t::instance(), reinterpret_cast<uint8_t *>(const_cast<char *>(value_str.data())), static_cast<uint32_t>(value_str.size()));
 
     refund.serialize_from(stream);
 
@@ -1001,7 +1001,7 @@ int32_t xrec_registration_contract_new_t::get_slash_info(std::string const & acc
         return xaccount_property_not_exist;
     }
 
-    xstream_t stream(xcontext_t::instance(), value_str.data(), value_str.size());
+    xstream_t stream(xcontext_t::instance(), reinterpret_cast<uint8_t*>(const_cast<char *>(value_str.data())), value_str.size());
     node_slash_info.serialize_from(stream);
 
     return 0;

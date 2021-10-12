@@ -258,11 +258,11 @@ private:
 private:
     contract_common::properties::xtoken_property_t m_balance{data::XPROPERTY_BALANCE_AVAILABLE, this};
     contract_common::properties::xstring_property_t m_genesis_prop{xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_reg_prop{xstake::XPORPERTY_CONTRACT_REG_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_tickets_prop{xstake::XPORPERTY_CONTRACT_TICKETS_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_refund_prop{xstake::XPORPERTY_CONTRACT_REFUND_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_slash_prop{xstake::XPROPERTY_CONTRACT_SLASH_INFO_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_votes_report_time_prop{xstake::XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_reg_prop{xstake::XPORPERTY_CONTRACT_REG_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_tickets_prop{xstake::XPORPERTY_CONTRACT_TICKETS_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_refund_prop{xstake::XPORPERTY_CONTRACT_REFUND_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_slash_prop{xstake::XPROPERTY_CONTRACT_SLASH_INFO_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_votes_report_time_prop{xstake::XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY, this};
 };
 using xrec_registration_contract_new_t = xtop_rec_registration_contract_new;
 
