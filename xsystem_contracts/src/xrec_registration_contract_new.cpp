@@ -279,7 +279,9 @@ void xrec_registration_contract_new_t::registerNode2(const std::string & role_ty
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
 
     std::error_code ec;
-    auto token_amount = src_action_asset_amount(ec);
+    auto token = src_action_asset(ec);
+    auto token_amount = token.amount();
+    token.clear();
     assert(!ec);
 
     node_info.m_account = account;
