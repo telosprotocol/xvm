@@ -143,7 +143,7 @@ void xrec_registration_contract_new_t::setup() {
             stream << adv_get_votes_str_detail;
             std::string adv_get_votes_str{std::string((const char*)stream.data(), stream.size())};
             // MAP_SET(XPORPERTY_CONTRACT_TICKETS_KEY, table_address, adv_get_votes_str);
-            m_tickets_prop.update(table_address, {adv_get_votes_str.begin(), adv_get_votes_str.end()});
+            m_tickets_prop.update(table_address, adv_get_votes_str);
         }
     }
 
@@ -155,7 +155,7 @@ void xrec_registration_contract_new_t::setup() {
     // auto const & source_address = sender().to_string();
     // MAP_CREATE(XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY);
     // MAP_SET(XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY, source_address, base::xstring_utl::tostring(0));
-    m_votes_report_time_prop.update(sender().to_string(), "0");
+    m_votes_report_time_prop.update(sender().to_string(), xstring_utl::tostring(0));
 
 #ifdef MAINNET_ACTIVATED
     xactivation_record record;
@@ -580,7 +580,7 @@ void xrec_registration_contract_new_t::update_node_info(xreg_node_info & node_in
     xstream_t stream(xcontext_t::instance());
     node_info.serialize_to(stream);
     // MAP_SET(XPORPERTY_CONTRACT_REG_KEY, node_info.m_account.value(), std::string((char *)stream.data(), stream.size()));
-    m_reg_prop.update(node_info.m_account.value(), {stream.data(), stream.data() + stream.size()});
+    m_reg_prop.update(node_info.m_account.value(), std::string{reinterpret_cast<char *>(stream.data()), static_cast<size_t>(stream.size())});
 }
 
 void xrec_registration_contract_new_t::delete_node_info(std::string const & account) {
@@ -644,7 +644,7 @@ int32_t xrec_registration_contract_new_t::ins_refund(const std::string & account
     //     XMETRICS_TIME_RECORD(XREG_CONTRACT "XPORPERTY_CONTRACT_REFUND_KEY_SetExecutionTime");
     //     MAP_SET(XPORPERTY_CONTRACT_REFUND_KEY, account, stream_str);
     // }
-    m_refund_prop.update(account, {stream.data(), stream.data() + stream.size()});
+    m_refund_prop.update(account, std::string{reinterpret_cast<char*>(stream.data()), static_cast<size_t>(stream.size())});
 
     return 0;
 }
