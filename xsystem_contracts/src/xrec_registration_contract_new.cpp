@@ -222,6 +222,22 @@ void xrec_registration_contract_new_t::registerNode(const std::string & role_typ
 #endif
 ) {
     if (at_source_action_stage()) {
+        auto const& src_data = source_action_data();
+        if (!src_data.empty() && data::enum_xaction_type::xaction_type_asset_out == source_action_type()) {
+            data::xproperty_asset asset_out{data::XPROPERTY_ASSET_TOP, uint64_t{0}};
+            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t*)src_data.data(), src_data.size());
+            stream >> asset_out.m_token_name;
+            stream >> asset_out.m_amount;
+
+            std::error_code ec;
+            write_receipt_data(contract_common::RECEITP_DATA_ASSET_OUT, xbyte_buffer_t{src_data.begin(), src_data.end()}, ec);
+            assert(!ec);
+
+            state_accessor::properties::xproperty_identifier_t balance_property_id{
+                data::XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::system};
+            auto token = state()->withdraw(balance_property_id, common::xsymbol_t{"TOP"}, asset_out.m_amount);
+            xdbg("[xrec_registration_contract::registerNode] at_source_action_stage, token name: %s, amount: %" PRIu64, asset_out.m_token_name.c_str(), asset_out.m_amount);
+        }
 
     }
 
