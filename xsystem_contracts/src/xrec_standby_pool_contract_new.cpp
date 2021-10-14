@@ -6,6 +6,7 @@
 #include "xdata/xelection/xstandby_result_store.h"
 #include "xdata/xrootblock.h"
 #include "xsystem_contracts/xsystem_contract_addresses.h"
+#include "xstate_accessor/xproperties/xproperty_identifier.h"
 
 using namespace top::contract_common;
 using namespace top::data::election;
@@ -97,7 +98,12 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
 #endif
                                                           std::string const & program_version) {
     if (at_source_action_stage()) {
-
+#if defined(XENABLE_MOCK_ZEC_STAKE)
+    // m_account_ctx->token_deposit(XPROPERTY_BALANCE_AVAILABLE, base::vtoken_t(10000000000));
+    // state_accessor::properties::xtop_property_identifier token_prop(
+    //     XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::user);
+    // state()->access_control()->deposit(sender(), token_prop, 10000000000);
+#endif
     }
 
     if (at_confirm_action_stage()) {
@@ -422,6 +428,7 @@ bool xtop_rec_standby_pool_contract_new::update_standby_result_store(std::map<co
 }
 
 void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const current_time) {
+#if 0
 #ifdef STATIC_CONSENSUS
     // static_consensus won't sync registration contract data.
     return;
@@ -465,6 +472,7 @@ void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const cu
         // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
         m_standby_prop.update(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
     }
+#endif
 }
 
 NS_END2

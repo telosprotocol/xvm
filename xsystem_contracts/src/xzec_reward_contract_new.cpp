@@ -27,10 +27,6 @@ using namespace top::base;
 enum { total_idx = 0, valid_idx, deposit_zero_num, num_type_idx_num } xreward_num_type_e;
 enum { edger_idx = 0, archiver_idx, auditor_idx, validator_idx, role_type_idx_num } xreward_role_type_e;
 
-// TODO lon:
-// 1. get_blockchain_height
-// 2. get_block_by_height
-
 NS_BEG2(top, system_contracts)
 
 void xtop_zec_reward_contract_new::setup() {
@@ -145,8 +141,6 @@ bool xtop_zec_reward_contract_new::update_reg_contract_read_status_internal(cons
 }
 
 void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common::xlogic_time_t cur_time) {
-    // TODO
-#if 0
     bool update_rec_reg_contract_read_status{false};
 
     auto const last_read_height = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_height.query()));
@@ -155,7 +149,8 @@ void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common:
     auto const height_step_limitation = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cross_reading_rec_reg_contract_height_step_limitation);
     auto const timeout_limitation = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cross_reading_rec_reg_contract_logic_timeout_limitation);
 
-    uint64_t latest_height = get_blockchain_height(sys_contract_rec_registration_addr);
+    // uint64_t latest_height = get_blockchain_height(sys_contract_rec_registration_addr);
+    uint64_t latest_height = state()->state_height(common::xaccount_address_t{sys_contract_rec_registration_addr});
     xdbg("[xtop_zec_reward_contract_new::update_reg_contract_read_status] cur_time: %llu, last_read_time: %llu, last_read_height: %llu, latest_height: %" PRIu64,
          cur_time,
          last_read_time,
@@ -178,16 +173,14 @@ void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common:
           update_rec_reg_contract_read_status);
 
     if (update_rec_reg_contract_read_status) {
-
-        xauto_ptr<xblock_t> block_ptr = get_block_by_height(sys_contract_rec_registration_addr, next_read_height);
-        XCONTRACT_ENSURE(block_ptr != nullptr, "fail to get the rec_reg data");
+        // xauto_ptr<xblock_t> block_ptr = get_block_by_height(sys_contract_rec_registration_addr, next_read_height);
+        XCONTRACT_ENSURE(state()->block_exist(common::xaccount_address_t{sys_contract_rec_registration_addr}, next_read_height) == true, "fail to get the rec_reg data");
         XMETRICS_PACKET_INFO(XREWARD_CONTRACT "update_status", "next_read_height", next_read_height, "current_time", cur_time)
         // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_BLOCK_HEIGHT, std::to_string(next_read_height));
         // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME, std::to_string(cur_time));
         m_last_read_rec_reg_contract_height.update(xstring_utl::tostring(next_read_height));
         m_last_read_rec_reg_contract_time.update(xstring_utl::tostring(cur_time));
     }
-#endif
     return;
 }
 
@@ -653,12 +646,10 @@ void xtop_zec_reward_contract_new::get_reward_onchain_param(xreward_onchain_para
 void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & onchain_param, xreward_property_param_t & property_param) {
     // get onchain param
     get_reward_onchain_param(onchain_param);
-    // TODO
-#if 0
-    property_param.zec_vote_contract_height = get_blockchain_height(sys_contract_zec_vote_addr);
-    property_param.zec_workload_contract_height = get_blockchain_height(sys_contract_zec_workload_addr);
-    property_param.zec_reward_contract_height = get_blockchain_height(sys_contract_zec_reward_addr);
-#endif
+    property_param.zec_vote_contract_height = state()->state_height(common::xaccount_address_t{sys_contract_zec_vote_addr});
+    property_param.zec_workload_contract_height = state()->state_height(common::xaccount_address_t{sys_contract_zec_workload_addr});
+    property_param.zec_reward_contract_height = state()->state_height(common::xaccount_address_t{sys_contract_zec_reward_addr});
+
     xinfo("[xtop_zec_reward_contract_new::get_reward_param] m_zec_vote_contract_height: %u, m_zec_workload_contract_height: %u, m_zec_reward_contract_height: %u",
           property_param.zec_vote_contract_height,
           property_param.zec_workload_contract_height,
@@ -775,8 +766,7 @@ top::xstake::uint128_t xtop_zec_reward_contract_new::calc_total_issuance(const c
     auto minimum_issuance = static_cast<top::xstake::uint128_t>(TOTAL_ISSUANCE) * min_ratio_annual_total_reward / 100 * REWARD_PRECISION;
     uint64_t & last_issuance_time = record.last_issuance_time;
     top::xstake::uint128_t & issued_until_last_year_end = record.issued_until_last_year_end;
-    // TODO: merge
-    // return calc_issuance_internal(total_height, record.last_issuance_time, minimum_issuance, issuance_rate, record.issued_until_last_year_end);
+    
     if (0 == total_height) {
         return 0;
     }
