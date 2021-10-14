@@ -256,7 +256,6 @@ private:
     bool        handle_receive_shard_votes(uint64_t report_time, uint64_t last_report_time, std::map<std::string, std::string> const & contract_adv_votes, std::map<std::string, std::string> & merge_contract_adv_votes);
 #endif
 private:
-    contract_common::properties::xtoken_property_t m_balance{data::XPROPERTY_BALANCE_AVAILABLE, this};
     contract_common::properties::xstring_property_t m_genesis_prop{xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
     contract_common::properties::xmap_property_t<std::string, std::string> m_reg_prop{xstake::XPORPERTY_CONTRACT_REG_KEY, this};
     contract_common::properties::xmap_property_t<std::string, std::string> m_tickets_prop{xstake::XPORPERTY_CONTRACT_TICKETS_KEY, this};

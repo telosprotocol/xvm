@@ -86,7 +86,7 @@ void xtop_rec_standby_pool_contract_new::setup() {
     }
 #endif
     // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
-    m_standby_prop.update(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
+    m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
 }
 
 void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_address_t const & node_id,
@@ -191,7 +191,7 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node_id.c_str());
 
     // auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY);
-    auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(m_standby_prop.query());
+    auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(m_standby_prop.value());
 
     xstandby_node_info_t new_node_info;
 
@@ -245,7 +245,7 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     if (new_node) {
         XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "role_type", common::to_string(role_type));
         // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
-        m_standby_prop.update(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
+        m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
     }
 #endif
 }

@@ -58,7 +58,7 @@ void xtop_zec_reward_contract_new::setup() {
     chain_data::xchain_data_processor_t::get_stake_string_property(address(), XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, db_kv_142);
     if (!db_kv_142.empty()) {
         // STRING_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, db_kv_142);
-        m_accumulate_issuance_yearly.update(db_kv_142);
+        m_accumulate_issuance_yearly.set(db_kv_142);
     } else {
         xaccumulated_reward_record record;
         update_accumulated_record(record);
@@ -67,11 +67,11 @@ void xtop_zec_reward_contract_new::setup() {
     // STRING_CREATE(XPROPERTY_LAST_READ_REC_REG_CONTRACT_BLOCK_HEIGHT);
     // std::string last_read_rec_reg_contract_height{"0"};
     // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_BLOCK_HEIGHT, last_read_rec_reg_contract_height);
-    m_last_read_rec_reg_contract_height.update(xstring_utl::tostring(0));
+    m_last_read_rec_reg_contract_height.set(xstring_utl::tostring(0));
     // STRING_CREATE(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME);
     // std::string last_read_rec_reg_contract_logic_time{"0"};
     // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME, last_read_rec_reg_contract_logic_time);
-    m_last_read_rec_reg_contract_time.update(xstring_utl::tostring(0));
+    m_last_read_rec_reg_contract_time.set(xstring_utl::tostring(0));
 
     // STRING_CREATE(XPROPERTY_REWARD_DETAIL);
     xissue_detail detail;
@@ -143,8 +143,8 @@ bool xtop_zec_reward_contract_new::update_reg_contract_read_status_internal(cons
 void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common::xlogic_time_t cur_time) {
     bool update_rec_reg_contract_read_status{false};
 
-    auto const last_read_height = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_height.query()));
-    auto const last_read_time = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_time.query()));
+    auto const last_read_height = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_height.value()));
+    auto const last_read_time = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_time.value()));
 
     auto const height_step_limitation = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cross_reading_rec_reg_contract_height_step_limitation);
     auto const timeout_limitation = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cross_reading_rec_reg_contract_logic_timeout_limitation);
@@ -160,7 +160,7 @@ void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common:
     if (latest_height == last_read_height) {
         XMETRICS_PACKET_INFO(XREWARD_CONTRACT "update_status", "next_read_height", last_read_height, "current_time", cur_time)
         // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME, std::to_string(cur_time));
-        m_last_read_rec_reg_contract_time.update(xstring_utl::tostring(cur_time));
+        m_last_read_rec_reg_contract_time.set(xstring_utl::tostring(cur_time));
         return;
     }
     // calc current_read_height:
@@ -178,8 +178,8 @@ void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common:
         XMETRICS_PACKET_INFO(XREWARD_CONTRACT "update_status", "next_read_height", next_read_height, "current_time", cur_time)
         // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_BLOCK_HEIGHT, std::to_string(next_read_height));
         // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME, std::to_string(cur_time));
-        m_last_read_rec_reg_contract_height.update(xstring_utl::tostring(next_read_height));
-        m_last_read_rec_reg_contract_time.update(xstring_utl::tostring(cur_time));
+        m_last_read_rec_reg_contract_height.set(xstring_utl::tostring(next_read_height));
+        m_last_read_rec_reg_contract_time.set(xstring_utl::tostring(cur_time));
     }
     return;
 }
@@ -196,8 +196,8 @@ void xtop_zec_reward_contract_new::calculate_reward(const common::xlogic_time_t 
 
     // std::map<std::string, std::string> auditor_workload_str;
     // std::map<std::string, std::string> validator_workload_str;
-    auto auditor_workload_str = m_auditor_workload.clone();
-    auto validator_workload_str = m_validator_workload.clone();
+    auto auditor_workload_str = m_auditor_workload.value();
+    auto validator_workload_str = m_validator_workload.value();
     // MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, auditor_workload_str);
     // MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_workload_str);
 
@@ -328,7 +328,7 @@ bool xtop_zec_reward_contract_new::reward_is_expire_internal(const common::xlogi
 
 bool xtop_zec_reward_contract_new::reward_is_expire(const common::xlogic_time_t onchain_timer_round, const xactivation_record & activation_record) const {
     // std::string const & accumulated_reward_serialize = STRING_GET2(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY);
-    auto const & accumulated_reward_serialize = m_accumulate_issuance_yearly.query();
+    auto const & accumulated_reward_serialize = m_accumulate_issuance_yearly.value();
     const uint32_t reward_issue_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(reward_issue_interval);
     return reward_is_expire_internal(onchain_timer_round, reward_issue_interval, activation_record, accumulated_reward_serialize);
 }
@@ -588,7 +588,7 @@ void xtop_zec_reward_contract_new::update_accumulated_record(xaccumulated_reward
           static_cast<uint32_t>(record.issued_until_last_year_end % REWARD_PRECISION));
     try {
         // STRING_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, accumulated_reward_serialize(record));
-        m_accumulate_issuance_yearly.update(accumulated_reward_serialize(record));
+        m_accumulate_issuance_yearly.set(accumulated_reward_serialize(record));
     } catch (std::runtime_error & e) {
         xwarn("[xtop_zec_reward_contract_new::update_issuance_detail] STRING_SET XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY error:%s", e.what());
     }
@@ -611,7 +611,7 @@ void xtop_zec_reward_contract_new::update_issuance_detail(xissue_detail const & 
         issue_detail.m_governance_reward_ratio);
     try {
         // STRING_SET(XPROPERTY_REWARD_DETAIL, issue_detail.to_string());
-        m_reward_detail.update(issue_detail.to_string());
+        m_reward_detail.set(issue_detail.to_string());
     } catch (std::runtime_error & e) {
         xwarn("[xtop_zec_reward_contract_new::update_issuance_detail] STRING_SET XPROPERTY_REWARD_DETAIL error:%s", e.what());
     }
@@ -656,7 +656,7 @@ void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & on
           property_param.zec_reward_contract_height);
     // get map nodes
     // std::map<std::string, std::string> map_nodes;
-    auto const last_read_height = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_height.query()));
+    auto const last_read_height = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_height.value()));
     // GET_MAP_PROPERTY(XPORPERTY_CONTRACT_REG_KEY, map_nodes, last_read_height, sys_contract_rec_registration_addr);
     contract_common::properties::xmap_property_t<std::string, std::string> reg_prop{XPORPERTY_CONTRACT_REG_KEY, this};
     auto map_nodes = reg_prop.clone(common::xaccount_address_t{sys_contract_rec_registration_addr});
@@ -672,8 +672,8 @@ void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & on
         property_param.map_nodes[address] = node;
     }
     // get workload
-    auto auditor_clusters_workloads = m_auditor_workload.clone();
-    auto validator_clusters_workloads = m_validator_workload.clone();
+    auto auditor_clusters_workloads = m_auditor_workload.value();
+    auto validator_clusters_workloads = m_validator_workload.value();
     // MAP_COPY_GET(XPORPERTY_CONTRACT_WORKLOAD_KEY, auditor_clusters_workloads);
     // MAP_COPY_GET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, validator_clusters_workloads);
     m_auditor_workload.clear();
@@ -726,7 +726,7 @@ void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & on
     xinfo("[xtop_zec_reward_contract_new::get_reward_param] votes_detail_count: %d", property_param.votes_detail.size());
     // get accumulated reward
     // std::string value_str = STRING_GET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY);
-    auto value_str = m_accumulate_issuance_yearly.query();
+    auto value_str = m_accumulate_issuance_yearly.value();
     if (value_str.size() != 0) {
         xstream_t stream(xcontext_t::instance(), (uint8_t *)value_str.c_str(), (uint32_t)value_str.size());
         property_param.accumulated_reward_record.serialize_from(stream);
@@ -1680,7 +1680,7 @@ xactivation_record xtop_zec_reward_contract_new::get_activation_record() {
     xactivation_record activation_record;
     // std::string activation_str = STRING_GET2(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
     contract_common::properties::xstring_property_t active_prop{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
-    auto activation_str = active_prop.query();
+    auto activation_str = active_prop.value();
 
     XCONTRACT_ENSURE(!activation_str.empty(), "activation_str");
     xstream_t stream{xcontext_t::instance(), (uint8_t *)activation_str.c_str(), (uint32_t)activation_str.size()};

@@ -28,7 +28,6 @@ NS_BEG2(top, system_contracts)
 #define TIMER_ADJUST_DENOMINATOR 10
 
 void xrec_registration_contract_new_t::setup() {
-    // m_balance.create();
     m_genesis_prop.create();
     m_reg_prop.create();
     m_tickets_prop.create();
@@ -86,7 +85,7 @@ void xrec_registration_contract_new_t::setup() {
     std::string db_kv_129;
     xchain_data_processor_t::get_stake_string_property(address(), XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, db_kv_129);
     if (!db_kv_129.empty()) {
-        m_genesis_prop.update(db_kv_129);
+        m_genesis_prop.set(db_kv_129);
     }
 
     const uint32_t old_tables_count = 256;
@@ -150,7 +149,7 @@ void xrec_registration_contract_new_t::setup() {
     data_processor_t data;
     xtop_chain_data_processor::get_contract_data(address(), data);
     // TOP_TOKEN_INCREASE(data.top_balance);
-    m_balance.deposit(state_accessor::xtoken_t{static_cast<uint64_t>(data.top_balance), common::xsymbol_t{"TOP"}});
+    deposit(state_accessor::xtoken_t{static_cast<uint64_t>(data.top_balance)});
 
     // auto const & source_address = sender().to_string();
     // MAP_CREATE(XPORPERTY_CONTRACT_VOTE_REPORT_TIME_KEY);
@@ -166,7 +165,7 @@ void xrec_registration_contract_new_t::setup() {
     record.serialize_to(stream);
     // auto value_str = ;
     // STRING_SET(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, value_str);
-    m_genesis_prop.update(std::string((char *)stream.data(), stream.size()));
+    m_genesis_prop.set(std::string((char *)stream.data(), stream.size()));
 #endif
 
     xdbg("[xrec_registration_contract::setup] pid:%d\n", getpid());
@@ -280,7 +279,7 @@ void xrec_registration_contract_new_t::registerNode2(const std::string & role_ty
 #endif
     xdbg("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, balance: %lld, account: %s, node_types: %s, signing_key: %s, dividend_rate: %u",
          getpid(),
-         m_balance.amount(),
+         balance(),
          account.c_str(),
          role_type_name.c_str(),
          signing_key.c_str(),
@@ -357,7 +356,7 @@ void xrec_registration_contract_new_t::unregisterNode() {
     XMETRICS_TIME_RECORD(XREG_CONTRACT "unregisterNode_ExecutionTime");
     uint64_t cur_time = time();
     std::string const& account = sender().to_string();
-    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode(), balance: %lld, account: %s", m_balance.amount(), account.c_str());
+    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode(), balance: %lld, account: %s", balance(), account.c_str());
 
     xreg_node_info node_info;
     auto ret = get_node_info(account, node_info);
@@ -370,7 +369,7 @@ void xrec_registration_contract_new_t::unregisterNode() {
 
     xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode() pid:%d, balance:%lld, account: %s, refund: %lld",
          getpid(),
-         m_balance.amount(),
+         balance(),
          account.c_str(),
          node_info.m_account_mortgage);
     // refund
@@ -870,7 +869,7 @@ void xrec_registration_contract::update_batch_stake_v2(uint64_t report_time, std
 }
 #endif
 void xrec_registration_contract_new_t::check_and_set_genesis_stage() {
-    std::string value_str = m_genesis_prop.query();
+    std::string value_str = m_genesis_prop.value();
     xactivation_record record;
 
     // {
@@ -887,7 +886,7 @@ void xrec_registration_contract_new_t::check_and_set_genesis_stage() {
         return;
     }
 
-    auto map_nodes = m_reg_prop.clone();
+    auto map_nodes = m_reg_prop.value();
     // try {
     //     XMETRICS_TIME_RECORD(XREG_CONTRACT "XPORPERTY_CONTRACT_REG_KEY_CopyGetExecutionTime");
     //     MAP_COPY_GET(XPORPERTY_CONTRACT_REG_KEY, map_nodes);
@@ -907,7 +906,7 @@ void xrec_registration_contract_new_t::check_and_set_genesis_stage() {
     //     XMETRICS_TIME_RECORD(XREG_CONTRACT "XPORPERTY_CONTRACT_GENESIS_STAGE_KEY_SetExecutionTime");
     //     STRING_SET(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, value_str);
     // }
-    m_genesis_prop.update(std::string((char *)stream.data(), stream.size()));
+    m_genesis_prop.set(std::string((char *)stream.data(), stream.size()));
 }
 #if 0
 void xrec_registration_contract::updateNodeType(const std::string & node_types) {

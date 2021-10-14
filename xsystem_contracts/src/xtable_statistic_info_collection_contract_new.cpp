@@ -32,7 +32,7 @@ void xtable_statistic_info_collection_contract_new::setup() {
     m_extend_func_prop.add(FULLTABLE_NUM, xbytes_t(1, static_cast<xbyte_t>('0')));
     m_extend_func_prop.add(FULLTABLE_HEIGHT, xbytes_t(1, static_cast<xbyte_t>('0')));
     m_tgas_prop.create();
-    m_tgas_prop.update("0");
+    m_tgas_prop.set("0");
     xdbg("xtable_statistic_info_collection_contract_new::setup here2");
 
 
