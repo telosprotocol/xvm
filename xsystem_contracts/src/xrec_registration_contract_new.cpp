@@ -235,6 +235,7 @@ void xrec_registration_contract_new_t::registerNode(const std::string & role_typ
             state_accessor::properties::xproperty_identifier_t balance_property_id{
                 data::XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::system};
             auto token = state()->withdraw(balance_property_id, common::xsymbol_t{"TOP"}, asset_out.m_amount);
+            token.clear();
             xdbg("[xrec_registration_contract::registerNode] at_source_action_stage, token name: %s, amount: %" PRIu64, asset_out.m_token_name.c_str(), asset_out.m_amount);
         }
 
