@@ -23,6 +23,8 @@ public:
     xtop_rec_registration_contract_new & operator=(xtop_rec_registration_contract_new &&) = default;
     ~xtop_rec_registration_contract_new() override = default;
 
+    explicit xtop_rec_registration_contract_new(observer_ptr<contract_common::xcontract_execution_context_t> initial_construction_exection_context);
+
     BEGIN_CONTRACT_API()
         DECLARE_API(xtop_rec_registration_contract_new::setup);
         DECLARE_API(xtop_rec_registration_contract_new::registerNode);

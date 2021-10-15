@@ -21,7 +21,7 @@ using namespace top::xstake;
 NS_BEG2(top, system_contracts)
 
 void xtop_rec_standby_pool_contract_new::setup() {
-    m_standby_prop.create();
+    //m_standby_prop.initialize();
 
     xstandby_result_store_t standby_result_store;
     // const std::vector<node_info_t> & seed_nodes = data::xrootblock_t::get_seed_nodes();

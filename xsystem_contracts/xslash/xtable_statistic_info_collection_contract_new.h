@@ -62,7 +62,7 @@ private:
      * @param summarize_info  in&out
      * @param summarize_fulltableblock_num in&out
      */
-    void collect_slash_statistic_info(xstatistics_data_t const& statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts, xbytes_t const& summarize_info_str, xbytes_t const& summarize_fulltableblock_num_str,
+    void collect_slash_statistic_info(xstatistics_data_t const& statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
                                         xunqualified_node_info_t& summarize_info, uint32_t& summarize_fulltableblock_num);
 
 
@@ -145,9 +145,9 @@ private:
 private:
 
 
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_workload_prop{xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_slash_prop{xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_extend_func_prop{xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_workload_prop{xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_slash_prop{xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_extend_func_prop{xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, this};
 
     contract_common::properties::xstring_property_t m_tgas_prop{xstake::XPORPERTY_CONTRACT_TGAS_KEY, this};
 };

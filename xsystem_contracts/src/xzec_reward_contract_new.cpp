@@ -30,13 +30,13 @@ enum { edger_idx = 0, archiver_idx, auditor_idx, validator_idx, role_type_idx_nu
 NS_BEG2(top, system_contracts)
 
 void xtop_zec_reward_contract_new::setup() {
-    m_auditor_workload.create();
-    m_validator_workload.create();
-    m_accumulate_issuance.create();
-    m_reward_detail.create();
-    m_accumulate_issuance_yearly.create();
-    m_last_read_rec_reg_contract_height.create();
-    m_last_read_rec_reg_contract_time.create();
+    //m_auditor_workload.initialize();
+    //m_validator_workload.initialize();
+    //m_accumulate_issuance.initialize();
+    //m_reward_detail.initialize();
+    //m_accumulate_issuance_yearly.initialize();
+    //m_last_read_rec_reg_contract_height.initialize();
+    //m_last_read_rec_reg_contract_time.initialize();
 
     // MAP_CREATE(XPORPERTY_CONTRACT_TASK_KEY);  // save dispatch tasks
     // std::vector<std::pair<std::string, std::string>> db_kv_111;
@@ -50,7 +50,7 @@ void xtop_zec_reward_contract_new::setup() {
     chain_data::xchain_data_processor_t::get_stake_map_property(address(), XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, db_kv_141);
     for (auto const & _p : db_kv_141) {
         // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, _p.first, _p.second);
-        m_accumulate_issuance.update(_p.first, {_p.second.begin(), _p.second.end()});
+        m_accumulate_issuance.set(_p.first, _p.second);
     }
 
     // STRING_CREATE(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY);
@@ -81,14 +81,14 @@ void xtop_zec_reward_contract_new::setup() {
     chain_data::xchain_data_processor_t::get_stake_map_property(address(), XPORPERTY_CONTRACT_WORKLOAD_KEY, db_kv_103);
     for (auto const & _p : db_kv_103) {
         // MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, _p.first, _p.second);
-        m_auditor_workload.update(_p.first, {_p.second.begin(), _p.second.end()});
+        m_auditor_workload.set(_p.first, _p.second);
     }
     // MAP_CREATE(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY);
     std::vector<std::pair<std::string, std::string>> db_kv_125;
     chain_data::xchain_data_processor_t::get_stake_map_property(address(), XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, db_kv_125);
     for (auto const & _p : db_kv_125) {
         // MAP_SET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, _p.first, _p.second);
-        m_validator_workload.update(_p.first, {_p.second.begin(), _p.second.end()});
+        m_validator_workload.set(_p.first, _p.second);
     }
 }
 
@@ -207,11 +207,11 @@ void xtop_zec_reward_contract_new::calculate_reward(const common::xlogic_time_t 
 
     for (auto const item : auditor_workload_str_change) {
         // MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, item.first, item.second);
-        m_auditor_workload.update(item.first, {item.second.begin(), item.second.end()});
+        m_auditor_workload.set(item.first, item.second);
     }
     for (auto const item : validator_workload_str_change) {
         // MAP_SET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, item.first, item.second);
-        m_validator_workload.update(item.first, {item.second.begin(), item.second.end()});
+        m_validator_workload.set(item.first, item.second);
     }
 }
 
@@ -563,13 +563,13 @@ void xtop_zec_reward_contract_new::update_accumulated_issuance(const common::xlo
 
     try {
         // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, xstring_utl::tostring(current_year), cur_year_issuances_str_new);
-        m_accumulate_issuance.update(xstring_utl::tostring(current_year), {cur_year_issuances_str_new.begin(), cur_year_issuances_str_new.end()});
+        m_accumulate_issuance.set(xstring_utl::tostring(current_year), cur_year_issuances_str_new);
     } catch (std::runtime_error & e) {
         xwarn("[xtop_zec_reward_contract_new::update_accumulated_issuance] set XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE error:%s", e.what());
     }
     try {
         // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, "total", total_issuances_str_new);
-        m_accumulate_issuance.update(std::string{"total"}, {total_issuances_str_new.begin(), total_issuances_str_new.end()});
+        m_accumulate_issuance.set(std::string{"total"}, total_issuances_str_new);
     } catch (std::runtime_error & e) {
         xwarn("[xtop_zec_reward_contract_new::update_accumulated_issuance] set XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE error:%s", e.what());
     }
