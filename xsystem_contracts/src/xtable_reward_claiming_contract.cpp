@@ -344,22 +344,25 @@ void xtop_table_reward_claiming_contract::claimNodeReward() {
     xstake::xreward_node_record reward_record;
     XCONTRACT_ENSURE(get_working_reward_record(account, reward_record) == 0, "claimNodeReward node account no reward");
     uint64_t cur_time = TIME();
-    xdbg("[xtop_table_reward_claiming_contract::claimNodeReward] balance:%llu, account: %s, pid: %d, cur_time: %llu, last_claim_time: %llu\n",
-         GET_BALANCE(),
-         account.c_str(),
-         getpid(),
-         cur_time,
-         reward_record.m_last_claim_time);
+    xinfo("[xtop_table_reward_claiming_contract::claimNodeReward] balance:%llu, account: %s, pid: %d, cur_time: %llu, last_claim_time: %llu\n",
+          GET_BALANCE(),
+          account.c_str(),
+          getpid(),
+          cur_time,
+          reward_record.m_last_claim_time);
     auto min_node_reward = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_node_reward);
-    XCONTRACT_ENSURE(static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION) > min_node_reward, "claimNodeReward: node no enough reward");
-
     // transfer to account
-    xinfo("[xtop_table_reward_claiming_contract::claimNodeReward] timer round: %" PRIu64 ", account: %s, reward: [%llu, %u], pid:%d\n",
-         TIME(),
-         account.c_str(),
-         static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION),
-         static_cast<uint32_t>(reward_record.m_unclaimed % REWARD_PRECISION),
-         getpid());
+    xinfo("[xtop_table_reward_claiming_contract::claimNodeReward] timer round: %" PRIu64 ", account: %s, reward: [%" PRIu64 ", %" PRIu32 "], reward_str: %s, reward_upper: %" PRIu64
+          ", reward_lower: %" PRIu64 ", min_node_reward: %" PRIu64 "",
+          TIME(),
+          account.c_str(),
+          static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION),
+          static_cast<uint32_t>(reward_record.m_unclaimed % REWARD_PRECISION),
+          reward_record.m_unclaimed.str().c_str(),
+          reward_record.m_unclaimed.upper(),
+          reward_record.m_unclaimed.lower(),
+          min_node_reward);
+    XCONTRACT_ENSURE(static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION) > min_node_reward, "claimNodeReward: node no enough reward");
 
     XMETRICS_PACKET_INFO("sysContract_tableRewardClaiming_claim_node_reward", "timer round", std::to_string(TIME()), "source address", account.c_str(), "reward", std::to_string(static_cast<uint64_t>(reward_record.m_unclaimed / REWARD_PRECISION)));
 
