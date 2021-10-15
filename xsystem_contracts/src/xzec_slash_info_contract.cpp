@@ -39,7 +39,7 @@ void xzec_slash_info_contract::setup() {
 
 void xzec_slash_info_contract::summarize_slash_info(std::string const & slash_info) {
     XMETRICS_TIME_RECORD("sysContract_zecSlash_summarize_slash_info");
-    XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_zec_slash_summarize_fullblock, 1);
+    XMETRICS_GAUGE(metrics::xmetrics_tag_t::contract_zec_slash_summarize_fullblock, 1);
 
     auto const & account = SELF_ADDRESS();
     auto const & source_addr = SOURCE_ADDRESS();
