@@ -232,7 +232,9 @@ void xrec_registration_contract_new_t::registerNode(const std::string & role_typ
             write_receipt_data(contract_common::RECEITP_DATA_ASSET_OUT, xbyte_buffer_t{src_data.begin(), src_data.end()}, ec);
             assert(!ec);
 
-            auto token = withdraw(asset_out.m_amount);
+            state_accessor::properties::xproperty_identifier_t balance_property_id{
+                data::XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::system};
+            auto token = state()->withdraw(balance_property_id, common::xsymbol_t{"TOP"}, asset_out.m_amount);
             token.clear();
             xdbg("[xrec_registration_contract::registerNode] at_source_action_stage, token name: %s, amount: %" PRIu64, asset_out.m_token_name.c_str(), asset_out.m_amount);
         }
@@ -343,7 +345,7 @@ void xrec_registration_contract_new_t::registerNode2(const std::string & role_ty
     XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
 
     update_node_info(node_info);
-    check_and_set_genesis_stage();
+    // check_and_set_genesis_stage();
 
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registerNode_Executed", 1);
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registeredUserCnt", 1);
