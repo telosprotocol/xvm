@@ -75,7 +75,7 @@ void xtop_rec_standby_pool_contract_new::setup() {
             uint64_t stake = top::get<uint64_t>(_pair);
             seed_node_info.stake_container.insert({node_type, stake});
         }
-        seed_node_info.program_version = "1.1.0"; 
+        seed_node_info.program_version = "1.1.0";
         seed_node_info.is_genesis_node = false;
 
         standby_result_store.result_of(common::xnetwork_id_t{base::enum_test_chain_id}).insert({node_id, seed_node_info});
@@ -97,22 +97,6 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
                                                           uint64_t const stake,
 #endif
                                                           std::string const & program_version) {
-    if (at_source_action_stage()) {
-#if defined(XENABLE_MOCK_ZEC_STAKE)
-    // m_account_ctx->token_deposit(XPROPERTY_BALANCE_AVAILABLE, base::vtoken_t(10000000000));
-    // state_accessor::properties::xtop_property_identifier token_prop(
-    //     XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::user);
-    // state()->access_control()->deposit(sender(), token_prop, 10000000000);
-#endif
-    }
-
-    if (at_confirm_action_stage()) {
-
-    }
-
-    if (at_target_action_stage()) {
-
-
     XMETRICS_TIME_RECORD(XREC_STANDBY "add_node_all_time");
 #if !defined(XENABLE_MOCK_ZEC_STAKE)
 
@@ -248,7 +232,6 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
         m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
     }
 #endif
-}
 }
 
 bool xtop_rec_standby_pool_contract_new::nodeJoinNetworkImpl(std::string const & program_version,

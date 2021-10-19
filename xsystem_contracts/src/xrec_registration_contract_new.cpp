@@ -211,7 +211,16 @@ void xtop_rec_registration_contract_new::setup() {
     }
 }
 
-void xtop_rec_registration_contract_new::registerNode(const std::string & role_type_name,
+void xrec_registration_contract_new_t::src_action_registerNode(std::string const& token_name, uint64_t token_amount) {
+    source_action_general_func();
+    state_accessor::properties::xproperty_identifier_t balance_property_id{
+        data::XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::system};
+    auto token = state()->withdraw(balance_property_id, common::xsymbol_t{token_name}, token_amount);
+    token.clear();
+    xdbg("[xrec_registration_contract::registerNode] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
+}
+
+void xrec_registration_contract_new_t::registerNode(const std::string & role_type_name,
                                                     const std::string & nickname,
                                                     const std::string & signing_key,
                                                     const uint32_t dividend_rate
@@ -220,43 +229,16 @@ void xtop_rec_registration_contract_new::registerNode(const std::string & role_t
                                                     common::xaccount_address_t const & registration_account
 #endif
 ) {
-    if (at_source_action_stage()) {
-        auto const& src_data = source_action_data();
-        if (!src_data.empty() && data::enum_xaction_type::xaction_type_asset_out == source_action_type()) {
-            data::xproperty_asset asset_out{data::XPROPERTY_ASSET_TOP, uint64_t{0}};
-            base::xstream_t stream(base::xcontext_t::instance(), (uint8_t*)src_data.data(), src_data.size());
-            stream >> asset_out.m_token_name;
-            stream >> asset_out.m_amount;
-
-            std::error_code ec;
-            write_receipt_data(contract_common::RECEITP_DATA_ASSET_OUT, xbyte_buffer_t{src_data.begin(), src_data.end()}, ec);
-            assert(!ec);
-
-            state_accessor::properties::xproperty_identifier_t balance_property_id{
-                data::XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::system};
-            auto token = state()->withdraw(balance_property_id, common::xsymbol_t{"TOP"}, asset_out.m_amount);
-            token.clear();
-            xdbg("[xrec_registration_contract::registerNode] at_source_action_stage, token name: %s, amount: %" PRIu64, asset_out.m_token_name.c_str(), asset_out.m_amount);
-        }
-    }
-
-    if (at_confirm_action_stage()) {
-
-    }
-
-    if (at_target_action_stage()) {
-
-
-        std::set<common::xnetwork_id_t> network_ids;
-        common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
-        network_ids.insert(nid);
+    std::set<common::xnetwork_id_t> network_ids;
+    common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
+    network_ids.insert(nid);
 
 #if defined XENABLE_MOCK_ZEC_STAKE
-        registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
+    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
 #else
-        registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids);
+    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids);
 #endif
-    }
+
 }
 
 void xtop_rec_registration_contract_new::registerNode2(const std::string & role_type_name,
