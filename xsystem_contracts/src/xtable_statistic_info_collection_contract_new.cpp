@@ -39,7 +39,7 @@ void xtable_statistic_info_collection_contract_new::setup() {
 void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xstatistics_data_t const& statistic_data,  xfulltableblock_statistic_accounts const& statistic_accounts, uint64_t block_height, int64_t tgas) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
     XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
-    XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_exec_fullblock, 1);
+    XMETRICS_GAUGE(metrics::xmetrics_tag_t::contract_table_statistic_exec_fullblock, 1);
 
     // auto const & source_addr = SOURCE_ADDRESS();
     // auto const & account = SELF_ADDRESS();
