@@ -211,7 +211,7 @@ void xtop_rec_registration_contract_new::setup() {
     }
 }
 
-void xrec_registration_contract_new_t::src_action_registerNode(std::string const& token_name, uint64_t token_amount) {
+void xrec_registration_contract_new_t::source_withdraw(std::string const& token_name, uint64_t token_amount) {
     source_action_general_func();
     state_accessor::properties::xproperty_identifier_t balance_property_id{
         data::XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::system};

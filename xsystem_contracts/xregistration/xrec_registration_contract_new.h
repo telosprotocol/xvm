@@ -29,7 +29,7 @@ public:
         DECLARE_API(xtop_rec_registration_contract_new::setup);
         DECLARE_API(xtop_rec_registration_contract_new::registerNode);
         DECLARE_API(xtop_rec_registration_contract_new::unregisterNode);
-        DECLARE_SENDER_ONLY_API(xtop_rec_registration_contract_new::src_action_registerNode);
+        DECLARE_SEND_ONLY_API(xtop_rec_registration_contract_new::source_withdraw);
         // DECLARE_API(xtop_rec_registration_contract_new::updateNodeInfo);
         // DECLARE_API(xtop_rec_registration_contract_new::setDividendRatio);
         // DECLARE_API(xtop_rec_registration_contract_new::setNodeName);
@@ -65,7 +65,7 @@ public:
 #endif
     );
 
-    void src_action_registerNode(std::string const& token_name, uint64_t token_amount);
+    void source_withdraw(std::string const& token_name, uint64_t token_amount);
     /**
      * @brief unregister the node
      *
