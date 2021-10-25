@@ -5,6 +5,7 @@
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_standby_pool_contract_new.h"
 
 #include "xcontract_common/xproperties/xproperty_map.h"
+#include "xcontract_common/xproperties/xproperty_string.h"
 #include "xcontract_common/xserialization/xserialization.h"
 #include "xdata/xcodec/xmsgpack/xstandby_result_store_codec.hpp"
 #include "xdata/xelection/xstandby_result_store.h"
@@ -421,7 +422,7 @@ void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const cu
 
     xactivation_record activation_record;
     // std::string value_str = STRING_GET2(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
-    contract_common::properties::xstring_property_t genesis_prop{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
+    // contract_common::properties::xstring_property_t genesis_prop{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
     auto const & string_property = get_property<contract_common::properties::xstring_property_t>(xtypeless_property_identifier_t{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY},
                                                                                                  common::xaccount_address_t{sys_contract_rec_registration_addr});
     auto const & string_value = string_property.value();

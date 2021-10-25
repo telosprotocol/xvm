@@ -658,11 +658,12 @@ void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & on
     // std::map<std::string, std::string> map_nodes;
     auto const last_read_height = static_cast<std::uint64_t>(std::stoull(m_last_read_rec_reg_contract_height.value()));
     // GET_MAP_PROPERTY(XPORPERTY_CONTRACT_REG_KEY, map_nodes, last_read_height, sys_contract_rec_registration_addr);
-    contract_common::properties::xmap_property_t<std::string, std::string> reg_prop{XPORPERTY_CONTRACT_REG_KEY, this};
-    auto map_nodes = reg_prop.clone(common::xaccount_address_t{sys_contract_rec_registration_addr});
+    // contract_common::properties::xmap_property_t<std::string, std::string> reg_prop{XPORPERTY_CONTRACT_REG_KEY, this};
+    auto map_nodes = get_property<contract_common::properties::xmap_property_t<std::string, std::string>>(
+        state_accessor::properties::xtypeless_property_identifier_t{XPORPERTY_CONTRACT_REG_KEY}, common::xaccount_address_t{sys_contract_rec_registration_addr});
     XCONTRACT_ENSURE(map_nodes.size() != 0, "MAP GET PROPERTY XPORPERTY_CONTRACT_REG_KEY empty");
     xinfo("[xtop_zec_reward_contract_new::get_reward_param] last_read_height: %llu, map_nodes size: %d", last_read_height, map_nodes.size());
-    for (auto const & entity : map_nodes) {
+    for (auto const & entity : map_nodes.value()) {
         auto const & account = entity.first;
         auto const & value_str = entity.second;
         xreg_node_info node;
@@ -708,9 +709,9 @@ void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & on
     // get vote
     // std::map<std::string, std::string> contract_auditor_votes;
     // MAP_COPY_GET(XPORPERTY_CONTRACT_TICKETS_KEY, contract_auditor_votes, sys_contract_zec_vote_addr);
-    contract_common::properties::xmap_property_t<std::string, std::string> tickets_prop{XPORPERTY_CONTRACT_TICKETS_KEY, this};
-    auto contract_auditor_votes = tickets_prop.clone(common::xaccount_address_t{sys_contract_zec_vote_addr});
-    for (auto & contract_auditor_vote : contract_auditor_votes) {
+    auto contract_auditor_votes =
+        get_property<contract_common::properties::xmap_property_t<std::string, std::string>>(state_accessor::properties::xtypeless_property_identifier_t{}, common::xaccount_address_t{sys_contract_zec_vote_addr});
+    for (auto & contract_auditor_vote : contract_auditor_votes.value()) {
         auto const & contract = contract_auditor_vote.first;
         auto const & auditor_votes_str = contract_auditor_vote.second;
         std::map<std::string, std::string> auditor_votes;
