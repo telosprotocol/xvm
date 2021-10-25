@@ -212,12 +212,12 @@ void xtop_rec_registration_contract_new::setup() {
 }
 
 void xrec_registration_contract_new_t::source_withdraw(std::string const& token_name, uint64_t token_amount) {
-    source_action_general_func();
-    state_accessor::properties::xproperty_identifier_t balance_property_id{
-        data::XPROPERTY_BALANCE_AVAILABLE, state_accessor::properties::xproperty_type_t::token, state_accessor::properties::xproperty_category_t::system};
-    auto token = state()->withdraw(balance_property_id, common::xsymbol_t{token_name}, token_amount);
-    token.clear();
-    xdbg("[xrec_registration_contract::registerNode] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
+    // withdraw from src action(account) state
+    auto token = state_withdraw(token_amount);
+    xdbg("[xrec_registration_contract::source_withdraw] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
+
+    // serialize token to target action(account)
+    asset_to_target_action(std::move(token));
 }
 
 void xrec_registration_contract_new_t::registerNode(const std::string & role_type_name,
