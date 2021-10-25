@@ -1,3 +1,7 @@
+// Copyright (c) 2017-2021 Telos Foundation & contributors
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "xvm/xsystem_contracts/xelection/xrec/xrec_standby_pool_contract_new.h"
 
 #include "xcontract_common/xproperties/xproperty_map.h"
@@ -11,6 +15,8 @@
 using namespace top::contract_common;
 using namespace top::data::election;
 using namespace top::xstake;
+using namespace top::state_accessor;
+using namespace top::state_accessor::properties;
 
 #ifndef XSYSCONTRACT_MODULE
 #    define XSYSCONTRACT_MODULE "sysContract_"
@@ -21,26 +27,8 @@ using namespace top::xstake;
 NS_BEG2(top, system_contracts)
 
 void xtop_rec_standby_pool_contract_new::setup() {
-    //m_standby_prop.initialize();
-
     xstandby_result_store_t standby_result_store;
-    // const std::vector<node_info_t> & seed_nodes = data::xrootblock_t::get_seed_nodes();
-    std::vector<node_info_t> const seed_nodes{
-        node_info_t{"T00000LNi53Ub726HcPXZfC4z6zLgTo5ks6GzTUp", "BNRHeRGw4YZnTHeNGxYtuAsvSslTV7THMs3A9RJM+1Vg63gyQ4XmK2i8HW+f3IaM7KavcH7JMhTPFzKtWp7IXW4="},
-        node_info_t{"T00000LeXNqW7mCCoj23LEsxEmNcWKs8m6kJH446", "BN9IQux1NQ0ByBCYAAVds5Si538gazH3gNIS5sODadNRA2zvvKDTSKhfwX5GNWtvb0nmoGHjQp9J9ElMyOUwBkk="},
-        node_info_t{"T00000LVpL9XRtVdU5RwfnmrCtJhvQFxJ8TB46gB", "BP+s96ilurhraFU7RD2Ua60rD8CpgDxCjWcp67yq7D500gf0ej5vBGiwqZ2GwoEWAcXFHqUlTQW8IqIWHCk5eKk="},
-        node_info_t{"T00000LLJ8AsN4hREDtCpuKAxJFwqka9LwiAon3M", "BDulJhE2hcVccX6ipiQQ7lerTjiiLOPHFRVIhFqFpFGEcgQlEH1lxMc2TxkVOmycwPkdaDJDyeMAoEWxFRkhB7o="},
-        node_info_t{"T00000LefzYnVUayJSgeX3XdKCgB4vk7BVUoqsum", "BPIMyevRyVoKNoghbcdMZurSNjHES5ltO0BhYMCToDOT4aBlLBu4SlVSgUGZdLor80KuZbu5CxTl9cefeFNSEfU="},
-        node_info_t{"T00000LXqp1NkfooMAw7Bty2iXTxgTCfsygMnxrT", "BFyhA6BP2mTbgOsmsQFjQ09r9iXn+f3fmceOb+O1aYmr6qDo7KwDv25iOMRV8nBOgunv6EUAtjDKidvME9YkuBQ="},
-        node_info_t{"T00000LaFmRAybSKTKjE8UXyf7at2Wcw8iodkoZ8", "BMpn9t4PDeHodoUeiamiipsS3bnNGT4Mbk/ynGJY1pnIuqv4nlEhVOv1CUZ5JbeNcWV/VNTin3xuvl/sOKNx1LU="},
-        node_info_t{"T00000LhCXUC5iQCREefnRPRFhxwDJTEbufi41EL", "BFyUBEG/eO5SomaDQZidofp7n0s0eq/9scRAxWp8w+fbb3CnOSffdN3CeNHzJKYgBBmK5anXtvXkkBYCmW7+tiU="},
-        node_info_t{"T00000LTSip8Xbjutrtm8RkQzsHKqt28g97xdUxg", "BETTgEv6HFFtxTVCQZBioXc5M2oXb5iPQgoO6qlXlPEzTPK4D2yuz4pAfQqfxwABRvi0nf1EY0CVy9Z3HJf2+CQ="},
-        node_info_t{"T00000LcNfcqFPH9vy3EYApkrcXLcQN2hb1ygZWE", "BC81J2PldKUM2+JjkgzmLWcHrAbQy7W9OZFYHdc3myToIMlrXYHuraEp+ncSfGEOkxw3BXYZQtAzp6gD7UKShDU="},
-        node_info_t{"T00000LUv7e8RZLNtnE1K9sEfE9SYe74rwYkzEub", "BF7e2Et86zY3PIJ2Bh/wgxcKTTdgxffuvaHJ3AbR99bQr9jAgUNKCyG9qbYDbgU74eUTDZFcoKycGWe7UF4ScFo="},
-        node_info_t{"T00000LKfBYfwTcNniDSQqj8fj5atiDqP8ZEJJv6", "BFFVnheBS2yJLwlb+q6xH/DL+RotbvRdd9YeJKug1tP+WppTdB36KzMOHxmHTsh5u9BKgPDgXppFvyBeqYUxoTU="},
-        node_info_t{"T00000LXRSDkzrUsseZmfJFnSSBsgm754XwV9SLw", "BDL1+u+QBTf15/susP8JHAr0cbrHrz8iXRnLfZ47izaFtc1ZGhD2OTuCEMUNO0cQC0LhnvZ6QhkaiiPuPb6tC58="},
-        node_info_t{"T00000Lgv7jLC3DQ3i3guTVLEVhGaStR4RaUJVwA", "BMmlycOO/y8Z/MDrCUw598nIU0GZlxAgYX+/3MEi6UvguDfnivjdULHO7L2yRkM9hWy3Ch3mKKyqMvIMG2W+Pyk="},
-    };
+    const std::vector<node_info_t> & seed_nodes = data::xrootblock_t::get_seed_nodes();
     for (size_t i = 0u; i < seed_nodes.size(); i++) {
         auto const & node_data = seed_nodes[i];
 
@@ -85,8 +73,7 @@ void xtop_rec_standby_pool_contract_new::setup() {
         standby_network_storage_result.set_activate_state(true);
     }
 #endif
-    // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
-    m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
+    m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_bytes(standby_result_store));
 }
 
 void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_address_t const & node_id,
@@ -98,38 +85,31 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
 #endif
                                                           std::string const & program_version) {
     XMETRICS_TIME_RECORD(XREC_STANDBY "add_node_all_time");
+
 #if !defined(XENABLE_MOCK_ZEC_STAKE)
 
-    // get reg_node_info && standby_info
-    // std::map<std::string, std::string> map_nodes;
+    auto const & map_nodes = get_property<contract_common::properties::xmap_property_t<std::string, xbytes_t>>(
+        state_accessor::properties::xtypeless_property_identifier_t{XPORPERTY_CONTRACT_REG_KEY}, common::xaccount_address_t{sys_contract_rec_registration_addr});
 
-    // MAP_COPY_GET(top::xstake::XPORPERTY_CONTRACT_REG_KEY, map_nodes, sys_contract_rec_registration_addr);
-    properties::xmap_property_t<std::string, xbytes_t> reg_node_prop{XPORPERTY_CONTRACT_REG_KEY, this};
-    auto map_nodes = reg_node_prop.get(std::string{sys_contract_rec_registration_addr});
-    XCONTRACT_ENSURE(map_nodes.size() != 0, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: did not get the MAP");
+    XCONTRACT_ENSURE(map_nodes.exist(node_id.value()), "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: did not find the node in contract map");
 
-    //auto iter = map_nodes.find(node_id.value());
-    //XCONTRACT_ENSURE(iter != map_nodes.end(), "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: did not find the node in contract map");
+    auto const & value_bytes = map_nodes.get(node_id.value());
+    base::xstream_t stream(base::xcontext_t::instance(), const_cast<uint8_t *>(value_bytes.data()), value_bytes.size());
+    xstake::xreg_node_info node;
+    node.serialize_from(stream);
 
-    //auto const & value_str = iter->second;
-    //base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
-    //xstake::xreg_node_info node;
-    //node.serialize_from(stream);
+    XCONTRACT_ENSURE(node.m_account == node_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] storage data messed up?");
+    XCONTRACT_ENSURE(node.m_network_ids.find(joined_network_id) != std::end(node.m_network_ids), "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched. Joined network id: " + joined_network_id.to_string());
 
-    //XCONTRACT_ENSURE(node.m_account == node_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] storage data messed up?");
-    //XCONTRACT_ENSURE(node.m_network_ids.find(joined_network_id) != std::end(node.m_network_ids), "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched. Joined network id: " + joined_network_id.to_string());
+    auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_bytes(m_standby_prop.value());
 
-    //// auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY);
-    //auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(m_standby_prop.query());
+    bool update_standby{false};
+    update_standby = nodeJoinNetworkImpl(program_version, node, standby_result_store);
 
-    //bool update_standby{false};
-    //update_standby = nodeJoinNetworkImpl(program_version, node, standby_result_store);
-
-    //if (update_standby) {
-    //    XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "role_type", common::to_string(node.get_role_type()));
-    //    // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
-    //    m_standby_prop.update(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
-    //}
+    if (update_standby) {
+        XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "role_type", common::to_string(node.get_role_type()));
+        m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_bytes(standby_result_store));
+    }
 
 #else
     // mock stake test
@@ -175,7 +155,7 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node_id.c_str());
 
     // auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY);
-    auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(m_standby_prop.value());
+    auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_bytes(m_standby_prop.value());
 
     xstandby_node_info_t new_node_info;
 
@@ -229,7 +209,7 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     if (new_node) {
         XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "role_type", common::to_string(role_type));
         // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
-        m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
+        m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_bytes(standby_result_store));
     }
 #endif
 }
@@ -411,7 +391,6 @@ bool xtop_rec_standby_pool_contract_new::update_standby_result_store(std::map<co
 }
 
 void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const current_time) {
-#if 0
 #ifdef STATIC_CONSENSUS
     // static_consensus won't sync registration contract data.
     return;
@@ -421,41 +400,43 @@ void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const cu
     XCONTRACT_ENSURE(address().value() == sys_contract_rec_standby_pool_addr, "xrec_standby_pool_contract_t instance is not triggled by xrec_standby_pool_contract_t");
     // XCONTRACT_ENSURE(current_time <= TIME(), "xrec_standby_pool_contract_t::on_timer current_time > consensus leader's time");
 
-    std::map<std::string, std::string> reg_node_info;  // key is the account string, value is the serialized data
-    // MAP_COPY_GET(XPORPERTY_CONTRACT_REG_KEY, reg_node_info, sys_contract_rec_registration_addr);
-    contract_common::properties::xmap_property_t<std::string, std::string> reg_node_prop{XPORPERTY_CONTRACT_REG_KEY, this};
-    reg_node_info = reg_node_prop.clone(common::xaccount_address_t{sys_contract_rec_registration_addr});
-    xdbg("[xrec_standby_pool_contract_t][on_timer] registration data size %zu", reg_node_info.size());
+    auto const & map_nodes = get_property<contract_common::properties::xmap_property_t<std::string, xbytes_t>>(
+        state_accessor::properties::xtypeless_property_identifier_t{XPORPERTY_CONTRACT_REG_KEY}, common::xaccount_address_t{sys_contract_rec_registration_addr});
+
+    xdbg("[xrec_standby_pool_contract_t][on_timer] registration data size %zu", map_nodes.size());
 
     std::map<common::xnode_id_t, xreg_node_info> registration_data;
-    for (auto const & item : reg_node_info) {
+    for (auto const & item : map_nodes.value()) {
         xreg_node_info node_info;
-        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)item.second.c_str(), (uint32_t)item.second.size());
+        base::xstream_t stream(base::xcontext_t::instance(), const_cast<uint8_t *>(item.second.data()), static_cast<uint32_t>(item.second.size()));
 
         node_info.serialize_from(stream);
         registration_data[common::xnode_id_t{item.first}] = node_info;
         xdbg("[xrec_standby_pool_contract_t][on_timer] found from registration contract node %s", item.first.c_str());
     }
     XCONTRACT_ENSURE(!registration_data.empty(), "read registration data failed");
-    ;
+
     // auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY);
-    auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(m_standby_prop.query());
+    auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_bytes(m_standby_prop.value());
 
     xactivation_record activation_record;
     // std::string value_str = STRING_GET2(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
     contract_common::properties::xstring_property_t genesis_prop{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
-    std::string value_str = genesis_prop.query(common::xaccount_address_t{sys_contract_rec_registration_addr});
-    if (!value_str.empty()) {
-        base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.c_str(), (uint32_t)value_str.size());
+    auto const & string_property = get_property<contract_common::properties::xstring_property_t>(xtypeless_property_identifier_t{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY},
+                                                                                                 common::xaccount_address_t{sys_contract_rec_registration_addr});
+    auto const & string_value = string_property.value();
+
+    if (!string_value.empty()) {
+        base::xstream_t stream(
+            base::xcontext_t::instance(), const_cast<uint8_t *>(reinterpret_cast<uint8_t const *>(string_value.data())), static_cast<uint32_t>(string_value.size()));
         activation_record.serialize_from(stream);
     }
 
     if (update_standby_result_store(registration_data, standby_result_store, activation_record)) {
         xdbg("[xrec_standby_pool_contract_t][on_timer] standby pool updated");
         // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
-        m_standby_prop.update(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(standby_result_store));
+        m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_bytes(standby_result_store));
     }
-#endif
 }
 
 NS_END2

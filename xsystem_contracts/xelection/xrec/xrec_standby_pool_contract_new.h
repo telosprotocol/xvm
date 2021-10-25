@@ -4,16 +4,19 @@
 
 #pragma once
 
-#include "xcontract_common/xproperties/xproperty_string.h"
-#include "xsystem_contract_runtime/xsystem_contract_runtime_helper.h"
+#include "xcontract_common/xproperties/xproperty_bytes.h"
 #include "xdata/xelection/xstandby_result_store.h"
 #include "xstake/xstake_algorithm.h"
+#include "xsystem_contract_runtime/xsystem_contract_runtime_helper.h"
 #include "xsystem_contracts/xbasic_system_contract.h"
 
 NS_BEG2(top, system_contracts)
 
 class xtop_rec_standby_pool_contract_new final : public xbasic_system_contract_t {
+private:
     using xbase_t = xbasic_system_contract_t;
+
+    contract_common::properties::xbytes_property_t m_standby_prop{data::XPROPERTY_CONTRACT_STANDBYS_KEY, this};
 
 public:
     xtop_rec_standby_pool_contract_new() = default;
@@ -102,9 +105,6 @@ private:
      * @return success/fail
      */
     bool update_activated_state(data::election::xstandby_network_storage_result_t & standby_network_storage_result, xstake::xactivation_record const & activation_record);
-
-private:
-    contract_common::properties::xstring_property_t m_standby_prop{data::XPROPERTY_CONTRACT_STANDBYS_KEY, this};
 };
 using xrec_standby_pool_contract_new_t = xtop_rec_standby_pool_contract_new;
 
