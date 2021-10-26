@@ -48,7 +48,7 @@ public:
     BEGIN_CONTRACT_API()
         DECLARE_API(xtable_statistic_info_collection_contract_new::setup);
         DECLARE_API(xtable_statistic_info_collection_contract_new::on_collect_statistic_info);
-        // DECLARE_API(xtable_statistic_info_collection_contract_new::report_summarized_statistic_info);
+        DECLARE_API(xtable_statistic_info_collection_contract_new::report_summarized_statistic_info);
     END_CONTRACT_API
 
 private:
