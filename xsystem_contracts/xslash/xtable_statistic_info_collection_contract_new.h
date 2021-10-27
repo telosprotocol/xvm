@@ -143,10 +143,8 @@ private:
     void upload_workload();
 
 private:
-
-
     contract_common::properties::xmap_property_t<std::string, std::string> m_workload_prop{xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, this};
-    contract_common::properties::xmap_property_t<std::string, std::string> m_slash_prop{xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_unqualified_node_prop{xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, this};
     contract_common::properties::xmap_property_t<std::string, std::string> m_extend_func_prop{xstake::XPROPERTY_CONTRACT_EXTENDED_FUNCTION_KEY, this};
 
     contract_common::properties::xstring_property_t m_tgas_prop{xstake::XPORPERTY_CONTRACT_TGAS_KEY, this};

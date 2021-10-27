@@ -29,18 +29,18 @@ public:
         DECLARE_API(xtop_rec_registration_contract_new::setup);
         DECLARE_API(xtop_rec_registration_contract_new::registerNode);
         DECLARE_API(xtop_rec_registration_contract_new::unregisterNode);
-        DECLARE_SEND_ONLY_API(xtop_rec_registration_contract_new::source_withdraw);
         // DECLARE_API(xtop_rec_registration_contract_new::updateNodeInfo);
-        // DECLARE_API(xtop_rec_registration_contract_new::setDividendRatio);
-        // DECLARE_API(xtop_rec_registration_contract_new::setNodeName);
-        // DECLARE_API(xtop_rec_registration_contract_new::update_batch_stake);
+        DECLARE_API(xtop_rec_registration_contract_new::setDividendRatio);
+        DECLARE_API(xtop_rec_registration_contract_new::setNodeName);
+        DECLARE_API(xtop_rec_registration_contract_new::update_batch_stake);
         // DECLARE_API(xtop_rec_registration_contract_new::update_batch_stake_v2);
-        // DECLARE_API(xtop_rec_registration_contract_new::redeemNodeDeposit);
+        DECLARE_API(xtop_rec_registration_contract_new::redeemNodeDeposit);
         // DECLARE_API(xtop_rec_registration_contract_new::updateNodeType);
         // DECLARE_API(xtop_rec_registration_contract_new::stakeDeposit);
-        // DECLARE_API(xtop_rec_registration_contract_new::unstakeDeposit);
-        // DECLARE_API(xtop_rec_registration_contract_new::updateNodeSignKey);
-        // DECLARE_API(xrec_registration_contract_new::slash_unqualified_node);
+        DECLARE_API(xtop_rec_registration_contract_new::unstakeDeposit);
+        DECLARE_API(xtop_rec_registration_contract_new::updateNodeSignKey);
+        DECLARE_API(xtop_rec_registration_contract_new::slash_unqualified_node);
+        DECLARE_SEND_ONLY_API(xtop_rec_registration_contract_new::source_withdraw);
     END_CONTRACT_API
 
     /**
@@ -71,8 +71,8 @@ public:
      *
      */
     void unregisterNode();
-#if 0
-    void updateNodeInfo(const std::string & nickname, const int updateDepositType, const uint64_t deposit, const uint32_t dividend_rate, const std::string & node_types, const std::string & node_sign_key);
+
+    // void updateNodeInfo(const std::string & nickname, const int updateDepositType, const uint64_t deposit, const uint32_t dividend_rate, const std::string & node_types, const std::string & node_sign_key);
     /**
      * @brief Set the Dividend Ratio
      *
@@ -117,11 +117,11 @@ public:
      */
     void updateNodeType(const std::string & node_types);
 
-    /**
-     * @brief stake deposit
-     *
-     */
-    void stakeDeposit();
+    // /**
+    //  * @brief stake deposit
+    //  *
+    //  */
+    // void stakeDeposit();
 
     /**
      * @brief unstake deposit
@@ -138,7 +138,6 @@ public:
      * @param punish_node_str
      */
     void slash_unqualified_node(std::string const& punish_node_str);
-#endif
 private:
     /**
      * @brief register the node
@@ -221,14 +220,14 @@ private:
      * @return int32_t
      */
     int32_t get_slash_info(std::string const & account, xstake::xslash_info & node_slash_info);
-#if 0
+
     /**
      * @brief get slash staking time
      *
      * @param node_addr
      */
-    void        slash_staking_time(std::string const& node_addr);
-#endif
+    void slash_staking_time(std::string const& node_addr);
+
     /**
      * @brief check if a valid nickname
      *
@@ -237,7 +236,7 @@ private:
      * @return false
      */
     bool is_valid_name(const std::string & nickname) const;
-#if 0
+
     /**
      * @brief check if signing key exists
      *
@@ -245,7 +244,7 @@ private:
      * @return true
      * @return false
      */
-    bool        check_if_signing_key_exist(const std::string & signing_key);
+    bool check_if_signing_key_exist(const std::string & signing_key);
 
     /**
      * @brief
@@ -257,8 +256,8 @@ private:
      * @return true
      * @return false
      */
-    bool        handle_receive_shard_votes(uint64_t report_time, uint64_t last_report_time, std::map<std::string, std::string> const & contract_adv_votes, std::map<std::string, std::string> & merge_contract_adv_votes);
-#endif
+    bool handle_receive_shard_votes(uint64_t report_time, uint64_t last_report_time, std::map<std::string, std::string> const & contract_adv_votes, std::map<std::string, std::string> & merge_contract_adv_votes);
+
 private:
     contract_common::properties::xstring_property_t m_genesis_prop{xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
     contract_common::properties::xmap_property_t<std::string, std::string> m_reg_prop{xstake::XPORPERTY_CONTRACT_REG_KEY, this};

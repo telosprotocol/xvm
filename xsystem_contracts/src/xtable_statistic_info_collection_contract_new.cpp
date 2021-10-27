@@ -85,7 +85,7 @@ void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xs
     std::string summarize_info_str;
     {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
-        if (m_slash_prop.exist("UNQUALIFIED_NODE")) summarize_info_str = m_slash_prop.get("UNQUALIFIED_NODE");
+        if (m_unqualified_node_prop.exist("UNQUALIFIED_NODE")) summarize_info_str = m_unqualified_node_prop.get("UNQUALIFIED_NODE");
     }
 
     std::string summarize_fulltableblock_num_str;
@@ -100,7 +100,7 @@ void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xs
                                     summarize_info, summarize_fulltableblock_num);
     update_slash_statistic_info(summarize_info, summarize_fulltableblock_num, block_height);
 
-    process_workload_statistic_data(statistic_data, statistic_accounts, tgas);
+    // process_workload_statistic_data(statistic_data, statistic_accounts, tgas);
 }
 
 void xtable_statistic_info_collection_contract_new::collect_slash_statistic_info(xstatistics_data_t const& statistic_data,
@@ -132,7 +132,7 @@ void  xtable_statistic_info_collection_contract_new::update_slash_statistic_info
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_unqualified_node_key");
         base::xstream_t stream(base::xcontext_t::instance());
         summarize_info.serialize_to(stream);
-        m_slash_prop.set("UNQUALIFIED_NODE", std::string{reinterpret_cast<char *>(stream.data()), static_cast<size_t>(stream.size())});
+        m_unqualified_node_prop.set("UNQUALIFIED_NODE", std::string{reinterpret_cast<char *>(stream.data()), static_cast<size_t>(stream.size())});
     }
 
     {
@@ -256,7 +256,7 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
         value_str.clear();
         {
             XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
-            if (m_slash_prop.exist("UNQUALIFIED_NODE")) value_str = m_slash_prop.get("UNQUALIFIED_NODE");
+            if (m_unqualified_node_prop.exist("UNQUALIFIED_NODE")) value_str = m_unqualified_node_prop.get("UNQUALIFIED_NODE");
         }
         if (!value_str.empty()) {
             base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
@@ -290,7 +290,7 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
 
         {
             XMETRICS_TIME_RECORD("sysContract_tableStatistic_remove_property_contract_unqualified_node_key");
-            m_slash_prop.remove("UNQUALIFIED_NODE");
+            m_unqualified_node_prop.remove("UNQUALIFIED_NODE");
         }
         {
             XMETRICS_TIME_RECORD("sysContract_tableStatistic_remove_property_contract_tableblock_num_key");
@@ -302,7 +302,8 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
         {
             stream.reset();
             stream << shard_slash_collect;
-            call(common::xaccount_address_t{sys_contract_zec_slash_info_addr}, "summarize_slash_info", std::string((char *)stream.data(), stream.size()));
+            call(common::xaccount_address_t{sys_contract_zec_slash_info_addr}, "summarize_slash_info", std::string((char *)stream.data(), stream.size()),
+                    contract_common::xfollowup_transaction_schedule_type_t::immediately);
         }
 
     }
@@ -501,7 +502,8 @@ void xtable_statistic_info_collection_contract_new::upload_workload() {
         {
             xstream_t stream(xcontext_t::instance());
             stream << group_workload_upload_str;
-            call(common::xaccount_address_t{sys_contract_zec_workload_addr}, "on_receive_workload", std::string((char *)stream.data(), stream.size()));
+            call(common::xaccount_address_t{sys_contract_zec_workload_addr}, "on_receive_workload", std::string((char *)stream.data(), stream.size()),
+                    contract_common::xfollowup_transaction_schedule_type_t::immediately);
             group_workload_upload.clear();
         }
 
