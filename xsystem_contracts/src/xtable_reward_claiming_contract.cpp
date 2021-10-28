@@ -4,6 +4,7 @@
 
 #include "xvm/xsystem_contracts/xreward/xtable_reward_claiming_contract.h"
 
+#include "xcommon/xlegacy_account_address.h"
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xdata/xdatautil.h"
 #include "xdata/xnative_contract_address.h"
@@ -21,8 +22,8 @@ void xtop_table_reward_claiming_contract::setup() {
         return;
     }
     xdbg("[xtop_table_reward_claiming_contract::setup] table id: %d", table_id);
-    
-    uint64_t acc_token = 0; 
+
+    uint64_t acc_token = 0;
     uint32_t acc_token_decimals = 0;
     for (auto i = 1; i <= xstake::XPROPERTY_SPLITED_NUM; i++) {
         std::string property{xstake::XPORPERTY_CONTRACT_VOTER_DIVIDEND_REWARD_KEY_BASE};
@@ -32,7 +33,7 @@ void xtop_table_reward_claiming_contract::setup() {
             for (auto j = 0; j < old_tables_count; j++) {
                 auto table_addr = std::string{sys_contract_sharding_reward_claiming_addr} + "@" + base::xstring_utl::tostring(j);
                 std::vector<std::pair<std::string, std::string>> db_kv_121;
-                chain_data::xchain_data_processor_t::get_stake_map_property(common::xaccount_address_t{table_addr}, property, db_kv_121);
+                chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{table_addr}, property, db_kv_121);
                 for (auto const & _p : db_kv_121) {
                     base::xvaccount_t vaccount{_p.first};
                     auto account_table_id = vaccount.get_ledger_subaddr();
@@ -50,13 +51,13 @@ void xtop_table_reward_claiming_contract::setup() {
             }
         }
     }
-    
+
     MAP_CREATE(xstake::XPORPERTY_CONTRACT_NODE_REWARD_KEY);
     {
         for (auto i = 0; i < old_tables_count; i++) {
             auto table_addr = std::string{sys_contract_sharding_reward_claiming_addr} + "@" + base::xstring_utl::tostring(i);
             std::vector<std::pair<std::string, std::string>> db_kv_124;
-            chain_data::xchain_data_processor_t::get_stake_map_property(common::xaccount_address_t{table_addr}, XPORPERTY_CONTRACT_NODE_REWARD_KEY, db_kv_124);
+            chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{table_addr}, XPORPERTY_CONTRACT_NODE_REWARD_KEY, db_kv_124);
             for (auto const & _p : db_kv_124) {
                 base::xvaccount_t vaccount{_p.first};
                 auto account_table_id = vaccount.get_ledger_subaddr();
@@ -148,11 +149,11 @@ void xtop_table_reward_claiming_contract::recv_voter_dividend_reward(uint64_t is
             std::map<std::string, uint64_t> votes_table;
             stream >> votes_table;
             xstake::xreward_record record;
-            xdbg("[xtop_table_reward_claiming_contract::recv_voter_dividend_reward] voter: %s", account.c_str()); 
+            xdbg("[xtop_table_reward_claiming_contract::recv_voter_dividend_reward] voter: %s", account.c_str());
             get_vote_reward_record(common::xaccount_address_t{account}, record); // not care return value hear
             add_voter_reward(issuance_clock_height, votes_table, rewards, adv_votes, record);
             update_vote_reward_record(common::xaccount_address_t{account}, record);
-        }       
+        }
     }
 }
 

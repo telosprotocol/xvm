@@ -45,7 +45,7 @@ void xrec_registration_contract::setup() {
     MAP_CREATE(XPROPERTY_CONTRACT_SLASH_INFO_KEY);
 
     std::vector<std::pair<std::string, std::string>> db_kv_101;
-    chain_data::xchain_data_processor_t::get_stake_map_property(SELF_ADDRESS(), XPORPERTY_CONTRACT_REG_KEY, db_kv_101);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{SELF_ADDRESS()}, XPORPERTY_CONTRACT_REG_KEY, db_kv_101);
     for (auto const & _p : db_kv_101) {
         auto const & node_info_serialized = _p.second;
 
@@ -81,19 +81,19 @@ void xrec_registration_contract::setup() {
     }
 
     std::vector<std::pair<std::string, std::string>> db_kv_128;
-    chain_data::xchain_data_processor_t::get_stake_map_property(SELF_ADDRESS(), XPORPERTY_CONTRACT_REFUND_KEY, db_kv_128);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{SELF_ADDRESS()}, XPORPERTY_CONTRACT_REFUND_KEY, db_kv_128);
     for (auto const & _p : db_kv_128) {
         MAP_SET(XPORPERTY_CONTRACT_REFUND_KEY, _p.first, _p.second);
     }
 
     std::vector<std::pair<std::string, std::string>> db_kv_132;
-    chain_data::xchain_data_processor_t::get_stake_map_property(SELF_ADDRESS(), XPROPERTY_CONTRACT_SLASH_INFO_KEY, db_kv_132);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{SELF_ADDRESS()}, XPROPERTY_CONTRACT_SLASH_INFO_KEY, db_kv_132);
     for (auto const & _p : db_kv_132) {
         MAP_SET(XPROPERTY_CONTRACT_SLASH_INFO_KEY, _p.first, _p.second);
     }
 
     std::string db_kv_129;
-    chain_data::xchain_data_processor_t::get_stake_string_property(SELF_ADDRESS(), XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, db_kv_129);
+    chain_data::xchain_data_processor_t::get_stake_string_property(common::xlegacy_account_address_t{SELF_ADDRESS()}, XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, db_kv_129);
     if (!db_kv_129.empty()) {
         STRING_SET(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, db_kv_129);
     }
@@ -110,7 +110,7 @@ void xrec_registration_contract::setup() {
                 for (uint32_t j = 0; j < old_tables_count; j++) {
                     auto table_addr = std::string{sys_contract_sharding_vote_addr} + "@" + base::xstring_utl::tostring(j);
                     std::vector<std::pair<std::string, std::string>> db_kv_112;
-                    chain_data::xchain_data_processor_t::get_stake_map_property(common::xaccount_address_t{table_addr}, property, db_kv_112);
+                    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{table_addr}, property, db_kv_112);
                     for (auto const & _p : db_kv_112) {
                         base::xvaccount_t vaccount{_p.first};
                         auto account_table_id = vaccount.get_ledger_subaddr();
@@ -156,7 +156,7 @@ void xrec_registration_contract::setup() {
     }
 
     top::chain_data::data_processor_t data;
-    top::chain_data::xtop_chain_data_processor::get_contract_data(SELF_ADDRESS(), data);
+    top::chain_data::xtop_chain_data_processor::get_contract_data(common::xlegacy_account_address_t{SELF_ADDRESS()}, data);
     TOP_TOKEN_INCREASE(data.top_balance);
 
     auto const & source_address = SOURCE_ADDRESS();

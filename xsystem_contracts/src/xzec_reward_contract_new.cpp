@@ -47,7 +47,7 @@ void xtop_zec_reward_contract_new::setup() {
 
     // MAP_CREATE(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE);  // save issuance
     std::vector<std::pair<std::string, std::string>> db_kv_141;
-    chain_data::xchain_data_processor_t::get_stake_map_property(address(), XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, db_kv_141);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{address()}, XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, db_kv_141);
     for (auto const & _p : db_kv_141) {
         // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, _p.first, _p.second);
         m_accumulate_issuance.set(_p.first, _p.second);
@@ -55,7 +55,7 @@ void xtop_zec_reward_contract_new::setup() {
 
     // STRING_CREATE(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY);
     std::string db_kv_142;
-    chain_data::xchain_data_processor_t::get_stake_string_property(address(), XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, db_kv_142);
+    chain_data::xchain_data_processor_t::get_stake_string_property(common::xlegacy_account_address_t{address()}, XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, db_kv_142);
     if (!db_kv_142.empty()) {
         // STRING_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, db_kv_142);
         m_accumulate_issuance_yearly.set(db_kv_142);
@@ -78,14 +78,14 @@ void xtop_zec_reward_contract_new::setup() {
     update_issuance_detail(detail);
     // MAP_CREATE(XPORPERTY_CONTRACT_WORKLOAD_KEY);
     std::vector<std::pair<std::string, std::string>> db_kv_103;
-    chain_data::xchain_data_processor_t::get_stake_map_property(address(), XPORPERTY_CONTRACT_WORKLOAD_KEY, db_kv_103);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{address()}, XPORPERTY_CONTRACT_WORKLOAD_KEY, db_kv_103);
     for (auto const & _p : db_kv_103) {
         // MAP_SET(XPORPERTY_CONTRACT_WORKLOAD_KEY, _p.first, _p.second);
         m_auditor_workload.set(_p.first, _p.second);
     }
     // MAP_CREATE(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY);
     std::vector<std::pair<std::string, std::string>> db_kv_125;
-    chain_data::xchain_data_processor_t::get_stake_map_property(address(), XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, db_kv_125);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{address()}, XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, db_kv_125);
     for (auto const & _p : db_kv_125) {
         // MAP_SET(XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, _p.first, _p.second);
         m_validator_workload.set(_p.first, _p.second);

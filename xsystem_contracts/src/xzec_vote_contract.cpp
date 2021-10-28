@@ -48,7 +48,7 @@ void xzec_vote_contract::setup() {
                 for (uint32_t j = 0; j < old_tables_count; j++) {
                     auto table_addr = std::string{sys_contract_sharding_vote_addr} + "@" + base::xstring_utl::tostring(j);
                     std::vector<std::pair<std::string, std::string>> db_kv_112;
-                    chain_data::xchain_data_processor_t::get_stake_map_property(common::xaccount_address_t{table_addr}, property, db_kv_112);
+                    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{table_addr}, property, db_kv_112);
                     for (auto const & _p : db_kv_112) {
                         base::xvaccount_t vaccount{_p.first};
                         auto account_table_id = vaccount.get_ledger_subaddr();

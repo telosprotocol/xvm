@@ -26,7 +26,7 @@ void xzec_slash_info_contract::setup() {
     // initialize map key
     MAP_CREATE(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY);
     std::vector<std::pair<std::string, std::string>> db_kv_131;
-    chain_data::xchain_data_processor_t::get_stake_map_property(SELF_ADDRESS(), xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, db_kv_131);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{SELF_ADDRESS()}, xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, db_kv_131);
     process_reset_data(db_kv_131);
     MAP_CREATE(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY);
 
