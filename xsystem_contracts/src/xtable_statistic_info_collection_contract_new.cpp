@@ -297,7 +297,7 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
             m_extend_func_prop.remove(FULLTABLE_NUM);
         }
 
-        XMETRICS_GAUGE(metrics::xmetircs_tag_t::contract_table_statistic_report_fullblock, 1);
+        XMETRICS_GAUGE(metrics::xmetrics_tag_t::contract_table_statistic_report_fullblock, 1);
         std::string shard_slash_collect = std::string((char *)stream.data(), stream.size());
         {
             stream.reset();

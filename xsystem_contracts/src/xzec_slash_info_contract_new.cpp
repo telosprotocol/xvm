@@ -22,7 +22,7 @@ NS_BEG2(top, system_contracts)
 void xzec_slash_info_contract_new::setup() {
     // initialize property
     std::vector<std::pair<std::string, std::string>> db_kv_131;
-    chain_data::xchain_data_processor_t::get_stake_map_property(address(), xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, db_kv_131);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{address()}, xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, db_kv_131);
     process_reset_data(db_kv_131);
 
     m_extend_func_prop.set(SLASH_DELETE_PROPERTY, "false");

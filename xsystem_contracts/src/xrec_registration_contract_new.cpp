@@ -931,7 +931,8 @@ void xtop_rec_registration_contract_new::unstakeDeposit(uint64_t unstake_deposit
 
     uint64_t min_deposit = node_info.get_required_min_deposit();
     XCONTRACT_ENSURE(unstake_deposit <= node_info.m_account_mortgage && node_info.m_account_mortgage - unstake_deposit >= min_deposit, "xrec_registration_contract::unstakeDeposit: unstake deposit too big");
-    transfer(source_account, unstake_deposit, contract_common::xfollowup_transaction_schedule_type_t::immediately);
+    assert(false); // 'transfer' API doesn't work now.
+    // transfer(source_account, unstake_deposit, contract_common::xfollowup_transaction_schedule_type_t::immediately);
 
     node_info.m_account_mortgage -= unstake_deposit;
     update_node_info(node_info);
