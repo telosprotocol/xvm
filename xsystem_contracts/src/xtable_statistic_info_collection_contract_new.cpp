@@ -30,7 +30,6 @@ void xtable_statistic_info_collection_contract_new::setup() {
     m_extend_func_prop.add(FULLTABLE_HEIGHT, "0");
 
     m_tgas_prop.set("0");
-    xdbg("xtable_statistic_info_collection_contract_new::setup here");
 }
 
 void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xstatistics_data_t const& statistic_data,  xfulltableblock_statistic_accounts const& statistic_accounts, uint64_t block_height, int64_t tgas) {
