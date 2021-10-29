@@ -20,6 +20,9 @@ static char const * errc_to_message(int const errc) noexcept {
     case xsystem_contract_errc_t::rec_registration_node_info_not_found:
         return "rec registraction constract: node info not found";
 
+    case xsystem_contract_errc_t::election_error:
+        return "election error";
+
     default:
         return "unknown error";
     }

@@ -15,6 +15,7 @@ enum class xenum_system_contract_errc {
     serialization_error,
     deserialization_error,
     rec_registration_node_info_not_found,
+    election_error,
 };
 using xsystem_contract_errc_t = xenum_system_contract_errc;
 

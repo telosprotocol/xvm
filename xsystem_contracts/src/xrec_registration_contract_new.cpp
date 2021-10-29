@@ -7,7 +7,6 @@
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xdata/xrootblock.h"
 #include "xdata/xslash.h"
-#include "xelect_common/elect_option.h"
 #include "xstore/xstore_error.h"
 #include "xsystem_contracts/xsystem_contract_addresses.h"
 
@@ -163,9 +162,6 @@ void xtop_rec_registration_contract_new::setup() {
 #endif
 
     xdbg("[xrec_registration_contract::setup] pid:%d", getpid());
-    if (elect::ElectOption::Instance()->IsEnableStaticec()) {
-        return;
-    }
     xreg_node_info node_info;
     {
         common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
@@ -317,11 +313,11 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
          token_amount,
          min_deposit,
          account.c_str());
-    XCONTRACT_ENSURE(token_amount >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
+    // XCONTRACT_ENSURE(token_amount >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
     XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
 
     update_node_info(node_info);
-    check_and_set_genesis_stage();
+    // check_and_set_genesis_stage();
 
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registerNode_Executed", 1);
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registeredUserCnt", 1);
