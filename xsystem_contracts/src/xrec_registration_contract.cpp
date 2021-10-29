@@ -15,7 +15,6 @@
 #include "xdata/xproperty.h"
 #include "xdata/xrootblock.h"
 #include "xdata/xslash.h"
-#include "xelect_common/elect_option.h"
 #include "xmetrics/xmetrics.h"
 #include "xstore/xstore_error.h"
 
@@ -174,9 +173,6 @@ void xrec_registration_contract::setup() {
 #endif
 
     xdbg("[xrec_registration_contract::setup] pid:%d\n", getpid());
-    if (elect::ElectOption::Instance()->IsEnableStaticec()) {
-        return;
-    }
     xreg_node_info node_info;
     {
         common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
