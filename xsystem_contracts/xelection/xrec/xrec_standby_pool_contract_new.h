@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Telos Foundation & contributors
+// Copyright (c) 2017-2021 Telos Foundation & contributors
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -25,8 +25,6 @@ public:
     xtop_rec_standby_pool_contract_new(xtop_rec_standby_pool_contract_new &&) = default;
     xtop_rec_standby_pool_contract_new & operator=(xtop_rec_standby_pool_contract_new &&) = default;
     ~xtop_rec_standby_pool_contract_new() override = default;
-
-    explicit xtop_rec_standby_pool_contract_new(observer_ptr<contract_common::xcontract_execution_context_t> initial_construction_execution_context);
 
     BEGIN_CONTRACT_API()
         DECLARE_API(xtop_rec_standby_pool_contract_new::setup);
