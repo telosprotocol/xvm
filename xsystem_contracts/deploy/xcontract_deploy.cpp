@@ -35,11 +35,11 @@ void xtop_contract_deploy::deploy_sys_contracts() {
            enum_broadcast_policy_t::normal,
            std::string(sys_contract_beacon_timer_addr) + ",on_timer,C," + config::xworkload_collection_interval_onchain_goverance_parameter_t::name);
     deploy(common::xaccount_address_t{sys_contract_zec_vote_addr}, xnode_type_t::zec, "all", enum_broadcast_policy_t::normal);
-    deploy(common::xaccount_address_t{sys_contract_zec_reward_addr},
-           xnode_type_t::zec,
-           "all",
-           enum_broadcast_policy_t::normal,
-           std::string(sys_contract_beacon_timer_addr) + ",on_timer,C," + config::xreward_update_interval_onchain_goverance_parameter_t::name);
+    // deploy(common::xaccount_address_t{sys_contract_zec_reward_addr},
+    //        xnode_type_t::zec,
+    //        "all",
+    //        enum_broadcast_policy_t::normal,
+    //        std::string(sys_contract_beacon_timer_addr) + ",on_timer,C," + config::xreward_update_interval_onchain_goverance_parameter_t::name);
 
     deploy(common::xaccount_address_t{sys_contract_sharding_vote_addr}, xnode_type_t::consensus_validator);
 

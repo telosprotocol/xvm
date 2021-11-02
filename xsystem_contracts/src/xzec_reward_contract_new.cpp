@@ -10,6 +10,8 @@
 
 using namespace top::xstake;
 using namespace top::base;
+using namespace top::state_accessor;
+using namespace top::state_accessor::properties;
 
 #if !defined(XZEC_MODULE)
 #    define XZEC_MODULE "sysContract_"
@@ -150,7 +152,7 @@ void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common:
     auto const timeout_limitation = XGET_ONCHAIN_GOVERNANCE_PARAMETER(cross_reading_rec_reg_contract_logic_timeout_limitation);
 
     // uint64_t latest_height = get_blockchain_height(sys_contract_rec_registration_addr);
-    uint64_t latest_height = state()->state_height(common::xaccount_address_t{sys_contract_rec_registration_addr});
+    uint64_t latest_height = state_height(common::xaccount_address_t{sys_contract_rec_registration_addr});
     xdbg("[xtop_zec_reward_contract_new::update_reg_contract_read_status] cur_time: %llu, last_read_time: %llu, last_read_height: %llu, latest_height: %" PRIu64,
          cur_time,
          last_read_time,
@@ -174,7 +176,7 @@ void xtop_zec_reward_contract_new::update_reg_contract_read_status(const common:
 
     if (update_rec_reg_contract_read_status) {
         // xauto_ptr<xblock_t> block_ptr = get_block_by_height(sys_contract_rec_registration_addr, next_read_height);
-        XCONTRACT_ENSURE(state()->block_exist(common::xaccount_address_t{sys_contract_rec_registration_addr}, next_read_height) == true, "fail to get the rec_reg data");
+        XCONTRACT_ENSURE(block_exist(common::xaccount_address_t{sys_contract_rec_registration_addr}, next_read_height) == true, "fail to get the rec_reg data");
         XMETRICS_PACKET_INFO(XREWARD_CONTRACT "update_status", "next_read_height", next_read_height, "current_time", cur_time)
         // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_BLOCK_HEIGHT, std::to_string(next_read_height));
         // STRING_SET(XPROPERTY_LAST_READ_REC_REG_CONTRACT_LOGIC_TIME, std::to_string(cur_time));
@@ -561,18 +563,10 @@ void xtop_zec_reward_contract_new::update_accumulated_issuance(const common::xlo
                                          cur_year_issuances_str_new,
                                          total_issuances_str_new);
 
-    try {
-        // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, xstring_utl::tostring(current_year), cur_year_issuances_str_new);
-        m_accumulate_issuance.set(xstring_utl::tostring(current_year), cur_year_issuances_str_new);
-    } catch (std::runtime_error & e) {
-        xwarn("[xtop_zec_reward_contract_new::update_accumulated_issuance] set XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE error:%s", e.what());
-    }
-    try {
-        // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, "total", total_issuances_str_new);
-        m_accumulate_issuance.set(std::string{"total"}, total_issuances_str_new);
-    } catch (std::runtime_error & e) {
-        xwarn("[xtop_zec_reward_contract_new::update_accumulated_issuance] set XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE error:%s", e.what());
-    }
+    // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, xstring_utl::tostring(current_year), cur_year_issuances_str_new);
+    m_accumulate_issuance.set(xstring_utl::tostring(current_year), cur_year_issuances_str_new);
+    // MAP_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, "total", total_issuances_str_new);
+    m_accumulate_issuance.set(std::string{"total"}, total_issuances_str_new);
     xinfo("[xtop_zec_reward_contract_new::update_accumulated_issuance] get stored accumulated issuance, year: %d, issuance: [%" PRIu64 ", total issuance: [%" PRIu64
           ", timer round : %" PRIu64 "\n",
           current_year,
@@ -586,12 +580,8 @@ void xtop_zec_reward_contract_new::update_accumulated_record(xaccumulated_reward
           record.last_issuance_time,
           static_cast<uint64_t>(record.issued_until_last_year_end / REWARD_PRECISION),
           static_cast<uint32_t>(record.issued_until_last_year_end % REWARD_PRECISION));
-    try {
-        // STRING_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, accumulated_reward_serialize(record));
-        m_accumulate_issuance_yearly.set(accumulated_reward_serialize(record));
-    } catch (std::runtime_error & e) {
-        xwarn("[xtop_zec_reward_contract_new::update_issuance_detail] STRING_SET XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY error:%s", e.what());
-    }
+    // STRING_SET(XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, accumulated_reward_serialize(record));
+    m_accumulate_issuance_yearly.set(accumulated_reward_serialize(record));
 }
 
 void xtop_zec_reward_contract_new::update_issuance_detail(xissue_detail const & issue_detail) {
@@ -609,12 +599,7 @@ void xtop_zec_reward_contract_new::update_issuance_detail(xissue_detail const & 
         issue_detail.m_auditor_reward_ratio,
         issue_detail.m_vote_reward_ratio,
         issue_detail.m_governance_reward_ratio);
-    try {
-        // STRING_SET(XPROPERTY_REWARD_DETAIL, issue_detail.to_string());
-        m_reward_detail.set(issue_detail.to_string());
-    } catch (std::runtime_error & e) {
-        xwarn("[xtop_zec_reward_contract_new::update_issuance_detail] STRING_SET XPROPERTY_REWARD_DETAIL error:%s", e.what());
-    }
+    m_reward_detail.set(issue_detail.to_string());
 }
 
 void xtop_zec_reward_contract_new::get_reward_onchain_param(xreward_onchain_param_t & onchain_param) {
@@ -646,9 +631,9 @@ void xtop_zec_reward_contract_new::get_reward_onchain_param(xreward_onchain_para
 void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & onchain_param, xreward_property_param_t & property_param) {
     // get onchain param
     get_reward_onchain_param(onchain_param);
-    property_param.zec_vote_contract_height = state()->state_height(common::xaccount_address_t{sys_contract_zec_vote_addr});
-    property_param.zec_workload_contract_height = state()->state_height(common::xaccount_address_t{sys_contract_zec_workload_addr});
-    property_param.zec_reward_contract_height = state()->state_height(common::xaccount_address_t{sys_contract_zec_reward_addr});
+    property_param.zec_vote_contract_height = state_height(common::xaccount_address_t{sys_contract_zec_vote_addr});
+    property_param.zec_workload_contract_height = state_height(common::xaccount_address_t{sys_contract_zec_workload_addr});
+    property_param.zec_reward_contract_height = state_height(common::xaccount_address_t{sys_contract_zec_reward_addr});
 
     xinfo("[xtop_zec_reward_contract_new::get_reward_param] m_zec_vote_contract_height: %u, m_zec_workload_contract_height: %u, m_zec_reward_contract_height: %u",
           property_param.zec_vote_contract_height,
@@ -709,8 +694,8 @@ void xtop_zec_reward_contract_new::get_reward_param(xreward_onchain_param_t & on
     // get vote
     // std::map<std::string, std::string> contract_auditor_votes;
     // MAP_COPY_GET(XPORPERTY_CONTRACT_TICKETS_KEY, contract_auditor_votes, sys_contract_zec_vote_addr);
-    auto contract_auditor_votes =
-        get_property<contract_common::properties::xmap_property_t<std::string, std::string>>(state_accessor::properties::xtypeless_property_identifier_t{}, common::xaccount_address_t{sys_contract_zec_vote_addr});
+    auto contract_auditor_votes = get_property<contract_common::properties::xmap_property_t<std::string, std::string>>(
+        state_accessor::properties::xtypeless_property_identifier_t{XPORPERTY_CONTRACT_TICKETS_KEY}, common::xaccount_address_t{sys_contract_zec_vote_addr});
     for (auto & contract_auditor_vote : contract_auditor_votes.value()) {
         auto const & contract = contract_auditor_vote.first;
         auto const & auditor_votes_str = contract_auditor_vote.second;
@@ -1344,8 +1329,8 @@ void xtop_zec_reward_contract_new::calc_nodes_rewards_v5(const common::xlogic_ti
         "total issuance: [%llu, %u], "
         "edge workload rewards: [%llu, %u], total edge num: %d, valid edge num: %d, "
         "archive workload rewards: [%llu, %u], total archive num: %d, valid archive num: %d, "
-        "auditor workload rewards: [%llu, %u], auditor workload grop num: %d, auditor group workload rewards: [%llu, %u], total auditor num: %d, valid auditor num: %d, "
-        "validator workload rewards: [%llu, %u], validator workload grop num: %d, validator group workload rewards: [%llu, %u], total validator num: %d, valid validator num: %d,  "
+        "auditor workload rewards: [%llu, %u], auditor workload group num: %d, auditor group workload rewards: [%llu, %u], total auditor num: %d, valid auditor num: %d, "
+        "validator workload rewards: [%llu, %u], validator workload group num: %d, validator group workload rewards: [%llu, %u], total validator num: %d, valid validator num: %d,  "
         "vote rewards: [%llu, %u], "
         "governance rewards: [%llu, %u], ",
         issue_time_length,
@@ -1521,7 +1506,7 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
     uint64_t & actual_issuance) {
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "dispatch_all_reward_Called", 1);
     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "dispatch_all_reward");
-    xdbg("[xtop_zec_reward_contract_new::dispatch_all_reward] pid:%d\n", getpid());
+    std::vector<contract_common::xfollowup_transaction_delay_param_t> tasks;
     // dispatch table reward
     uint64_t issuance = 0;
     // uint32_t task_id = get_task_id();
@@ -1534,36 +1519,33 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
             reward += 1;
         }
         issuance += reward;
-        // std::map<std::string, uint64_t> issuances;
-        std::error_code ec;
-        transfer(contract, reward, contract_common::xfollowup_transaction_schedule_type_t::immediately, ec);
-        XCONTRACT_ENSURE(!ec, "transfer generated error!");
-        // issuances.emplace(contract.to_string(), reward);
-        // xstream_t seo_stream(xcontext_t::instance());
-        // seo_stream << issuances;
-
-        // add_task(task_id, current_time, contract.to_string(), XTRANSFER_ACTION, std::string((char *)seo_stream.data(), seo_stream.size()));
-        // task_id++;
+        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+              contract_common::xdelay_followup_type_t::transfer,
+              current_time,
+              contract.value().c_str(),
+              XTRANSFER_ACTION);
+        tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{
+            contract_common::xdelay_followup_type_t::transfer, current_time, contract, XTRANSFER_ACTION, xstring_utl::tostring(reward)});
     }
     xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] actual issuance: %lu", issuance);
     // dispatch community reward
     uint64_t common_funds = static_cast<uint64_t>(community_reward / REWARD_PRECISION);
     if (common_funds > 0) {
         issuance += common_funds;
-        std::error_code ec;
-        transfer(common::xaccount_address_t{sys_contract_rec_tcc_addr}, common_funds, contract_common::xfollowup_transaction_schedule_type_t::immediately, ec);
-        XCONTRACT_ENSURE(!ec, "transfer generated error!");
-        // std::map<std::string, uint64_t> issuances;
-        // issuances.emplace(sys_contract_rec_tcc_addr, common_funds);
-        // xstream_t seo_stream(xcontext_t::instance());
-        // seo_stream << issuances;
-
-        // add_task(task_id, current_time, sys_contract_rec_tcc_addr, XTRANSFER_ACTION, std::string((char *)seo_stream.data(), seo_stream.size()));
-        // task_id++;
+        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+              contract_common::xdelay_followup_type_t::transfer,
+              current_time,
+              sys_contract_rec_tcc_addr,
+              XTRANSFER_ACTION);
+        tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{contract_common::xdelay_followup_type_t::transfer,
+                                                                                current_time,
+                                                                                common::xaccount_address_t{sys_contract_rec_tcc_addr},
+                                                                                XTRANSFER_ACTION,
+                                                                                xstring_utl::tostring(common_funds)});
     }
     xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] common_funds: %lu", common_funds);
     // generate tasks
-    const int task_limit = 1000;
+    // const int task_limit = 1000;
     xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] pid: %d, table_node_reward_detail size: %d\n", getpid(), table_node_reward_detail.size());
     for (auto & entity : table_node_reward_detail) {
         auto const & contract = entity.first;
@@ -1573,27 +1555,18 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
         std::map<std::string, top::xstake::uint128_t> account_awards2;
         for (auto it = account_awards.begin(); it != account_awards.end(); it++) {
             account_awards2[it->first.to_string()] = it->second;
-            // if (++count % task_limit == 0) {
-            //     xstream_t reward_stream(xcontext_t::instance());
-            //     reward_stream << current_time;
-            //     reward_stream << account_awards2;
-                // add_task(task_id, current_time, contract.to_string(), XREWARD_CLAIMING_ADD_NODE_REWARD, std::string((char *)reward_stream.data(), reward_stream.size()));
-            //     task_id++;
-
-            //     account_awards2.clear();
-            // }
         }
         xstream_t reward_stream(xcontext_t::instance());
         reward_stream << current_time;
         reward_stream << account_awards2;
-        call(contract, "recv_node_reward", std::string((char *)reward_stream.data(), reward_stream.size()), contract_common::xfollowup_transaction_schedule_type_t::immediately);
-        // if (account_awards2.size() > 0) {
-        //     xstream_t reward_stream(xcontext_t::instance());
-        //     reward_stream << current_time;
-        //     reward_stream << account_awards2;
-        //     add_task(task_id, current_time, contract.to_string(), XREWARD_CLAIMING_ADD_NODE_REWARD, std::string((char *)reward_stream.data(), reward_stream.size()));
-        //     task_id++;
-        // }
+        std::string param = std::string((char *)reward_stream.data(), reward_stream.size());
+        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+              contract_common::xdelay_followup_type_t::call,
+              current_time,
+              contract.value().c_str(),
+              XREWARD_CLAIMING_ADD_NODE_REWARD);
+        tasks.emplace_back(
+            contract_common::xfollowup_transaction_delay_param_t{contract_common::xdelay_followup_type_t::call, current_time, contract, XREWARD_CLAIMING_ADD_NODE_REWARD, param});
     }
     xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] pid: %d, table_node_dividend_detail size: %d\n", getpid(), table_node_dividend_detail.size());
     for (auto const & entity : table_node_dividend_detail) {
@@ -1604,30 +1577,21 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
         std::map<std::string, top::xstake::uint128_t> auditor_vote_rewards2;
         for (auto it = auditor_vote_rewards.begin(); it != auditor_vote_rewards.end(); it++) {
             auditor_vote_rewards2[it->first.to_string()] = it->second;
-            // if (++count % task_limit == 0) {
-            //     xstream_t reward_stream(xcontext_t::instance());
-            //     reward_stream << current_time;
-            //     reward_stream << auditor_vote_rewards2;
-            //     add_task(task_id, current_time, contract.to_string(), XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD, std::string((char *)reward_stream.data(), reward_stream.size()));
-            //     task_id++;
-
-            //     auditor_vote_rewards2.clear();
-            // }
         }
-        // if (auditor_vote_rewards2.size() > 0) {
-        //     xstream_t reward_stream(xcontext_t::instance());
-        //     reward_stream << current_time;
-        //     reward_stream << auditor_vote_rewards2;
-            // add_task(task_id, current_time, contract.to_string(), XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD, std::string((char *)reward_stream.data(), reward_stream.size()));
-        //     task_id++;
-        // }
         xstream_t reward_stream(xcontext_t::instance());
         reward_stream << current_time;
         reward_stream << auditor_vote_rewards2;
-        call(contract, "recv_voter_dividend_reward", std::string((char *)reward_stream.data(), reward_stream.size()), contract_common::xfollowup_transaction_schedule_type_t::immediately);
-
+        std::string param = std::string((char *)reward_stream.data(), reward_stream.size());
+        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+              contract_common::xdelay_followup_type_t::call,
+              current_time,
+              contract.value().c_str(),
+              XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD);
+        tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{
+            contract_common::xdelay_followup_type_t::call, current_time, contract, XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD, param});
     }
 
+    delay_followup(tasks);
     actual_issuance = issuance;
 // #if defined(DEBUG)
 //     print_tasks();
@@ -1680,12 +1644,16 @@ xaccumulated_reward_record xtop_zec_reward_contract_new::accumulated_reward_dese
 xactivation_record xtop_zec_reward_contract_new::get_activation_record() {
     xactivation_record activation_record;
     // std::string activation_str = STRING_GET2(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, sys_contract_rec_registration_addr);
-    contract_common::properties::xstring_property_t active_prop{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
-    auto activation_str = active_prop.value();
+    // contract_common::properties::xstring_property_t active_prop{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, this};
+    // auto activation_str = active_prop.value();
+    auto const & string_property = get_property<contract_common::properties::xstring_property_t>(xtypeless_property_identifier_t{XPORPERTY_CONTRACT_GENESIS_STAGE_KEY},
+                                                                                                 common::xaccount_address_t{sys_contract_rec_registration_addr});
+    auto const & activation_str = string_property.value();
 
     XCONTRACT_ENSURE(!activation_str.empty(), "activation_str");
     xstream_t stream{xcontext_t::instance(), (uint8_t *)activation_str.c_str(), (uint32_t)activation_str.size()};
     activation_record.serialize_from(stream);
+    xinfo("[xtop_zec_reward_contract_new::get_activation_record] actived: %d, activation_time: %lu", activation_record.activated, activation_record.activation_time);
     return activation_record;
 }
 

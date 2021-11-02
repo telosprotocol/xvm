@@ -50,8 +50,8 @@ public:
 
     BEGIN_CONTRACT_API()
         DECLARE_API(xtop_zec_reward_contract_new::setup);
-        DECLARE_API(xtop_zec_reward_contract_new::on_timer);
         DECLARE_API(xtop_zec_reward_contract_new::calculate_reward);
+        DECLARE_SELF_ONLY_API(xtop_zec_reward_contract_new::on_timer);
     END_CONTRACT_API
 
 private:
