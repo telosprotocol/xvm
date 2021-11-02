@@ -274,6 +274,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
     node_info.m_account = account;
     node_info.m_registered_role = role_type;
 #if defined XENABLE_MOCK_ZEC_STAKE
+    token_amount = 100000000000000;
     node_info.m_account_mortgage = 100000000000000;
 #else
     node_info.m_account_mortgage += token_amount;
@@ -313,11 +314,11 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
          token_amount,
          min_deposit,
          account.c_str());
-    // XCONTRACT_ENSURE(token_amount >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
+    XCONTRACT_ENSURE(token_amount >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
     XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
 
     update_node_info(node_info);
-    // check_and_set_genesis_stage();
+    check_and_set_genesis_stage();
 
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registerNode_Executed", 1);
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registeredUserCnt", 1);
