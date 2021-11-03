@@ -43,7 +43,7 @@ public:
     BEGIN_CONTRACT_API()
         DECLARE_API(xzec_slash_info_contract_new::setup);
         DECLARE_API(xzec_slash_info_contract_new::summarize_slash_info);
-        DECLARE_API(xzec_slash_info_contract_new::do_unqualified_node_slash);
+        DECLARE_SELF_ONLY_API(xzec_slash_info_contract_new::do_unqualified_node_slash);
     END_CONTRACT_API
 
 private:
