@@ -29,18 +29,19 @@ public:
         DECLARE_API(xtop_rec_registration_contract_new::setup);
         DECLARE_API(xtop_rec_registration_contract_new::registerNode);
         DECLARE_API(xtop_rec_registration_contract_new::unregisterNode);
-        // DECLARE_API(xtop_rec_registration_contract_new::updateNodeInfo);
+        DECLARE_API(xtop_rec_registration_contract_new::updateNodeInfo);
         DECLARE_API(xtop_rec_registration_contract_new::setDividendRatio);
         DECLARE_API(xtop_rec_registration_contract_new::setNodeName);
         DECLARE_API(xtop_rec_registration_contract_new::update_batch_stake);
-        // DECLARE_API(xtop_rec_registration_contract_new::update_batch_stake_v2);
+        DECLARE_API(xtop_rec_registration_contract_new::update_batch_stake_v2);
         DECLARE_API(xtop_rec_registration_contract_new::redeemNodeDeposit);
-        // DECLARE_API(xtop_rec_registration_contract_new::updateNodeType);
-        // DECLARE_API(xtop_rec_registration_contract_new::stakeDeposit);
+        DECLARE_API(xtop_rec_registration_contract_new::updateNodeType);
+        DECLARE_API(xtop_rec_registration_contract_new::stakeDeposit);
         DECLARE_API(xtop_rec_registration_contract_new::unstakeDeposit);
         DECLARE_API(xtop_rec_registration_contract_new::updateNodeSignKey);
         DECLARE_API(xtop_rec_registration_contract_new::slash_unqualified_node);
         DECLARE_SEND_ONLY_API(xtop_rec_registration_contract_new::source_withdraw);
+        DECLARE_CONFIRM_ONLY_API(xtop_rec_registration_contract_new::confirm_deposit);
     END_CONTRACT_API
 
     /**
@@ -66,13 +67,14 @@ public:
     );
 
     void source_withdraw(std::string const& token_name, uint64_t token_amount);
+    void confirm_deposit(std::string const& token_name, uint64_t token_amount);
     /**
      * @brief unregister the node
      *
      */
     void unregisterNode();
 
-    // void updateNodeInfo(const std::string & nickname, const int updateDepositType, const uint64_t deposit, const uint32_t dividend_rate, const std::string & node_types, const std::string & node_sign_key);
+    void updateNodeInfo(const std::string & nickname, const int updateDepositType, const uint64_t deposit, const uint32_t dividend_rate, const std::string & node_types, const std::string & node_sign_key);
     /**
      * @brief Set the Dividend Ratio
      *
@@ -121,7 +123,7 @@ public:
     //  * @brief stake deposit
     //  *
     //  */
-    // void stakeDeposit();
+    void stakeDeposit();
 
     /**
      * @brief unstake deposit
