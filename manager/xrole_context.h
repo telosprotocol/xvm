@@ -5,11 +5,14 @@
 #pragma once
 
 #include "xbase/xns_macro.h"
+#include "xblockstore/xsyncvstore_face.h"
+#include "xdata/xblock_statistics_data.h"
+#include "xdata/xfulltableblock_account_data.h"
 #include "xstore/xstore_face.h"
 #include "xtxpool_service_v2/xrequest_tx_receiver_face.h"
+#include "xvledger/xvcnode.h"
 #include "xvm/xcontract_info.h"
 #include "xvnetwork/xvnetwork_driver_face.h"
-#include "xblockstore/xsyncvstore_face.h"
 
 NS_BEG2(top, contract)
 
@@ -141,6 +144,12 @@ protected:
      * @return false
      */
     bool is_scheduled_table_contract(common::xaccount_address_t const& addr) const;
+
+    /**
+     * @brief get accounts data
+     *
+     */
+    data::xfulltableblock_statistic_accounts fulltableblock_statistic_accounts(data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service);
 
 protected:
     observer_ptr<xstore_face_t>                                                 m_store{};
