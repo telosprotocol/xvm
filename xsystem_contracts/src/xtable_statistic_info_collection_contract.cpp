@@ -40,7 +40,7 @@ void xtable_statistic_info_collection_contract::setup() {
 
 }
 
-void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::string const& statistic_info, uint64_t block_height, int64_t tgas) {
+void xtable_statistic_info_collection_contract::on_collect_statistic_info(xstatistics_data_t const& statistic_data,  xfulltableblock_statistic_accounts const& statistic_accounts, uint64_t block_height, int64_t tgas) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
     XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
     XMETRICS_GAUGE(metrics::xmetrics_tag_t::contract_table_statistic_exec_fullblock, 1);
@@ -94,10 +94,6 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
         getpid());
 
 
-
-    xstatistics_data_t statistic_data;
-    statistic_data.deserialize_based_on<base::xstream_t>({ std::begin(statistic_info), std::end(statistic_info) });
-    auto node_service = contract::xcontract_manager_t::instance().get_node_service();
     std::string summarize_info_str;
     try {
         XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
@@ -122,22 +118,21 @@ void xtable_statistic_info_collection_contract::on_collect_statistic_info(std::s
 
     xunqualified_node_info_t summarize_info;
     uint32_t summarize_fulltableblock_num = 0;
-    XCONTRACT_ENSURE(node_service != nullptr, "node service is empty!");
-    collect_slash_statistic_info(statistic_data, node_service, summarize_info_str, summarize_fulltableblock_num_str,
+    collect_slash_statistic_info(statistic_data, statistic_accounts, summarize_info_str, summarize_fulltableblock_num_str,
                                     summarize_info, summarize_fulltableblock_num);
     update_slash_statistic_info(summarize_info, summarize_fulltableblock_num, block_height);
 
 
-    process_workload_statistic_data(statistic_data, tgas);
+    process_workload_statistic_data(statistic_data, statistic_accounts, tgas);
 }
 
-void xtable_statistic_info_collection_contract::collect_slash_statistic_info(xstatistics_data_t const& statistic_data,  base::xvnodesrv_t * node_service, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
+void xtable_statistic_info_collection_contract::collect_slash_statistic_info(xstatistics_data_t const& statistic_data,  xfulltableblock_statistic_accounts const& statistic_accounts, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
                                                                                 xunqualified_node_info_t& summarize_info, uint32_t& summarize_fulltableblock_num) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_collect_slash_statistic_info");
     XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_collect_slash_statistic_info");
 
     // get the slash info
-    auto const node_info = process_statistic_data(statistic_data, node_service);
+    auto const node_info = process_statistic_data(statistic_data, statistic_accounts);
     if (!summarize_info_str.empty()) {
         base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)summarize_info_str.data(), summarize_info_str.size());
         summarize_info.serialize_from(stream);
@@ -189,7 +184,7 @@ void  xtable_statistic_info_collection_contract::accumulate_node_info(xunqualifi
     }
 }
 
-xunqualified_node_info_t  xtable_statistic_info_collection_contract::process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service) {
+xunqualified_node_info_t  xtable_statistic_info_collection_contract::process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_process_statistic_data");
     XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_process_statistic_data");
     xunqualified_node_info_t res_node_info;
@@ -200,18 +195,13 @@ xunqualified_node_info_t  xtable_statistic_info_collection_contract::process_sta
         for (auto const & group_item: elect_statistic.group_statistics_data) {
             xgroup_related_statistics_data_t const& group_account_data = group_item.second;
             common::xgroup_address_t const& group_addr = group_item.first;
-            xvip2_t const& group_xvip2 = top::common::xip2_t{
-                group_addr.network_id(),
-                group_addr.zone_id(),
-                group_addr.cluster_id(),
-                group_addr.group_id(),
-                (uint16_t)group_account_data.account_statistics_data.size(),
-                static_item.first
-            };
+            auto account_group = statistic_accounts.accounts_detail.at(static_item.first);
+            auto group_accounts = account_group.group_data[group_addr];
+
             // process auditor group
             if (top::common::has<top::common::xnode_type_t::auditor>(group_addr.type())) {
                 for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                    auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                    auto account_addr = group_accounts.account_data[slotid];
                     res_node_info.auditor_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].vote_data.block_count;
                     res_node_info.auditor_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
                     xdbg("[xtable_statistic_info_collection_contract][do_unqualified_node_slash] incremental auditor data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
@@ -219,7 +209,7 @@ xunqualified_node_info_t  xtable_statistic_info_collection_contract::process_sta
                 }
             } else if (top::common::has<top::common::xnode_type_t::validator>(group_addr.type())) {// process validator group
                 for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                    auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                    auto account_addr = group_accounts.account_data[slotid];
                     res_node_info.validator_info[common::xnode_id_t{account_addr}].subset_count += group_account_data.account_statistics_data[slotid].vote_data.block_count;
                     res_node_info.validator_info[common::xnode_id_t{account_addr}].block_count += group_account_data.account_statistics_data[slotid].vote_data.vote_count;
                     xdbg("[xtable_statistic_info_collection_contract][do_unqualified_node_slash] incremental validator data: {gourp id: %d, account addr: %s, slot id: %u, subset count: %u, block_count: %u}", group_addr.group_id().value(), account_addr.c_str(),
@@ -361,11 +351,10 @@ void xtable_statistic_info_collection_contract::report_summarized_statistic_info
 
 }
 
-std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_collection_contract::get_workload_from_data(xstatistics_data_t const & statistic_data) {
+std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_collection_contract::get_workload_from_data(xstatistics_data_t const & statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts) {
     XMETRICS_TIME_RECORD("sysContractc_workload_get_workload_from_data");
     XMETRICS_CPU_TIME_RECORD("sysContractc_workload_get_workload_from_data");
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
-    auto node_service = contract::xcontract_manager_t::instance().get_node_service();
     auto workload_per_tableblock = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tableblock);
     auto workload_per_tx = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tx);
     for (auto const & static_item : statistic_data.detail) {
@@ -380,8 +369,11 @@ std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_coll
                                                               (uint16_t)group_account_data.account_statistics_data.size(),
                                                               static_item.first};
             xdbg("[xtable_statistic_info_collection_contract::get_workload] group xvip2: %llu, %llu", group_xvip2.high_addr, group_xvip2.low_addr);
+
+            auto account_group = statistic_accounts.accounts_detail.at(static_item.first);
+            auto group_accounts = account_group.group_data[group_addr];
             for (size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                auto account_str = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                auto account_str = group_accounts.account_data[slotid];
                 uint32_t block_count = group_account_data.account_statistics_data[slotid].block_data.block_count;
                 uint32_t tx_count = group_account_data.account_statistics_data[slotid].block_data.transaction_count;
                 uint32_t workload = block_count * workload_per_tableblock + tx_count * workload_per_tx;
@@ -394,7 +386,7 @@ std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_coll
                         it2 = ret.first;
                     }
 
-                    it2->second.m_leader_count[account_str] += workload;
+                    it2->second.m_leader_count[account_str.value()] += workload;
                 }
 
                 xdbg(
@@ -555,10 +547,10 @@ void xtable_statistic_info_collection_contract::upload_workload() {
     }
 }
 
-void xtable_statistic_info_collection_contract::process_workload_statistic_data(xstatistics_data_t const & statistic_data, const int64_t tgas) {
+void xtable_statistic_info_collection_contract::process_workload_statistic_data(xstatistics_data_t const & statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts, const int64_t tgas) {
     XMETRICS_TIME_RECORD("sysContract_tableStatistic_process_workload_statistic_data");
     XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_process_workload_statistic_data");
-    auto const & group_workload = get_workload_from_data(statistic_data);
+    auto const & group_workload = get_workload_from_data(statistic_data, statistic_accounts);
     if (!group_workload.empty()) {
         update_workload(group_workload);
     }

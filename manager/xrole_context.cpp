@@ -11,6 +11,7 @@
 #include "xvm/manager/xcontract_address_map.h"
 #include "xvm/manager/xmessage_ids.h"
 #include "xvm/manager/xrole_context.h"
+#include "xvm/manager/xcontract_manager.h"
 #include "xvm/xvm_service.h"
 #include "xvledger/xvledger.h"
 
@@ -53,10 +54,13 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
                 base::xauto_ptr<base::xvblock_t> full_block = base::xvchain_t::instance().get_xblockstore()->load_block_object(base::xvaccount_t{block_owner}, block_height, base::enum_xvblock_flag_committed, true);
 
                 xfull_tableblock_t* full_tableblock = dynamic_cast<xfull_tableblock_t*>(full_block.get());
-                auto fulltable_statisitc_data_str = full_tableblock->get_table_statistics_string();
+                auto node_service = contract::xcontract_manager_t::instance().get_node_service();
+                auto const fulltable_statisitc_data = full_tableblock->get_table_statistics();
+                auto const statistic_accounts = fulltableblock_statistic_accounts(fulltable_statisitc_data, node_service);
 
                 base::xstream_t stream(base::xcontext_t::instance());
-                stream << fulltable_statisitc_data_str;
+                stream << fulltable_statisitc_data;
+                stream << statistic_accounts;
                 stream << block_height;
                 stream << block->get_pledge_balance_change_tgas();
                 std::string action_params = std::string((char *)stream.data(), stream.size());
@@ -247,6 +251,42 @@ bool xrole_context_t::valid_call(const uint64_t onchain_timer_round) {
         xinfo("not valid call %llu", onchain_timer_round);
         return false;
     }
+}
+
+data::xfulltableblock_statistic_accounts xrole_context_t::fulltableblock_statistic_accounts(data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service) {
+    using namespace top::data;
+
+    xfulltableblock_statistic_accounts res;
+
+    // process one full tableblock statistic data
+    for (auto const & statistic_item: block_statistic_data.detail) {
+        auto elect_statistic = statistic_item.second;
+        xfulltableblock_group_data_t res_group_data;
+        for (auto const & group_item: elect_statistic.group_statistics_data) {
+            xgroup_related_statistics_data_t const& group_account_data = group_item.second;
+            common::xgroup_address_t const& group_addr = group_item.first;
+            xvip2_t const& group_xvip2 = top::common::xip2_t{
+                group_addr.network_id(),
+                group_addr.zone_id(),
+                group_addr.cluster_id(),
+                group_addr.group_id(),
+                (uint16_t)group_account_data.account_statistics_data.size(),
+                statistic_item.first
+            };
+
+            xfulltableblock_account_data_t res_account_data;
+            for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
+                auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                res_account_data.account_data.emplace_back(std::move(account_addr));
+            }
+
+            res_group_data.group_data[group_addr] = res_account_data;
+        }
+
+        res.accounts_detail[statistic_item.first] = res_group_data;
+    }
+
+    return res;
 }
 
 void xrole_context_t::call_contract(const uint64_t onchain_timer_round, xblock_monitor_info_t * info, const uint64_t block_timestamp) {
