@@ -41,7 +41,7 @@ public:
         DECLARE_API(xtop_rec_registration_contract_new::updateNodeSignKey);
         DECLARE_API(xtop_rec_registration_contract_new::slash_unqualified_node);
         DECLARE_SEND_ONLY_API(xtop_rec_registration_contract_new::source_withdraw);
-        DECLARE_CONFIRM_ONLY_API(xtop_rec_registration_contract_new::confirm_deposit);
+        // DECLARE_CONFIRM_ONLY_API(xtop_rec_registration_contract_new::confirm_deposit);
     END_CONTRACT_API
 
     /**
