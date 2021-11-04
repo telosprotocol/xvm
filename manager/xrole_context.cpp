@@ -5,6 +5,7 @@
 #include "xchain_timer/xchain_timer_face.h"
 #include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xdata/xfull_tableblock.h"
+#include "xdata/xtx_factory.h"
 #include "xmbus/xevent_timer.h"
 #include "xmbus/xevent_store.h"
 #include "xvm/manager/xcontract_address_map.h"
@@ -12,8 +13,6 @@
 #include "xvm/manager/xrole_context.h"
 #include "xvm/xvm_service.h"
 #include "xvledger/xvledger.h"
-#include "xdata/xtransaction_v2.h"
-
 
 #include <cinttypes>
 #include <cmath>
@@ -291,8 +290,11 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
             xinfo("[xrole_context_t] call_contract in consensus mode, address timer unorder, not create tx", address.value().c_str());
             continue;
         }
-        auto tx = make_object_ptr<xtransaction_v2_t>();
-
+#ifdef RPC_V2
+        xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_2);
+#else
+        xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_1);
+#endif
         tx->make_tx_run_contract(asset_out, info->action, action_params);
         tx->set_same_source_target_address(address.value());
         xaccount_ptr_t account = m_store->query_account(address.value());
@@ -330,7 +332,11 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
         xinfo("[xrole_context_t] call_contract in consensus mode, address timer unorder, not create tx", address.c_str());
         return;
     }
-    auto tx = make_object_ptr<xtransaction_v2_t>();
+#ifdef RPC_V2
+    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_2);
+#else
+    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_1);
+#endif
     tx->make_tx_run_contract(info->action, action_params);
     tx->set_same_source_target_address(address.value());
     xaccount_ptr_t account = m_store->query_account(address.value());
@@ -361,8 +367,11 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
 
 void xrole_context_t::on_fulltableblock_event(common::xaccount_address_t const& contract_name, std::string const& action_name, std::string const& action_params, uint64_t timestamp, uint16_t table_id) {
     auto const address = xcontract_address_map_t::calc_cluster_address(contract_name, table_id);
-
-    auto tx = make_object_ptr<xtransaction_v2_t>();
+#ifdef RPC_V2
+    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_2);
+#else
+    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_1);
+#endif
     tx->make_tx_run_contract(action_name, action_params);
     tx->set_same_source_target_address(address.value());
     xaccount_ptr_t account = m_store->query_account(address.value());
