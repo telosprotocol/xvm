@@ -6,7 +6,6 @@
 
 #include "xcontract_common/xproperties/xproperty_map.h"
 #include "xcontract_common/xproperties/xproperty_string.h"
-#include "xdata/xelection/xstandby_result_store.h"
 #include "xstake/xstake_algorithm.h"
 #include "xsystem_contract_runtime/xsystem_contract_runtime_helper.h"
 #include "xsystem_contracts/xbasic_system_contract.h"
@@ -46,7 +45,7 @@ public:
     xtop_zec_reward_contract_new & operator=(xtop_zec_reward_contract_new const &) = delete;
     xtop_zec_reward_contract_new(xtop_zec_reward_contract_new &&) = default;
     xtop_zec_reward_contract_new & operator=(xtop_zec_reward_contract_new &&) = default;
-    ~xtop_zec_reward_contract_new() override = default;
+    ~xtop_zec_reward_contract_new() = default;
 
     BEGIN_CONTRACT_API()
         DECLARE_API(xtop_zec_reward_contract_new::setup);
