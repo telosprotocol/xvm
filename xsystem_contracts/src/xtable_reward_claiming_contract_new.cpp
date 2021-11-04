@@ -87,7 +87,7 @@ contract_common::properties::xmap_property_t<std::string, std::string> & xtop_ta
 }
 
 contract_common::properties::xmap_property_t<std::string, std::string> const & xtop_table_reward_claiming_contract_new::get_voter_dividend_reward_property(uint32_t index) const {
-    if (index > 4 || index <= 0) {
+    if (index > m_voter_dividend_reward_prop.size() || index <= 0) {
         top::error::throw_error(xvm::enum_xvm_error_code::query_contract_data_property_missing);
     }
 
