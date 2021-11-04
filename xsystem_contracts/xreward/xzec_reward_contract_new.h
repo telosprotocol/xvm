@@ -563,14 +563,6 @@ private:
     std::string reward_task_serialize(const xstake::xreward_dispatch_task & task) const;
 
     /**
-     * @brief reward_task_deserialize
-     *
-     * @param task_str task_str
-     * @return task
-     */
-    xstake::xreward_dispatch_task reward_task_deserialize(const std::string & task_str) const;
-
-    /**
      * @brief accumulated_reward_serialize
      *
      * @param record record

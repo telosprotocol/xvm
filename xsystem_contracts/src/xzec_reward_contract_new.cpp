@@ -32,14 +32,6 @@ enum { edger_idx = 0, archiver_idx, auditor_idx, validator_idx, role_type_idx_nu
 NS_BEG2(top, system_contracts)
 
 void xtop_zec_reward_contract_new::setup() {
-    //m_auditor_workload.initialize();
-    //m_validator_workload.initialize();
-    //m_accumulate_issuance.initialize();
-    //m_reward_detail.initialize();
-    //m_accumulate_issuance_yearly.initialize();
-    //m_last_read_rec_reg_contract_height.initialize();
-    //m_last_read_rec_reg_contract_time.initialize();
-
     // MAP_CREATE(XPORPERTY_CONTRACT_TASK_KEY);  // save dispatch tasks
     // std::vector<std::pair<std::string, std::string>> db_kv_111;
     // chain_data::xchain_data_processor_t::get_stake_map_property(address(), xstake::XPORPERTY_CONTRACT_TASK_KEY, db_kv_111);
@@ -334,188 +326,6 @@ bool xtop_zec_reward_contract_new::reward_is_expire(const common::xlogic_time_t 
     const uint32_t reward_issue_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(reward_issue_interval);
     return reward_is_expire_internal(onchain_timer_round, reward_issue_interval, activation_record, accumulated_reward_serialize);
 }
-#if 0
-uint32_t xtop_zec_reward_contract_new::get_task_id_internal(std::map<std::string, std::string> const & tasks_map_str) const {
-    uint32_t task_id = 0;
-    if (tasks_map_str.size() > 0) {
-        auto it = tasks_map_str.end();
-        it--;
-        task_id = xstring_utl::touint32(it->first);
-        task_id++;
-    }
-    return task_id;
-}
-
-uint32_t xtop_zec_reward_contract_new::get_task_id() const {
-    std::map<std::string, std::string> tasks_map_str;
-    try {
-        MAP_COPY_GET(XPORPERTY_CONTRACT_TASK_KEY, tasks_map_str);
-    } catch (std::runtime_error & e) {
-        xwarn("[xtop_zec_reward_contract_new::get_task_id] get XPORPERTY_CONTRACT_TASK_KEY error:%s", e.what());
-    }
-    return get_task_id_internal(tasks_map_str);
-}
-
-std::pair<std::string, std::string> xtop_zec_reward_contract_new::add_task_internal(const uint32_t task_id,
-                                                                            const common::xlogic_time_t onchain_timer_round,
-                                                                            const std::string & contract,
-                                                                            const std::string & action,
-                                                                            const std::string & params) {
-    xreward_dispatch_task task;
-    task.onchain_timer_round = onchain_timer_round;
-    task.contract = contract;
-    task.action = action;
-    task.params = params;
-    std::stringstream ss;
-    ss << std::setw(10) << std::setfill('0') << task_id;
-    return std::make_pair(ss.str(), reward_task_serialize(task));
-}
-
-void xtop_zec_reward_contract_new::add_task(const uint32_t task_id,
-                                    const common::xlogic_time_t onchain_timer_round,
-                                    const std::string & contract,
-                                    const std::string & action,
-                                    const std::string & params) {
-    auto pair = add_task_internal(task_id, onchain_timer_round, contract, action, params);
-    try {
-        MAP_SET(XPORPERTY_CONTRACT_TASK_KEY, pair.first, pair.second);
-    } catch (std::runtime_error & e) {
-        xwarn("[xtop_zec_reward_contract_new::add_task] set XPORPERTY_CONTRACT_TASK_KEY error:%s", e.what());
-    }
-}
-
-void xtop_zec_reward_contract_new::execute_task_internal(std::map<std::string, std::string> & dispatch_tasks,
-                                                 std::map<std::string, uint64_t> & transfer_map,
-                                                 std::vector<xreward_dispatch_task> & call_vec,
-                                                 std::vector<std::string> & rm_vec) {
-    XMETRICS_TIME_RECORD(XREWARD_CONTRACT "execute_task_ExecutionTime");
-
-    xreward_dispatch_task task;
-
-    xdbg("[xtop_zec_reward_contract_new::execute_task] map size: %d\n", dispatch_tasks.size());
-    XMETRICS_COUNTER_SET(XREWARD_CONTRACT "currentTaskCnt", dispatch_tasks.size());
-
-    const int32_t task_num_per_round = 16;
-    for (auto i = 0; i < task_num_per_round; i++) {
-        auto it = dispatch_tasks.begin();
-        if (it == dispatch_tasks.end())
-            return;
-
-        xstream_t stream(xcontext_t::instance(), (uint8_t *)it->second.c_str(), (uint32_t)it->second.size());
-        task.serialize_from(stream);
-
-        XMETRICS_PACKET_INFO(XREWARD_CONTRACT "executeTask",
-                             "id",
-                             it->first,
-                             "logicTime",
-                             task.onchain_timer_round,
-                             "targetContractAddr",
-                             task.contract,
-                             "action",
-                             task.action,
-                             "onChainParamTaskNumPerRound",
-                             task_num_per_round);
-
-        // debug output
-        if (task.action == XREWARD_CLAIMING_ADD_NODE_REWARD || task.action == XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD) {
-            xstream_t stream_params(xcontext_t::instance(), (uint8_t *)task.params.c_str(), (uint32_t)task.params.size());
-            uint64_t onchain_timer_round;
-            std::map<std::string, top::xstake::uint128_t> rewards;
-            stream_params >> onchain_timer_round;
-            stream_params >> rewards;
-            for (auto const & r : rewards) {
-                xinfo("[xtop_zec_reward_contract_new::execute_task] contract: %s, action: %s, account: %s, reward: [%llu, %u], onchain_timer_round: %llu\n",
-                      task.contract.c_str(),
-                      task.action.c_str(),
-                      r.first.c_str(),
-                      static_cast<uint64_t>(r.second / REWARD_PRECISION),
-                      static_cast<uint32_t>(r.second % REWARD_PRECISION),
-                      task.onchain_timer_round);
-            }
-        } else if (task.action == XTRANSFER_ACTION) {
-            std::map<std::string, uint64_t> issuances;
-            xstream_t seo_stream(xcontext_t::instance(), (uint8_t *)task.params.c_str(), (uint32_t)task.params.size());
-            seo_stream >> issuances;
-            for (auto const & issue : issuances) {
-                xinfo("[xtop_zec_reward_contract_new::execute_task] action: %s, contract account: %s, issuance: %llu, onchain_timer_round: %llu\n",
-                      task.action.c_str(),
-                      issue.first.c_str(),
-                      issue.second,
-                      task.onchain_timer_round);
-                // TRANSFER(issue.first, issue.second);
-                transfer_map.insert(std::make_pair(issue.first, issue.second));
-            }
-        }
-
-        if (task.action != XTRANSFER_ACTION) {
-            // CALL(common::xaccount_address_t{task.contract}, task.action, task.params);
-            call_vec.emplace_back(task);
-        }
-        rm_vec.emplace_back(it->first);
-        dispatch_tasks.erase(it);
-    }
-}
-
-void xtop_zec_reward_contract_new::execute_task() {
-    std::map<std::string, std::string> dispatch_tasks;
-    try {
-        MAP_COPY_GET(XPORPERTY_CONTRACT_TASK_KEY, dispatch_tasks);
-    } catch (std::runtime_error & e) {
-        xwarn("[xtop_zec_reward_contract_new::update_accumulated_issuance] set XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE error:%s", e.what());
-    }
-    std::map<std::string, uint64_t> transfer_map;
-    std::vector<xreward_dispatch_task> call_vec;
-    std::vector<std::string> rm_vec;
-    execute_task_internal(dispatch_tasks, transfer_map, call_vec, rm_vec);
-    for (auto it = transfer_map.begin(); it != transfer_map.end(); it++) {
-        TRANSFER(it->first, it->second);
-    }
-    for (auto it = call_vec.begin(); it != call_vec.end(); it++) {
-        CALL(common::xaccount_address_t{it->contract}, it->action, it->params);
-    }
-    for (auto it = rm_vec.begin(); it != rm_vec.end(); it++) {
-        MAP_REMOVE(XPORPERTY_CONTRACT_TASK_KEY, *it);
-    }
-}
-
-void xtop_zec_reward_contract_new::print_tasks() {
-    std::map<std::string, std::string> dispatch_tasks;
-    MAP_COPY_GET(XPORPERTY_CONTRACT_TASK_KEY, dispatch_tasks);
-
-    xreward_dispatch_task task;
-    for (auto const & p : dispatch_tasks) {
-        xstream_t stream(xcontext_t::instance(), (uint8_t *)p.second.c_str(), (uint32_t)p.second.size());
-        task.serialize_from(stream);
-
-        xdbg("[xtop_zec_reward_contract_new::print_tasks] task id: %s, onchain_timer_round: %llu, contract: %s, action: %s\n",
-             p.first.c_str(),
-             task.onchain_timer_round,
-             task.contract.c_str(),
-             task.action.c_str());
-
-        if (task.action == XREWARD_CLAIMING_ADD_NODE_REWARD || task.action == XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD) {
-            xstream_t stream_params(xcontext_t::instance(), (uint8_t *)task.params.c_str(), (uint32_t)task.params.size());
-            uint64_t onchain_timer_round;
-            std::map<std::string, top::xstake::uint128_t> rewards;
-            stream_params >> onchain_timer_round;
-            stream_params >> rewards;
-            for (auto const & r : rewards) {
-                xdbg("[xtop_zec_reward_contract_new::print_tasks] account: %s, reward: [%llu, %u]\n",
-                     r.first.c_str(),
-                     static_cast<uint64_t>(r.second / REWARD_PRECISION),
-                     static_cast<uint32_t>(r.second % REWARD_PRECISION));
-            }
-        } else if (task.action == XTRANSFER_ACTION) {
-            std::map<std::string, uint64_t> issuances;
-            xstream_t seo_stream(xcontext_t::instance(), (uint8_t *)task.params.c_str(), (uint32_t)task.params.size());
-            seo_stream >> issuances;
-            for (auto const & issue : issuances) {
-                xdbg("[xtop_zec_reward_contract_new::print_tasks] contract account: %s, issuance: %llu\n", issue.first.c_str(), issue.second);
-            }
-        }
-    }
-}
-#endif
 
 uint32_t xtop_zec_reward_contract_new::calc_current_year(const common::xlogic_time_t time_since_active) const {
     return time_since_active / TIMER_BLOCK_HEIGHT_PER_YEAR + 1;
@@ -949,26 +759,6 @@ uint64_t xtop_zec_reward_contract_new::calc_votes(std::map<common::xaccount_addr
 
     return total_votes;
 }
-
-// std::map<common::xaccount_address_t, uint64_t> xtop_zec_reward_contract_new::calc_votes(
-//     std::map<common::xaccount_address_t, std::map<common::xaccount_address_t, uint64_t>> const & votes_detail,
-//     std::map<common::xaccount_address_t, xreg_node_info> const & map_nodes) {
-//     std::map<common::xaccount_address_t, uint64_t> account_votes;
-//     for (auto & entity : map_nodes) {
-//         auto const & account = entity.first;
-//         auto & node = entity.second;
-//         for (auto const & vote_detail : votes_detail) {
-//             auto const & contract = vote_detail.first;
-//             auto const & vote = vote_detail.second;
-//             auto iter = vote.find(account);
-//             if (iter != vote.end()) {
-//                 account_votes[account] += iter->second;
-//             }
-//         }
-//     }
-
-//     return account_votes;
-// }
 
 top::xstake::uint128_t xtop_zec_reward_contract_new::calc_zero_workload_reward(bool is_auditor,
                                                                                std::map<common::xcluster_address_t, cluster_workload_t> & workloads_detail,
@@ -1609,21 +1399,6 @@ void xtop_zec_reward_contract_new::update_property(const common::xlogic_time_t c
     update_accumulated_issuance(current_time, actual_issuance, activation_record);
     update_accumulated_record(record);
     update_issuance_detail(issue_detail);
-}
-
-std::string xtop_zec_reward_contract_new::reward_task_serialize(const xreward_dispatch_task & task) const {
-    xstream_t stream{xcontext_t::instance()};
-    task.serialize_to(stream);
-    return std::string((char *)stream.data(), stream.size());
-}
-
-xreward_dispatch_task xtop_zec_reward_contract_new::reward_task_deserialize(const std::string & task_str) const {
-    xreward_dispatch_task task;
-    if (!task_str.empty()) {
-        xstream_t stream{xcontext_t::instance(), (uint8_t *)task_str.c_str(), (uint32_t)task_str.size()};
-        task.serialize_from(stream);
-    }
-    return task;
 }
 
 std::string xtop_zec_reward_contract_new::accumulated_reward_serialize(const xaccumulated_reward_record & record) const {
