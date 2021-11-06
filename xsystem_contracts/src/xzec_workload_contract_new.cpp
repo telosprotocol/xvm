@@ -49,7 +49,7 @@ void xtop_zec_workload_contract_new::on_receive_workload(std::string const & tab
         activation_str = activation_property.value();
         workload_str = m_workload.value();
         tgas_str = m_tgas.value();
-        height_str = m_table_height.get(std::to_string(table_id));
+        height_str = m_table_height.get(top::to_string(table_id));
     }
 
     handle_workload_str(activation_str, table_info_str, workload_str, tgas_str, height_str, workload_str_new, tgas_str_new);

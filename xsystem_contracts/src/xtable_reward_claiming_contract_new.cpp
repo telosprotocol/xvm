@@ -124,14 +124,13 @@ void xtop_table_reward_claiming_contract_new::recv_voter_dividend_reward(const c
     auto table_id = self_address.table_id();
     auto adv_votes_bytes = get_property<contract_common::properties::xmap_property_t<std::string, std::string>>(
         state_accessor::properties::xtypeless_property_identifier_t{xstake::XPORPERTY_CONTRACT_POLLABLE_KEY},
-        common::xaccount_address_t{data::xdatautil::serialize_owner_str(sys_contract_sharding_vote_addr, table_id)});
+        common::xaccount_address_t{common::xaccount_base_address_t::build_from(sys_contract_sharding_vote_addr), table_id});
     auto adv_votes = adv_votes_bytes.value();
 
     for (size_t i = 1; i <= m_voter_dividend_reward_prop.size(); ++i) {
         auto votes_property_name = std::string{xstake::XPORPERTY_CONTRACT_VOTES_KEY_BASE} + "-" + std::to_string(i);
-        auto vote_addr = data::xdatautil::serialize_owner_str(sys_contract_sharding_vote_addr, table_id);
         auto voters_bytes = get_property<contract_common::properties::xmap_property_t<std::string, std::string>>(
-            state_accessor::properties::xtypeless_property_identifier_t{votes_property_name}, common::xaccount_address_t{vote_addr});
+            state_accessor::properties::xtypeless_property_identifier_t{votes_property_name}, common::xaccount_address_t{common::xaccount_base_address_t::build_from(sys_contract_sharding_vote_addr), table_id});
         auto voters = voters_bytes.value();
         xdbg("[xtop_table_reward_claiming_contract_new::recv_voter_dividend_reward] vote maps %s size: %d", votes_property_name.c_str(), voters.size());
         // calc_voter_reward(voters);
