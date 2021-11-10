@@ -5,10 +5,10 @@
 #include "xvm/xsystem_contracts/xregistration/xrec_registration_contract_new.h"
 
 #include "xchain_upgrade/xchain_data_processor.h"
+#include "xdata/xnative_contract_address.h"
 #include "xdata/xrootblock.h"
 #include "xdata/xslash.h"
 #include "xstore/xstore_error.h"
-#include "xsystem_contracts/xsystem_contract_addresses.h"
 
 using namespace top::base;
 using namespace top::chain_data;

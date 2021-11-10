@@ -9,8 +9,8 @@
 #include "xcontract_common/xserialization/xserialization.h"
 #include "xdata/xcodec/xmsgpack/xstandby_result_store_codec.hpp"
 #include "xdata/xelection/xstandby_result_store.h"
+#include "xdata/xnative_contract_address.h"
 #include "xdata/xrootblock.h"
-#include "xsystem_contracts/xsystem_contract_addresses.h"
 #include "xstate_accessor/xproperties/xproperty_identifier.h"
 
 using namespace top::contract_common;
