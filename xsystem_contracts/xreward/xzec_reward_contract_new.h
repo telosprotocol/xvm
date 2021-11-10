@@ -589,6 +589,7 @@ private:
     contract_common::properties::xmap_property_t<std::string, std::string> m_auditor_workload{xstake::XPORPERTY_CONTRACT_WORKLOAD_KEY, this};
     contract_common::properties::xmap_property_t<std::string, std::string> m_validator_workload{xstake::XPORPERTY_CONTRACT_VALIDATOR_WORKLOAD_KEY, this};
     contract_common::properties::xmap_property_t<std::string, std::string> m_accumulate_issuance{xstake::XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_reward_task{xstake::XPORPERTY_CONTRACT_TASK_KEY, this};
     // string property
     contract_common::properties::xstring_property_t m_reward_detail{xstake::XPROPERTY_REWARD_DETAIL, this};
     contract_common::properties::xstring_property_t m_accumulate_issuance_yearly{xstake::XPROPERTY_CONTRACT_ACCUMULATED_ISSUANCE_YEARLY, this};
