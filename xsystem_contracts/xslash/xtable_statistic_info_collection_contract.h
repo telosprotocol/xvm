@@ -6,6 +6,7 @@
 
 #include "xcommon/xlogic_time.h"
 #include "xdata/xfull_tableblock.h"
+#include "xdata/xfulltableblock_account_data.h"
 #include "xdata/xslash.h"
 #include "xstake/xstake_algorithm.h"
 #include "xvledger/xvcnode.h"
@@ -42,7 +43,7 @@ public:
      * @param block_height the fullblock height
      */
     void
-    on_collect_statistic_info(std::string const& statistic_info, uint64_t block_height, int64_t tgas);
+    on_collect_statistic_info(top::data::xstatistics_data_t const& statistic_data, top::data::xfulltableblock_statistic_accounts const& statistic_accounts, uint64_t block_height, int64_t tgas);
 
     /**
      * @brief report the summarized statistic info
@@ -68,7 +69,7 @@ private:
      * @param summarize_info  in&out
      * @param summarize_fulltableblock_num in&out
      */
-    void collect_slash_statistic_info(xstatistics_data_t const& statistic_data,  base::xvnodesrv_t * node_service, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
+    void collect_slash_statistic_info(top::data::xstatistics_data_t const& statistic_data, top::data::xfulltableblock_statistic_accounts const& statistic_accounts, std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
                                         xunqualified_node_info_t& summarize_info, uint32_t& summarize_fulltableblock_num);
 
 
@@ -95,10 +96,10 @@ private:
      * @brief process statistic data to get nodeinfo
      *
      * @param block_statistic_data  the statistic data of a fulltable block
-     * @param auditor_n
+     * @param statistic_accounts    the statistic accounts data of a fulltable block
      * @return xunqualified_node_info_t  the node info from statistic data
      */
-    xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, base::xvnodesrv_t * node_service);
+    xunqualified_node_info_t process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, top::data::xfulltableblock_statistic_accounts const& statistic_accounts);
 
     /**
      * @brief process workload statistic data
@@ -107,7 +108,7 @@ private:
      * @param  tgas tgas
      *
      */
-    void process_workload_statistic_data(xstatistics_data_t const & statistic_data, const int64_t tgas);
+    void process_workload_statistic_data(top::data::xstatistics_data_t const & statistic_data,  top::data::xfulltableblock_statistic_accounts const& statistic_accounts, const int64_t tgas);
 
     /**
      * @brief get_workload
@@ -115,7 +116,7 @@ private:
      * @param  xstatistics_data_t  statistic data
      *
      */
-    std::map<common::xgroup_address_t, xstake::xgroup_workload_t> get_workload_from_data(xstatistics_data_t const & statistic_data);
+    std::map<common::xgroup_address_t, xstake::xgroup_workload_t> get_workload_from_data(top::data::xstatistics_data_t const & statistic_data, top::data::xfulltableblock_statistic_accounts const& statistic_accounts);
 
     /**
      * @brief get_workload
