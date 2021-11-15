@@ -203,7 +203,7 @@ void xtop_rec_registration_contract_new::setup() {
 
 void xrec_registration_contract_new_t::source_withdraw(std::string const& token_name, uint64_t token_amount) {
     // withdraw from src action(account) state
-    auto token = state_withdraw(token_amount);
+    auto token = withdraw(token_amount);
     xdbg("[xrec_registration_contract::source_withdraw] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
 
     // serialize token to target action(account)
@@ -217,7 +217,7 @@ void xrec_registration_contract_new_t::confirm_deposit(std::string const& token_
     assert(!ec);
     top::error::throw_error(ec);
     xdbg("[xrec_registration_contract::confirm_deposit] at_confirm_action_stage, token name: %s, amount: %" PRIu64, token.symbol().c_str(), token.amount());
-    state_deposit(std::move(token));
+    deposit(std::move(token));
 }
 
 void xrec_registration_contract_new_t::registerNode(const std::string & role_type_name,
