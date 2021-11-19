@@ -338,12 +338,6 @@ void xtop_contract_manager::init(observer_ptr<xstore_face_t> const & store,
 void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contract_cluster_address, xvblockstore_t * blockstore) {
     assert(contract_cluster_address.has_value());
 
-    if (blockstore->exist_genesis_block(contract_cluster_address.value())) {
-        xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block exist", contract_cluster_address.c_str());
-        return;
-    }
-    xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block not exist", contract_cluster_address.c_str());
-
     xtransaction_ptr_t tx = make_object_ptr<xtransaction_v1_t>();
     data::xproperty_asset asset_out{0};
     tx->make_tx_run_contract(asset_out, "setup", "");
@@ -364,8 +358,20 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
     base::xauto_ptr<base::xvblock_t> block(data::xblocktool_t::create_genesis_lightunit(contract_cluster_address.value(), tx, result));
     xassert(block);
 
+    if (blockstore->exist_genesis_block(contract_cluster_address.value()) ) {
+        auto const& genesis_block = blockstore->load_block_object(contract_cluster_address.value(), (uint64_t)0, (uint64_t)0, false);
+        if (block->get_block_hash() == genesis_block->get_block_hash()) {
+            xdbg("xtop_contract_manager::setup_chain blockchain account %s genesis block exist", contract_cluster_address.c_str());
+            return;
+        } else {
+            if (contract_cluster_address.value().find(top::sys_contract_sharding_statistic_info_addr) != std::string::npos) {
+                xwarn("xtop_contract_manager::setup_chain blockchain account %s genesis block exist but hash not match", contract_cluster_address.c_str());
+                blockstore->delete_block(block->get_account(), block.get());
+            }
+        }
+    }
+
     base::xvaccount_t _vaddr(block->get_account());
-    // m_blockstore->delete_block(_vaddr, genesis_block.get());  // delete default genesis block
     auto ret = blockstore->store_block(_vaddr, block.get());
     if (!ret) {
         xerror("xtop_contract_manager::setup_chain %s genesis block fail", contract_cluster_address.c_str());
