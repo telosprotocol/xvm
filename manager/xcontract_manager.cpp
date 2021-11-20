@@ -366,7 +366,10 @@ void xtop_contract_manager::setup_chain(common::xaccount_address_t const & contr
         } else {
             if (contract_cluster_address.value().find(top::sys_contract_sharding_statistic_info_addr) != std::string::npos) {
                 xwarn("xtop_contract_manager::setup_chain blockchain account %s genesis block exist but hash not match", contract_cluster_address.c_str());
-                blockstore->delete_block(block->get_account(), block.get());
+                blockstore->delete_block(block->get_account(), block.get()); // here just delete it, below will store new root block
+            } else { // not table statistic addr
+                xerror("xtop_contract_manager::setup_chain blockchain account %s genesis block exist but hash not match", contract_cluster_address.c_str());
+                return;
             }
         }
     }
