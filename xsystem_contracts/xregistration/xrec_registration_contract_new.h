@@ -40,7 +40,7 @@ public:
         DECLARE_API(xtop_rec_registration_contract_new::unstakeDeposit);
         DECLARE_API(xtop_rec_registration_contract_new::updateNodeSignKey);
         DECLARE_API(xtop_rec_registration_contract_new::slash_unqualified_node);
-        DECLARE_SEND_ONLY_API(xtop_rec_registration_contract_new::source_withdraw);
+        DECLARE_SEND_ONLY_API(xtop_rec_registration_contract_new::mortgage);
         // DECLARE_CONFIRM_ONLY_API(xtop_rec_registration_contract_new::confirm_deposit);
     END_CONTRACT_API
 
@@ -66,7 +66,7 @@ public:
 #endif
     );
 
-    void source_withdraw(std::string const& token_name, uint64_t token_amount);
+    void mortgage(std::string const & token_name, uint64_t token_amount);
     void confirm_deposit(std::string const& token_name, uint64_t token_amount);
     /**
      * @brief unregister the node

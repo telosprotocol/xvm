@@ -1,62 +1,53 @@
+// Copyright (c) 2017-present Telos Foundation & contributors
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #pragma once
 
 #include "xbase/xns_macro.h"
 
 #include <cstdint>
 #include <functional>
-#include <stdexcept>
 #include <system_error>
 #include <type_traits>
 
-NS_BEG4(top, xvm, system_contracts, error)
+NS_BEG3(top, system_contracts, error)
 
-enum class xenum_system_contract_errc {
+enum class xenum_errc {
     successful,
     serialization_error,
     deserialization_error,
     rec_registration_node_info_not_found,
     election_error,
+    proposal_not_found,
+    proposal_not_changed,
+    unknown_proposal_type,
+    invalid_proposer,
+    proposal_already_voted,
 };
-using xsystem_contract_errc_t = xenum_system_contract_errc;
+using xerrc_t = xenum_errc;
 
-std::error_code make_error_code(xsystem_contract_errc_t errc) noexcept;
-std::error_condition make_error_condition(xsystem_contract_errc_t errc) noexcept;
+std::error_code make_error_code(xerrc_t errc) noexcept;
+std::error_condition make_error_condition(xerrc_t errc) noexcept;
 
 std::error_category const & system_contract_category();
 
-class xtop_system_contract_execution_error : public std::runtime_error {
-public:
-    xtop_system_contract_execution_error(xsystem_contract_errc_t const error_code);
-    xtop_system_contract_execution_error(xsystem_contract_errc_t const error_code, std::string extra_msg);
-
-    std::error_code const & code() const noexcept;
-
-private:
-    xtop_system_contract_execution_error(std::error_code ec);
-    xtop_system_contract_execution_error(std::error_code ec, std::string extra_msg);
-
-private:
-    std::error_code m_ec;
-};
-using xsystem_contract_execution_error_t = xtop_system_contract_execution_error;
-
-
-NS_END4
+NS_END3
 
 NS_BEG1(std)
 
 #if !defined(XCXX14_OR_ABOVE)
 
 template <>
-struct hash<top::xvm::system_contracts::error::xsystem_contract_errc_t> final {
-    size_t operator()(top::xvm::system_contracts::error::xsystem_contract_errc_t errc) const noexcept;
+struct hash<top::system_contracts::error::xerrc_t> final {
+    size_t operator()(top::system_contracts::error::xerrc_t errc) const noexcept;
 };
 
 template <>
-struct is_error_code_enum<top::xvm::system_contracts::error::xsystem_contract_errc_t> : std::true_type {};
+struct is_error_code_enum<top::system_contracts::error::xerrc_t> : std::true_type {};
 
 template <>
-struct is_error_condition_enum<top::xvm::system_contracts::error::xsystem_contract_errc_t> : std::true_type {};
+struct is_error_condition_enum<top::system_contracts::error::xerrc_t> : std::true_type {};
 
 #endif
 

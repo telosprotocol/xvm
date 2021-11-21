@@ -477,7 +477,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
                 xerror("genesis_election failed auditor %" PRIu16 " validator %" PRIu16,
                        static_cast<std::uint16_t>(auditor_group_id.value()),
                        static_cast<std::uint16_t>(validator_group_id.value()));
-                std::error_code ec{ top::xvm::system_contracts::error::xsystem_contract_errc_t::election_error };
+                std::error_code ec{ error::xerrc_t::election_error };
                 top::error::throw_error(ec);
             }
         }

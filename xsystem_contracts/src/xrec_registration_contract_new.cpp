@@ -201,10 +201,10 @@ void xtop_rec_registration_contract_new::setup() {
     }
 }
 
-void xrec_registration_contract_new_t::source_withdraw(std::string const& token_name, uint64_t token_amount) {
+void xrec_registration_contract_new_t::mortgage(std::string const & token_name, uint64_t token_amount) {
     // withdraw from src action(account) state
     auto token = withdraw(token_amount);
-    xdbg("[xrec_registration_contract::source_withdraw] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
+    xdbg("[xrec_registration_contract::mortgage] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
 
     // serialize token to target action(account)
     asset_to_next_action(std::move(token));
@@ -246,7 +246,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
                                                      const std::string & signing_key,
                                                      const uint32_t dividend_rate,
                                                      const std::set<common::xnetwork_id_t> & network_ids
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
                                                      ,
                                                      common::xaccount_address_t const & registration_account
 #endif
@@ -254,7 +254,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registerNode_Called", 1);
     XMETRICS_TIME_RECORD(XREG_CONTRACT "registerNode_ExecutionTime");
 
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
     auto const & account = registration_account;
 #else
     auto const & account = sender();
@@ -284,7 +284,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
 
     node_info.m_account = account;
     node_info.m_registered_role = role_type;
-#if defined XENABLE_MOCK_ZEC_STAKE
+#if defined(XENABLE_MOCK_ZEC_STAKE)
     token_amount = 100000000000000;
     node_info.m_account_mortgage = 100000000000000;
 #else

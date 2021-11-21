@@ -1,27 +1,43 @@
+// Copyright (c) 2017-present Telos Foundation & contributors
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include "xvm/xsystem_contracts/xerror/xerror.h"
 
-#include <string>
-#include <type_traits>
-
-NS_BEG4(top, xvm, system_contracts, error)
+NS_BEG3(top, system_contracts, error)
 
 static char const * errc_to_message(int const errc) noexcept {
-    auto ec = static_cast<error::xsystem_contract_errc_t>(errc);
+    auto ec = static_cast<xerrc_t>(errc);
     switch (ec) {
-    case xsystem_contract_errc_t::successful:
+    case xerrc_t::successful:
         return "successful";
 
-    case xsystem_contract_errc_t::serialization_error:
+    case xerrc_t::serialization_error:
         return "serialization error";
 
-    case xsystem_contract_errc_t::deserialization_error:
+    case xerrc_t::deserialization_error:
         return "deserialization error";
 
-    case xsystem_contract_errc_t::rec_registration_node_info_not_found:
+    case xerrc_t::rec_registration_node_info_not_found:
         return "rec registraction constract: node info not found";
 
-    case xsystem_contract_errc_t::election_error:
+    case xerrc_t::election_error:
         return "election error";
+
+    case xerrc_t::proposal_not_found:
+        return "proposal not found";
+
+    case xerrc_t::proposal_not_changed:
+        return "proposal not changed";
+
+    case xerrc_t::unknown_proposal_type:
+        return "unknown proposal type";
+
+    case xerrc_t::invalid_proposer:
+        return "invalid proposer";
+
+    case xerrc_t::proposal_already_voted:
+        return "proposal alrady voted";
 
     default:
         return "unknown error";
@@ -40,11 +56,11 @@ public:
 };
 using xsystem_contract_category_t = xtop_system_contract_category;
 
-std::error_code make_error_code(xsystem_contract_errc_t errc) noexcept {
+std::error_code make_error_code(xerrc_t errc) noexcept {
     return std::error_code(static_cast<int>(errc), system_contract_category());
 }
 
-std::error_condition make_error_condition(xsystem_contract_errc_t errc) noexcept {
+std::error_condition make_error_condition(xerrc_t errc) noexcept {
     return std::error_condition(static_cast<int>(errc), system_contract_category());
 }
 
@@ -53,29 +69,12 @@ std::error_category const & system_contract_category() {
     return category;
 }
 
-xtop_system_contract_execution_error::xtop_system_contract_execution_error(xsystem_contract_errc_t errc) : xtop_system_contract_execution_error{make_error_code(errc)} {
-}
-
-xtop_system_contract_execution_error::xtop_system_contract_execution_error(xsystem_contract_errc_t errc, std::string extra_msg) : xtop_system_contract_execution_error{make_error_code(errc), std::move(extra_msg)} {
-}
-
-xtop_system_contract_execution_error::xtop_system_contract_execution_error(std::error_code ec) : std::runtime_error{ec.message()}, m_ec{std::move(ec)} {
-}
-
-xtop_system_contract_execution_error::xtop_system_contract_execution_error(std::error_code ec, std::string extra_msg)
-  : std::runtime_error{extra_msg += ":" + ec.message()}, m_ec{std::move(ec)} {
-}
-
-std::error_code const & xtop_system_contract_execution_error::code() const noexcept {
-    return m_ec;
-}
-
-NS_END4
+NS_END3
 
 NS_BEG1(std)
 
-size_t hash<top::xvm::system_contracts::error::xsystem_contract_errc_t>::operator()(top::xvm::system_contracts::error::xsystem_contract_errc_t errc) const noexcept {
-    return static_cast<size_t>(static_cast<std::underlying_type<top::xvm::system_contracts::error::xsystem_contract_errc_t>::type>(errc));
+size_t hash<top::system_contracts::error::xerrc_t>::operator()(top::system_contracts::error::xerrc_t errc) const noexcept {
+    return static_cast<size_t>(static_cast<std::underlying_type<top::system_contracts::error::xerrc_t>::type>(errc));
 }
 
 NS_END1
