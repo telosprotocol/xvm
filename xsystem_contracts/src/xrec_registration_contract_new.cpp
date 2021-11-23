@@ -456,7 +456,7 @@ void xtop_rec_registration_contract_new::redeemNodeDeposit() {
 
     xdbg("[xrec_registration_contract::redeemNodeDeposit] pid:%d, balance:%llu, account: %s, refund amount: %llu\n", getpid(), balance(), source_account.c_str(), refund.refund_amount);
     // refund
-    transfer(source_account, refund.refund_amount, contract_common::xfollowup_transaction_schedule_type_t::immediately);
+    // transfer(source_account, refund.refund_amount, contract_common::xfollowup_transaction_schedule_type_t::delay);
 
     del_refund(source_account.value());
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "redeemNodeDeposit_Executed", 1);

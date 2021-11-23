@@ -5,13 +5,13 @@
 #pragma once
 
 #include "xbase/xdata.h"
+#include "xcontract_common/xproperties/xproperty_string.h"
+#include "xcontract_common/xproperties/xproperty_map.h"
 #include "xdata/xdata_common.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xproposal_data.h"
 #include "xsystem_contracts/xbasic_system_contract.h"
 #include "xsystem_contract_runtime/xsystem_contract_runtime_helper.h"
-#include "xcontract_common/xproperties/xproperty_string.h"
-#include "xcontract_common/xproperties/xproperty_map.h"
 
 NS_BEG2(top, system_contracts)
 
@@ -24,23 +24,14 @@ class xtop_rec_tcc_contract final : public xbasic_system_contract_t {
 
     contract_common::properties::xmap_property_t<std::string, std::string> m_tcc_parameters{ONCHAIN_PARAMS, this};
     contract_common::properties::xstring_property_t m_tcc_next_unused_proposal_id{SYSTEM_GENERATED_ID, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_tcc_proposal_ids{PROPOSAL_MAP_ID, this};
-    contract_common::properties::xmap_property_t<std::string, xbytes_t> m_tcc_vote_ids{VOTE_MAP_ID, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_tcc_proposal_ids{PROPOSAL_MAP_ID, this};
+    contract_common::properties::xmap_property_t<std::string, std::string> m_tcc_vote_ids{VOTE_MAP_ID, this};
     contract_common::properties::xstring_property_t m_tcc_voted_proposal{CURRENT_VOTED_PROPOSAL, this};
 
 public:
-    XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xtop_rec_tcc_contract);
-    XDECLARE_DEFAULTED_OVERRIDE_DESTRUCTOR(xtop_rec_tcc_contract);
-
-    BEGIN_CONTRACT_API()
-        DECLARE_API(xtop_rec_tcc_contract::setup);
-        DECLARE_API(xtop_rec_tcc_contract::submitProposal);
-        DECLARE_API(xtop_rec_tcc_contract::withdrawProposal);
-        DECLARE_API(xtop_rec_tcc_contract::tccVote);
-    END_CONTRACT_API
-
-private:
     void setup();
+
+    void charge(std::string const & token_name, uint64_t token_amount);
 
     /**
      * @brief sumbit a tcc proposal
@@ -74,6 +65,18 @@ private:
      * @return true
      * @return false
      */
+
+    BEGIN_CONTRACT_API()
+        DECLARE_API(xtop_rec_tcc_contract::setup);
+        DECLARE_API(xtop_rec_tcc_contract::submitProposal);
+        DECLARE_API(xtop_rec_tcc_contract::withdrawProposal);
+        DECLARE_API(xtop_rec_tcc_contract::tccVote);
+        DECLARE_SEND_ONLY_API(xtop_rec_tcc_contract::charge);
+        // DECLARE_CONFIRM_ONLY_API(xtop_rec_tcc_contract::confirm_charge);
+    END_CONTRACT_API
+
+private:
+
     bool get_proposal_info(const std::string& proposal_id, tcc::proposal_info& proposal);
 
     /**
@@ -117,6 +120,6 @@ private:
      */
     void check_bwlist_proposal(std::string const& bwlist);
 };
-using xrec_tcc_contract_t = xtop_rec_tcc_contract;
+using xrec_tcc_contract_new_t = xtop_rec_tcc_contract;
 
 NS_END2

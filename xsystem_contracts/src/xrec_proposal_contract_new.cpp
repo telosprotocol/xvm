@@ -40,7 +40,7 @@ void xtop_rec_tcc_contract::setup() {
 }
 
 bool xtop_rec_tcc_contract::get_proposal_info(const std::string & proposal_id, tcc::proposal_info & proposal) {
-    xbytes_t value;
+    std::string value;
     try {
         value = m_tcc_proposal_ids.get(proposal_id);
     } catch (top::error::xtop_error_t const &) {
@@ -48,9 +48,18 @@ bool xtop_rec_tcc_contract::get_proposal_info(const std::string & proposal_id, t
         return false;  // not exist
     }
 
-    top::base::xstream_t stream{base::xcontext_t::instance(), value.data(), static_cast<uint32_t>(value.size())};
+    top::base::xstream_t stream{base::xcontext_t::instance(), (uint8_t*)value.data(), static_cast<uint32_t>(value.size())};
     proposal.deserialize(stream);
     return true;
+}
+
+void xtop_rec_tcc_contract::charge(std::string const & token_name, uint64_t token_amount) {
+    // withdraw from src action(account) state
+    auto token = withdraw(token_amount);
+    xdbg("[xtop_rec_tcc_contract::charge] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
+
+    // serialize token to target action(account)
+    asset_to_next_action(std::move(token));
 }
 
 void xtop_rec_tcc_contract::submitProposal(const std::string & target,
@@ -138,7 +147,7 @@ void xtop_rec_tcc_contract::submitProposal(const std::string & target,
     proposal.proposal_id = base::xstring_utl::tostring(base::xstring_utl::touint64(system_id) + 1);
     proposal.parameter = target;
     proposal.new_value = value;
-    proposal.deposit = token.amount();
+    proposal.deposit = token_amount;
     proposal.type = type;
     // proposal.modification_description = modification_description;
     proposal.effective_timer_height = effective_timer_height;
@@ -153,7 +162,7 @@ void xtop_rec_tcc_contract::submitProposal(const std::string & target,
 
     top::base::xstream_t newstream(base::xcontext_t::instance());
     proposal.serialize(newstream);
-    xbytes_t proposal_value{newstream.data(), newstream.data() + newstream.size()};
+    std::string proposal_value((char *)newstream.data(), newstream.size());
 
     m_tcc_proposal_ids.set(proposal.proposal_id, proposal_value);
     m_tcc_next_unused_proposal_id.set(proposal.proposal_id);
@@ -222,10 +231,12 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
     std::vector<std::string> vec_committee;
     uint32_t voter_committee_size = base::xstring_utl::split_string(committee_list, ',', vec_committee);
 
-    auto value_bytes = m_tcc_vote_ids.get(proposal_id);
-    top::base::xstream_t stream{base::xcontext_t::instance(), value_bytes.data(), static_cast<uint32_t>(value_bytes.size())};
     std::map<std::string, bool> voting_result;
-    MAP_DESERIALIZE_SIMPLE(stream, voting_result);
+    auto value_string = m_tcc_vote_ids.get(proposal_id);
+    if (!value_string.empty()) {
+        top::base::xstream_t stream{base::xcontext_t::instance(), (uint8_t*)value_string.data(), static_cast<uint32_t>(value_string.size())};
+        MAP_DESERIALIZE_SIMPLE(stream, voting_result);
+    }
 
     if (proposal_expired(proposal_id)) {
         uint32_t yes_voters = 0;
@@ -327,7 +338,7 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
             m_tcc_vote_ids.remove(proposal_id);
         }
         m_tcc_proposal_ids.remove(proposal_id);
-        transfer(common::xaccount_address_t{proposal.proposal_client_address}, proposal.deposit, contract_common::xfollowup_transaction_schedule_type_t::immediately);
+        // transfer(common::xaccount_address_t{proposal.proposal_client_address}, proposal.deposit, contract_common::xfollowup_transaction_schedule_type_t::delay);
 
         if (proposal.voting_status == tcc::voting_success) {
             // save the voting status
@@ -377,12 +388,12 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
     } else if (proposal.voting_status == tcc::voting_in_progress) {
         top::base::xstream_t stream(base::xcontext_t::instance());
         MAP_SERIALIZE_SIMPLE(stream, voting_result);
-        m_tcc_vote_ids.set(proposal_id, {stream.data(), stream.data() + stream.size()});
+        m_tcc_vote_ids.set(proposal_id, std::string((char *)stream.data(), stream.size()));
 
         stream.reset();
         proposal.serialize(stream);
-
-        m_tcc_proposal_ids.set(proposal_id, {stream.data(), stream.data() + stream.size()});
+        std::string voted_proposal((char *)stream.data(), stream.size());
+        m_tcc_proposal_ids.set(proposal_id, voted_proposal);
     }
 
     delete_expired_proposal();
@@ -440,7 +451,7 @@ bool xtop_rec_tcc_contract::voter_in_committee(const std::string & voter_client_
 
 void xtop_rec_tcc_contract::delete_expired_proposal() {
 
-    auto proposals = m_tcc_parameters.value();
+    auto proposals = m_tcc_proposal_ids.value();
 
     for (auto const& item: proposals) {
         tcc::proposal_info proposal{};
