@@ -125,7 +125,7 @@ void xtop_rec_tcc_contract::submitProposal(const std::string & target,
     assert(!ec);
     top::error::throw_error(ec);
 
-    xdbg("[xtop_rec_tcc_contract::submitProposal] the sender transaction token: %s, amount: %" PRIu64, token.symbol().c_str(), token.amount());
+    xdbg("[xtop_rec_tcc_contract::submitProposal] the sender transaction token: %s, amount: %" PRIu64, token.symbol().c_str(), token_amount);
     auto min_tcc_proposal_deposit = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_tcc_proposal_deposit);
     XCONTRACT_ENSURE(token.amount() >= min_tcc_proposal_deposit * TOP_UNIT, "[xtop_rec_tcc_contract::submitProposal] deposit less than minimum proposal deposit!");
 
@@ -338,7 +338,7 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
             m_tcc_vote_ids.remove(proposal_id);
         }
         m_tcc_proposal_ids.remove(proposal_id);
-        // transfer(common::xaccount_address_t{proposal.proposal_client_address}, proposal.deposit, contract_common::xfollowup_transaction_schedule_type_t::delay);
+        transfer(common::xaccount_address_t{proposal.proposal_client_address}, proposal.deposit, contract_common::xfollowup_transaction_schedule_type_t::immediately);
 
         if (proposal.voting_status == tcc::voting_success) {
             // save the voting status
