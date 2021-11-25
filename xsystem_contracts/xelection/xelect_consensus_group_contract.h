@@ -154,7 +154,7 @@ protected:
                             common::xcluster_id_t const & cid,
                             common::xgroup_id_t const & gid,
                             common::xnode_type_t const node_type,
-                            common::xrole_type_t const role_type,
+                            common::xminer_type_t const role_type,
                             std::uint64_t const random_seed,
                             xrange_t<config::xgroup_size_t> const & group_size_range,
                             data::election::xstandby_result_t const & standby_result,

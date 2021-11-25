@@ -53,22 +53,22 @@ void xrec_registration_contract::setup() {
         xreg_node_info node_info;
         node_info.serialize_from(stream);
 
-        auto const old_role = static_cast<common::xold_role_type_t>(node_info.m_registered_role);
+        auto const old_role = static_cast<common::xlagacy_miner_type_t>(node_info.m_registered_role);
         switch (old_role) {
-        case common::xold_role_type_t::advance:
-            node_info.m_registered_role = common::xrole_type_t::advance;
+        case common::xlagacy_miner_type_t::advance:
+            node_info.m_registered_role = common::xminer_type_t::advance;
             break;
 
-        case common::xold_role_type_t::consensus:
-            node_info.m_registered_role = common::xrole_type_t::validator;
+        case common::xlagacy_miner_type_t::consensus:
+            node_info.m_registered_role = common::xminer_type_t::validator;
             break;
 
-        case common::xold_role_type_t::archive:
-            node_info.m_registered_role = common::xrole_type_t::archive;
+        case common::xlagacy_miner_type_t::archive:
+            node_info.m_registered_role = common::xminer_type_t::archive;
             break;
 
-        case common::xold_role_type_t::edge:
-            node_info.m_registered_role = common::xrole_type_t::edge;
+        case common::xlagacy_miner_type_t::edge:
+            node_info.m_registered_role = common::xminer_type_t::edge;
             break;
 
         default:
@@ -188,7 +188,7 @@ void xrec_registration_contract::setup() {
             node_info.m_account             = node_data.m_account;
             node_info.m_account_mortgage    = 0;
             node_info.m_genesis_node        = true;
-            node_info.m_registered_role     = common::xrole_type_t::edge | common::xrole_type_t::advance | common::xrole_type_t::validator | common::xrole_type_t::archive;
+            node_info.m_registered_role     = common::xminer_type_t::edge | common::xminer_type_t::advance | common::xminer_type_t::validator | common::xminer_type_t::archive;
             node_info.m_network_ids.insert(network_id);
             node_info.nickname              = std::string("bootnode") + std::to_string(i + 1);
             node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
@@ -245,8 +245,8 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     xreg_node_info node_info;
     auto ret = get_node_info(account.value(), node_info);
     XCONTRACT_ENSURE(ret != 0, "xrec_registration_contract::registerNode2: node exist!");
-    common::xrole_type_t const role_type = common::to_role_type(role_type_name);
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
+    common::xminer_type_t const role_type = common::to_role_type(role_type_name);
+    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::registerNode: invalid nickname");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
 
@@ -360,8 +360,8 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::updateNodeInfo: invalid nickname");
     XCONTRACT_ENSURE(updateDepositType == 1 || updateDepositType == 2, "xrec_registration_contract::updateNodeInfo: invalid updateDepositType");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::updateNodeInfo: dividend_rate must be greater than or be equal to zero");
-    common::xrole_type_t const role_type = common::to_role_type(node_types);
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
+    common::xminer_type_t const role_type = common::to_role_type(node_types);
+    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
 
     node_info.nickname          = nickname;
     node_info.m_registered_role = role_type;
@@ -843,8 +843,8 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
     XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::updateNodeType: node not exist");
 
 
-    common::xrole_type_t role_type = common::to_role_type(node_types);
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::updateNodeType: invalid node_type!");
+    common::xminer_type_t role_type = common::to_role_type(node_types);
+    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeType: invalid node_type!");
     XCONTRACT_ENSURE(role_type != node_info.m_registered_role, "xrec_registration_contract::updateNodeType: node_types can not be same!");
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();

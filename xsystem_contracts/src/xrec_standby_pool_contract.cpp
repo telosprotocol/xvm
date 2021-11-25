@@ -54,7 +54,7 @@ void xtop_rec_standby_pool_contract::setup() {
         seed_node_info.stake_container.insert({common::xnode_type_t::consensus_validator, 0});
         seed_node_info.stake_container.insert({common::xnode_type_t::edge, 0});
 #if defined(XENABLE_MOCK_ZEC_STAKE)
-        seed_node_info.user_request_role = common::xrole_type_t::edge | common::xrole_type_t::archive | common::xrole_type_t::validator | common::xrole_type_t::advance;
+        seed_node_info.user_request_role = common::xminer_type_t::edge | common::xminer_type_t::archive | common::xminer_type_t::validator | common::xminer_type_t::advance;
 #endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
         seed_node_info.program_version = "1.1.0"; // todo init version
         seed_node_info.is_genesis_node = true;
@@ -91,7 +91,7 @@ void xtop_rec_standby_pool_contract::setup() {
 void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t const & node_id,
                                                       common::xnetwork_id_t const & joined_network_id,
 #if defined(XENABLE_MOCK_ZEC_STAKE)
-                                                      common::xrole_type_t role_type,
+                                                      common::xminer_type_t role_type,
                                                       std::string const & consensus_public_key,
                                                       uint64_t const stake,
 #endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
@@ -161,7 +161,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
          "registerNode",
          std::string{reinterpret_cast<char *>(param_stream.data()), static_cast<std::size_t>(param_stream.size())});
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork][mock_zec_stake to registration] finish CALL registration contract");
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
+    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
 
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node_id.c_str());
 
@@ -261,7 +261,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
     }
 
     auto const role_type = node.get_role_type();
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
+    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
     XCONTRACT_ENSURE(node.get_required_min_deposit() <= node.m_account_mortgage,
                      "[xrec_standby_pool_contract_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() + ", role_type : " + common::to_string(role_type));
 
