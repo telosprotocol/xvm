@@ -11,6 +11,7 @@
 #include "xmetrics/xmetrics.h"
 #include "xverifier/xverifier_errors.h"
 #include "xverifier/xverifier_utl.h"
+#include "xvledger/xvaccount.h"
 
 #include <algorithm>
 #include <cinttypes>
@@ -97,7 +98,11 @@ void xrec_proposal_contract::submitProposal(const std::string & target,
         XCONTRACT_ENSURE(xverifier::xtx_utl::address_is_valid(target) == xverifier::xverifier_error::xverifier_success, "[xrec_proposal_contract::submitProposal] proposal_update_asset type proposal, target invalid!");
         break;
     case proposal_type::proposal_add_parameter:
-        XCONTRACT_ENSURE(not MAP_FIELD_EXIST(ONCHAIN_PARAMS, target), "[xrec_proposal_contract::submitProposal] proposal_add_parameter target already exist");
+        {
+            XCONTRACT_ENSURE(not MAP_FIELD_EXIST(ONCHAIN_PARAMS, target), "[xrec_proposal_contract::submitProposal] proposal_add_parameter target already exist");
+            if (target == "whitelist" || target == "blacklist") check_bwlist_proposal(value);
+        }
+
         break;
     case proposal_type::proposal_delete_parameter:
         XCONTRACT_ENSURE(MAP_FIELD_EXIST(ONCHAIN_PARAMS, target), "[xrec_proposal_contract::submitProposal] proposal_add_parameter target do not exist");
@@ -434,6 +439,10 @@ void xrec_proposal_contract::check_bwlist_proposal(std::string const& bwlist) {
     uint32_t size = base::xstring_utl::split_string(bwlist, ',', vec_member);
     XCONTRACT_ENSURE(size > 0, "[xrec_proposal_contract::check_bwlist_proposal] target value error, size zero");
     for (auto const& v: vec_member) {
+        XCONTRACT_ENSURE(v.size() > top::base::xvaccount_t::enum_vaccount_address_prefix_size, "[xrec_proposal_contract::check_bwlist_proposal]  target value error, addr not support");
+        auto const addr_type = top::base::xvaccount_t::get_addrtype_from_account(v);
+        XCONTRACT_ENSURE(addr_type == top::base::enum_vaccount_addr_type::enum_vaccount_addr_type_secp256k1_eth_user_account || addr_type == top::base::enum_vaccount_addr_type::enum_vaccount_addr_type_secp256k1_user_account,
+                            "[xrec_proposal_contract::check_bwlist_proposal]  target value error, addr type not support");
         XCONTRACT_ENSURE(top::xverifier::xverifier_success == top::xverifier::xtx_utl::address_is_valid(v), "[xrec_proposal_contract::check_bwlist_proposal]  target value error, addr invalid");
     }
 
