@@ -42,7 +42,7 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
         return;
     }
 
-    auto fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    auto const & fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
     if (chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_clock())) {
         // process block event
         if (m_contract_info->has_block_monitors()) {
@@ -50,6 +50,10 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
             // table fulltable block process
             if ((m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) &&
                 block_owner.find(sys_contract_sharding_table_block_addr) != std::string::npos && block->is_fulltable()) {
+                // run statistic contract only when new system contract framework not enabled.
+                if (chain_fork::xchain_fork_config_center_t::is_forked(fork_config.new_system_contract_runtime_fork_point, block->get_clock())) {
+                    return;
+                }
                 auto block_height = block->get_height();
                 xdbg("xrole_context_t::on_block_to_db fullblock process, owner: %s, height: %" PRIu64, block->get_block_owner().c_str(), block_height);
                 base::xauto_ptr<base::xvblock_t> full_block = base::xvchain_t::instance().get_xblockstore()->load_block_object(base::xvaccount_t{block_owner}, block_height, base::enum_xvblock_flag_committed, true);
@@ -148,6 +152,10 @@ void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
             }
         }
 
+        auto const & fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+        if (chain_fork::xchain_fork_config_center_t::is_forked(fork_config.new_system_contract_runtime_fork_point, block->get_height())) {
+            return;
+        }
         if (info != nullptr) {
             bool do_call{false};
             uint64_t block_timestamp{0};
@@ -155,7 +163,6 @@ void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
             if (info->type == enum_monitor_type_t::timer) {
                 xdbg("==== timer monitor");
                 if (m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) {
-                    auto fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
                     if (!chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_height())) {
                         return;
                     }
