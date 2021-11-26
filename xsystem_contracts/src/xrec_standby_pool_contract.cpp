@@ -91,7 +91,7 @@ void xtop_rec_standby_pool_contract::setup() {
 void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t const & node_id,
                                                       common::xnetwork_id_t const & joined_network_id,
 #if defined(XENABLE_MOCK_ZEC_STAKE)
-                                                      common::xminer_type_t role_type,
+                                                      common::xminer_type_t miner_type,
                                                       std::string const & consensus_public_key,
                                                       uint64_t const stake,
 #endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
@@ -119,7 +119,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
 
     auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY);
     if (nodeJoinNetworkImpl(program_version, node, standby_result_store)) {
-        XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "role_type", common::to_string(node.get_role_type()));
+        XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "miner_type", common::to_string(node.get_role_type()));
         serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
     }
 
@@ -131,15 +131,15 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
     XCONTRACT_ENSURE(nid == joined_network_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched");
     network_ids.insert(nid);
 
-    bool const rec = xstake::could_be<common::xnode_type_t::rec>(role_type);
-    bool const zec = xstake::could_be<common::xnode_type_t::zec>(role_type);
-    bool const auditor = xstake::could_be<common::xnode_type_t::consensus_auditor>(role_type);
-    bool const validator = xstake::could_be<common::xnode_type_t::consensus_validator>(role_type);
-    bool const edge = xstake::could_be<common::xnode_type_t::edge>(role_type);
-    bool const archive = xstake::could_be<common::xnode_type_t::storage_archive>(role_type);
-    bool const full_node = xstake::could_be<common::xnode_type_t::storage_full_node>(role_type);
+    bool const rec = xstake::could_be<common::xnode_type_t::rec>(miner_type);
+    bool const zec = xstake::could_be<common::xnode_type_t::zec>(miner_type);
+    bool const auditor = xstake::could_be<common::xnode_type_t::consensus_auditor>(miner_type);
+    bool const validator = xstake::could_be<common::xnode_type_t::consensus_validator>(miner_type);
+    bool const edge = xstake::could_be<common::xnode_type_t::edge>(miner_type);
+    bool const archive = xstake::could_be<common::xnode_type_t::storage_archive>(miner_type);
+    bool const full_node = xstake::could_be<common::xnode_type_t::storage_full_node>(miner_type);
 
-    std::string const role_type_string = common::to_string(role_type);
+    std::string const role_type_string = common::to_string(miner_type);
     assert(role_type_string == common::XMINER_TYPE_EDGE      ||
            role_type_string == common::XMINER_TYPE_ADVANCE   ||
            role_type_string == common::XMINER_TYPE_VALIDATOR ||
@@ -153,7 +153,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
     param_stream << consensus_public_key;
     param_stream << static_cast<uint32_t>(0);
     param_stream << node_id;
-    xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork][mock_zec_stake to registration] node_id:%s,role_type:%s",
+    xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork][mock_zec_stake to registration] node_id:%s,miner_type:%s",
          node_id.c_str(),
          role_type_string.c_str(),
          consensus_public_key.c_str());
@@ -161,7 +161,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
          "registerNode",
          std::string{reinterpret_cast<char *>(param_stream.data()), static_cast<std::size_t>(param_stream.size())});
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork][mock_zec_stake to registration] finish CALL registration contract");
-    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
+    XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
 
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node_id.c_str());
 
@@ -169,7 +169,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
 
     xstandby_node_info_t new_node_info;
 
-    new_node_info.user_request_role = role_type;  // new_node.m_role_type;
+    new_node_info.user_request_role = miner_type;  // new_node.m_role_type;
 
     new_node_info.consensus_public_key = xpublic_key_t{consensus_public_key};
     new_node_info.program_version = program_version;
@@ -217,7 +217,7 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
     }
 
     if (new_node) {
-        XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "role_type", common::to_string(role_type));
+        XMETRICS_PACKET_INFO(XREC_STANDBY "nodeJoinNetwork", "node_id", node_id.value(), "miner_type", common::to_string(miner_type));
         serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
     }
 #endif
@@ -226,12 +226,15 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
 bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & program_version,
                                                          xstake::xreg_node_info const & node,
                                                          data::election::xstandby_result_store_t & standby_result_store) {
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    auto const archive_miner_enabled = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_archive_miner_type_fork_point, TIME());
+
     std::set<common::xnetwork_id_t> network_ids = node.m_network_ids;
 
     auto consensus_public_key = node.consensus_public_key;
     uint64_t rec_stake{ 0 }, zec_stake{ 0 }, auditor_stake{ 0 }, validator_stake{ 0 }, edge_stake{ 0 }, archive_stake{ 0 }, full_node_stake{ 0 };
     bool const rec{node.can_be_rec()}, zec{node.can_be_zec()}, auditor{node.can_be_auditor()}, validator{node.can_be_validator()}, edge{node.can_be_edge()},
-               archive{node.can_be_archive()}, full_node{node.can_be_full_node()};
+        archive{archive_miner_enabled ? node.can_be_archive() : node.legacy_can_be_archive()}, full_node{node.can_be_full_node()};
     if (rec) {
         rec_stake = node.rec_stake();
     }
@@ -262,7 +265,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
 
     auto const role_type = node.get_role_type();
     XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
-    XCONTRACT_ENSURE(node.get_required_min_deposit() <= node.m_account_mortgage,
+    XCONTRACT_ENSURE(node.get_required_min_deposit() <= node.deposit(),
                      "[xrec_standby_pool_contract_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() + ", role_type : " + common::to_string(role_type));
 
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node.m_account.c_str());
@@ -314,10 +317,15 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
     return new_node;
 }
 
-bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_info const & reg_node, xstandby_node_info_t & standby_node_info) const {
+bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_info const & reg_node,
+                                                         xstandby_node_info_t & standby_node_info,
+                                                         common::xlogic_time_t const current_logic_time) const {
 #if defined(XENABLE_MOCK_ZEC_STAKE)
     return false;
 #endif
+
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    auto const archive_miner_enabled = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_archive_miner_type_fork_point, current_logic_time);
 
     election::xstandby_node_info_t new_node_info;
     if (reg_node.can_be_rec()) {
@@ -326,8 +334,14 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
     if (reg_node.can_be_zec()) {
         new_node_info.stake_container.insert({ common::xnode_type_t::zec, reg_node.zec_stake() });
     }
-    if (reg_node.can_be_archive()) {
-        new_node_info.stake_container.insert({ common::xnode_type_t::storage_archive, reg_node.archive_stake() });
+    if (archive_miner_enabled) {
+        if (reg_node.can_be_archive()) {
+            new_node_info.stake_container.insert({common::xnode_type_t::storage_archive, reg_node.archive_stake()});
+        }
+    } else {
+        if (reg_node.legacy_can_be_archive()) {
+            new_node_info.stake_container.insert({common::xnode_type_t::storage_archive, reg_node.archive_stake()});
+        }
     }
     if (reg_node.can_be_auditor()) {
         new_node_info.stake_container.insert({ common::xnode_type_t::consensus_auditor, reg_node.auditor_stake() });
@@ -367,7 +381,8 @@ bool xtop_rec_standby_pool_contract::update_activated_state(xstandby_network_sto
 
 bool xtop_rec_standby_pool_contract::update_standby_result_store(std::map<common::xnode_id_t, xstake::xreg_node_info> const & registration_data,
                                                                  data::election::xstandby_result_store_t & standby_result_store,
-                                                                 xstake::xactivation_record const & activation_record) {
+                                                                 xstake::xactivation_record const & activation_record,
+                                                                 common::xlogic_time_t const current_logic_time) {
     bool updated{false};
     for (auto & standby_network_result_info : standby_result_store) {
         assert(top::get<common::xnetwork_id_t const>(standby_network_result_info).value() == base::enum_test_chain_id ||
@@ -389,7 +404,7 @@ bool xtop_rec_standby_pool_contract::update_standby_result_store(std::map<common
                 continue;
             } else {
                 auto const & reg_node = top::get<top::xstake::xreg_node_info>(*registration_iter);
-                if (update_standby_node(reg_node, node_info) && !updated) {
+                if (update_standby_node(reg_node, node_info, current_logic_time) && !updated) {
                     updated = true;
                 }
             }
@@ -435,7 +450,7 @@ void xtop_rec_standby_pool_contract::on_timer(common::xlogic_time_t const curren
         activation_record.serialize_from(stream);
     }
 
-    if (update_standby_result_store(registration_data, standby_result_store, activation_record)) {
+    if (update_standby_result_store(registration_data, standby_result_store, activation_record, current_time)) {
         xdbg("[xrec_standby_pool_contract_t][on_timer] standby pool updated");
         serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
     }

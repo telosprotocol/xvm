@@ -11,6 +11,7 @@
 #include "xbasic/xutility.h"
 #include "xchain_fork/xchain_upgrade_center.h"
 #include "xchain_upgrade/xchain_data_processor.h"
+#include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xproperty.h"
@@ -198,7 +199,7 @@ void xrec_registration_contract::setup() {
     }
 }
 
-void xrec_registration_contract::registerNode(const std::string & role_type_name,
+void xrec_registration_contract::registerNode(const std::string & miner_type_name,
                                               const std::string & nickname,
                                               const std::string & signing_key,
                                               const uint32_t dividend_rate
@@ -211,23 +212,33 @@ void xrec_registration_contract::registerNode(const std::string & role_type_name
     network_ids.insert(nid);
 
 #if defined(XENABLE_MOCK_ZEC_STAKE)
-    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
+    registerNode2(miner_type_name, nickname, signing_key, dividend_rate, network_ids, registration_account);
 #else   // #if defined(XENABLE_MOCK_ZEC_STAKE)
-    registerNode2(role_type_name, nickname, signing_key, dividend_rate, network_ids);
+    registerNode2(miner_type_name, nickname, signing_key, dividend_rate, network_ids);
 #endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
 }
 
-void xrec_registration_contract::registerNode2(const std::string & role_type_name,
+void xrec_registration_contract::registerNode2(const std::string & miner_type_name,
                                                const std::string & nickname,
                                                const std::string & signing_key,
                                                const uint32_t dividend_rate,
                                                const std::set<common::xnetwork_id_t> & network_ids
 #if defined(XENABLE_MOCK_ZEC_STAKE)
-                                             , common::xaccount_address_t const & registration_account
+                                               ,
+                                               common::xaccount_address_t const & registration_account
 #endif  // #if defined(XENABLE_MOCK_ZEC_STAKE)
 ) {
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "registerNode_Called", 1);
     XMETRICS_TIME_RECORD(XREG_CONTRACT "registerNode_ExecutionTime");
+
+    auto const miner_type = common::to_miner_type(miner_type_name);
+    XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
+
+    // support archive miner type only after fork point.
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    if (!chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_archive_miner_type_fork_point, TIME())) {
+        XCONTRACT_ENSURE(!common::has<common::xminer_type_t::archive>(miner_type), "miner of type archive is not supported yet");
+    }
 
 #if defined(XENABLE_MOCK_ZEC_STAKE)
     auto const & account = registration_account;
@@ -238,16 +249,14 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
          getpid(),
          GET_BALANCE(),
          account.c_str(),
-         role_type_name.c_str(),
+         miner_type_name.c_str(),
          signing_key.c_str(),
          dividend_rate);
 
     xreg_node_info node_info;
     auto ret = get_node_info(account.value(), node_info);
     XCONTRACT_ENSURE(ret != 0, "xrec_registration_contract::registerNode2: node exist!");
-    common::xminer_type_t const role_type = common::to_role_type(role_type_name);
-    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
-    XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::registerNode: invalid nickname");
+    XCONTRACT_ENSURE(is_valid_name(nickname), "xrec_registration_contract::registerNode: invalid nickname");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
@@ -261,7 +270,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     stream >> asset_out.m_amount;
 
     node_info.m_account = account;
-    node_info.m_registered_role = role_type;
+    node_info.m_registered_role = miner_type;
 #if defined(XENABLE_MOCK_ZEC_STAKE)
     node_info.m_account_mortgage = 100000000000000;
 #else   // #if defined(XENABLE_MOCK_ZEC_STAKE)
@@ -360,11 +369,11 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
     XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::updateNodeInfo: invalid nickname");
     XCONTRACT_ENSURE(updateDepositType == 1 || updateDepositType == 2, "xrec_registration_contract::updateNodeInfo: invalid updateDepositType");
     XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::updateNodeInfo: dividend_rate must be greater than or be equal to zero");
-    common::xminer_type_t const role_type = common::to_role_type(node_types);
-    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
+    auto const miner_type = common::to_miner_type(node_types);
+    XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
 
     node_info.nickname          = nickname;
-    node_info.m_registered_role = role_type;
+    node_info.m_registered_role = miner_type;
 
     uint64_t const min_deposit = node_info.get_required_min_deposit();
     if (updateDepositType == 1) { // stake deposit
@@ -499,7 +508,7 @@ void xrec_registration_contract::updateNodeSignKey(const std::string & node_sign
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "updateNodeSignKey_Executed", 1);
 }
 
-void xrec_registration_contract::update_node_info(xreg_node_info & node_info) {
+void xrec_registration_contract::update_node_info(xreg_node_info const & node_info) {
     base::xstream_t stream(base::xcontext_t::instance());
     node_info.serialize_to(stream);
 
@@ -815,7 +824,10 @@ void xrec_registration_contract::check_and_set_genesis_stage() {
     } catch (std::runtime_error & e) {
         xdbg("[xrec_registration_contract::check_and_set_genesis_stage] MAP COPY GET error:%s", e.what());
     }
-    bool active = check_registered_nodes_active(map_nodes);
+
+    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
+    auto const enable_archive_miner = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_archive_miner_type_fork_point, TIME());
+    bool active = check_registered_nodes_active(map_nodes, enable_archive_miner);
     if (active) {
         record.activated = 1;
         record.activation_time = TIME();
@@ -843,9 +855,9 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
     XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::updateNodeType: node not exist");
 
 
-    common::xminer_type_t role_type = common::to_role_type(node_types);
-    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeType: invalid node_type!");
-    XCONTRACT_ENSURE(role_type != node_info.m_registered_role, "xrec_registration_contract::updateNodeType: node_types can not be same!");
+    auto const miner_type = common::to_miner_type(node_types);
+    XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeType: invalid node_type!");
+    XCONTRACT_ENSURE(miner_type != node_info.m_registered_role, "xrec_registration_contract::updateNodeType: node_types can not be same!");
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
     XCONTRACT_ENSURE(!account.empty(), "xrec_registration_contract::updateNodeType: account must be not empty");
@@ -860,7 +872,7 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
         node_info.m_account_mortgage += asset_out.m_amount;
     }
 
-    node_info.m_registered_role  = role_type;
+    node_info.m_registered_role  = miner_type;
     uint64_t min_deposit = node_info.get_required_min_deposit();
     xdbg(("[xrec_registration_contract::updateNodeType] min_deposit: %" PRIu64 ", account: %s, account morgage: %llu\n"),
         min_deposit, account.c_str(), node_info.m_account_mortgage);
