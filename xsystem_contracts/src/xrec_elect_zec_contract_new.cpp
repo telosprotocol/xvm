@@ -63,7 +63,7 @@ void xtop_rec_elect_zec_contract_new::elect_config_nodes(common::xlogic_time_t c
         election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xcommittee_cluster_id).result_of(common::xcommittee_group_id);
 
     auto nodes_info = xvm::system_contracts::xstatic_election_center::instance().get_static_election_nodes("zec_start_nodes");
-    for (auto nodes : nodes_info) {
+    for (auto const & nodes : nodes_info) {
         xelection_info_t new_election_info{};
         new_election_info.consensus_public_key = nodes.pub_key;
         new_election_info.stake = nodes.stake;
@@ -74,6 +74,8 @@ void xtop_rec_elect_zec_contract_new::elect_config_nodes(common::xlogic_time_t c
         election_info_bundle.election_info(std::move(new_election_info));
 
         election_group_result.insert(std::move(election_info_bundle));
+
+        xdbg("zec static elected in %s", nodes.node_id.c_str());
     }
     auto next_version = election_group_result.group_version();
     if (!next_version.empty()) {

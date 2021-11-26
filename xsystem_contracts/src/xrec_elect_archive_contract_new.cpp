@@ -84,7 +84,7 @@ void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time
             continue;
         }
         auto & election_group_result = election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(archive_gid);
-        for (auto nodes : nodes_info) {
+        for (auto const & nodes : nodes_info) {
             xelection_info_t new_election_info{};
             new_election_info.consensus_public_key = nodes.pub_key;
             new_election_info.stake = nodes.stake;
@@ -95,6 +95,8 @@ void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time
             election_info_bundle.election_info(std::move(new_election_info));
 
             election_group_result.insert(std::move(election_info_bundle));
+
+            xdbg("storage gid %" PRIu16 " static elected in %s", static_cast<uint16_t>(archive_gid.value()), nodes.node_id.c_str());
         }
         election_group_result.election_committee_version(common::xelection_round_t{0});
         election_group_result.timestamp(current_time);

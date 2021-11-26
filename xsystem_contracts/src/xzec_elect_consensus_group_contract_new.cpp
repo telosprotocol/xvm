@@ -190,7 +190,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
 
         // elect in:
         auto adv_group_node_infos = xvm::system_contracts::xstatic_election_center::instance().get_static_consensus_election_nodes(adv_group_id.value());
-        for (auto node : adv_group_node_infos) {
+        for (auto const & node : adv_group_node_infos) {
             xelection_info_t new_election_info{};
             new_election_info.joined_version = next_version;
             new_election_info.stake = node.stake;
@@ -201,6 +201,8 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
             election_info_bundle.node_id(node.node_id);
             election_info_bundle.election_info(new_election_info);
             adv_election_group_result.insert(std::move(election_info_bundle));
+
+            xdbg("auditor gid %" PRIu16 " static elected in %s", static_cast<uint16_t>(adv_group_id.value()), node.node_id.c_str());
         }
 
         for (auto _index = 0; _index < pre_associate; ++_index) {
@@ -221,7 +223,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
             val_election_group_result.start_time(current_time);
 
             auto val_group_node_infos = xvm::system_contracts::xstatic_election_center::instance().get_static_consensus_election_nodes(val_group_id.value());
-            for (auto node : val_group_node_infos) {
+            for (auto const & node : val_group_node_infos) {
                 xelection_info_t new_election_info{};
                 new_election_info.joined_version = next_version;
                 new_election_info.stake = node.stake;
@@ -232,6 +234,8 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
                 election_info_bundle.node_id(node.node_id);
                 election_info_bundle.election_info(new_election_info);
                 val_election_group_result.insert(std::move(election_info_bundle));
+
+                xdbg("validator gid %" PRIu16 " static elected in %s", static_cast<uint16_t>(val_group_id.value()), node.node_id.c_str());
             }
         }
 
