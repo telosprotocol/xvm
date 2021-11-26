@@ -47,12 +47,15 @@ bool executed_archive{false};
 // it will elect the first and only round archive nodes as you want.
 
 void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time_t const current_time) {
-    uint64_t latest_height = get_blockchain_height(sys_contract_rec_elect_archive_addr);
+    uint64_t latest_height = state_height(common::xaccount_address_t{sys_contract_rec_elect_archive_addr});
     xinfo("[archive_start_nodes] get_latest_height: %" PRIu64, latest_height);
     if (latest_height > 0) {
         executed_archive = true;
         return;
     }
+
+    std::map<common::xgroup_id_t, contract_common::properties::xbytes_property_t *> properties{{common::xarchive_group_id, std::addressof(m_archive_result)},
+                                                                                               {common::xfull_node_group_id, std::addressof(m_fullnode_result)}};
 
     using top::data::election::xelection_info_bundle_t;
     using top::data::election::xelection_info_t;
@@ -62,8 +65,7 @@ void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time
     for (auto index = 0; index < XGET_CONFIG(archive_group_count); ++index) {
         top::common::xgroup_id_t archive_gid{static_cast<top::common::xgroup_id_t::value_type>(common::xarchive_group_id_value_begin + index)};
 
-        auto election_result_store =
-            xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(archive_gid));
+        auto election_result_store = contract_common::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_bytes(properties.at(archive_gid)->value());
         auto & election_network_result = election_result_store.result_of(network_id());
         auto node_type = common::xnode_type_t::archive;
         std::string static_node_str = "";
@@ -76,7 +78,7 @@ void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time
         } else {
             xassert(false);
         }
-        auto nodes_info = xstatic_election_center::instance().get_static_election_nodes(static_node_str);
+        auto nodes_info = xvm::system_contracts::xstatic_election_center::instance().get_static_election_nodes(static_node_str);
         if (nodes_info.empty()) {
             xinfo("[archive_start_nodes] get empty node_info: %s gid: %d", static_node_str.c_str(), archive_gid.value());
             continue;
@@ -100,9 +102,8 @@ void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time
         if (election_group_result.group_version().empty()) {
             election_group_result.group_version(common::xelection_round_t::max());
         }
-        xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, data::election::get_property_by_group_id(archive_gid), election_result_store);
+        properties.at(archive_gid)->set(contract_common::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_bytes(election_result_store));
     }
-
 }
 #endif
 
@@ -116,7 +117,7 @@ void xtop_rec_elect_archive_contract_new::setup() {
 
 void xtop_rec_elect_archive_contract_new::on_timer(const uint64_t current_time) {
 #ifdef STATIC_CONSENSUS
-    if (xstatic_election_center::instance().if_allow_elect()) {
+    if (xvm::system_contracts::xstatic_election_center::instance().if_allow_elect()) {
         if (!executed_archive) {
             elect_config_nodes(current_time);
             return;
@@ -209,13 +210,13 @@ void xtop_rec_elect_archive_contract_new::elect_fullnode(common::xlogic_time_t c
 
     if (elect_group(common::xarchive_zone_id,
                     common::xdefault_cluster_id,
-                    common::xarchive_group_id,
+                    common::xfull_node_group_id,
                     current_time,
                     current_time,
                     xrange_t<config::xgroup_size_t>{0, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size)},
                     standby_network_result,
                     election_network_result)) {
-        m_archive_result.set(contract_common::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_bytes(election_result_store));
+        m_fullnode_result.set(contract_common::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_bytes(election_result_store));
     }
 }
 

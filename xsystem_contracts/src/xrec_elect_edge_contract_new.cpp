@@ -49,7 +49,7 @@ uint64_t before_elect_config_edge_height{UINT64_MAX};
 // it will elect the first and only round archive nodes as you want.
 
 void xtop_rec_elect_edge_contract_new::elect_config_nodes(common::xlogic_time_t const current_time) {
-    uint64_t latest_height = get_blockchain_height(sys_contract_rec_elect_edge_addr);
+    uint64_t latest_height = state_height(common::xaccount_address_t{sys_contract_rec_elect_edge_addr});
     xinfo("[edge_start_nodes] get_latest_height: %" PRIu64, latest_height);
     if (latest_height > before_elect_config_edge_height) {
         // already elect config edge before
@@ -64,13 +64,12 @@ void xtop_rec_elect_edge_contract_new::elect_config_nodes(common::xlogic_time_t 
     using top::data::election::xelection_result_store_t;
     using top::data::election::xstandby_node_info_t;
 
-    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
-    auto election_result_store =
-        xvm::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, data::election::get_property_by_group_id(common::xdefault_group_id));
+    auto property_names = data::election::get_property_name_by_addr(address());
+    auto election_result_store = contract_common::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_bytes(m_result.value());
     auto node_type = common::xnode_type_t::edge;
     auto & election_group_result = election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(common::xdefault_group_id);
 
-    auto nodes_info = xstatic_election_center::instance().get_static_election_nodes("edge_start_nodes");
+    auto nodes_info = xvm::system_contracts::xstatic_election_center::instance().get_static_election_nodes("edge_start_nodes");
     for (auto nodes : nodes_info) {
         xelection_info_t new_election_info{};
         new_election_info.consensus_public_key = nodes.pub_key;
@@ -90,8 +89,7 @@ void xtop_rec_elect_edge_contract_new::elect_config_nodes(common::xlogic_time_t 
     if (election_group_result.group_version().empty()) {
         election_group_result.group_version(common::xelection_round_t::max());
     }
-    xvm::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(
-        *this, data::election::get_property_by_group_id(common::xdefault_group_id), election_result_store);
+    m_result.set(contract_common::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_bytes(election_result_store));
 }
 #endif
 
@@ -108,7 +106,7 @@ void xtop_rec_elect_edge_contract_new::on_timer(const uint64_t current_time) {
         xinfo("[STATIC_CONSENSUS] edge election should elect seed nodes first");
         executed_rec_edge_first = true;
     } else {
-        if (xstatic_election_center::instance().if_allow_elect()) {
+        if (xvm::system_contracts::xstatic_election_center::instance().if_allow_elect()) {
             if (!executed_config_edge) {
                 elect_config_nodes(current_time);
                 return;

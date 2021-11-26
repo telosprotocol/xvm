@@ -12,6 +12,9 @@
 #include "xdata/xnative_contract_address.h"
 #include "xdata/xrootblock.h"
 #include "xstate_accessor/xproperties/xproperty_identifier.h"
+#if defined(STATIC_CONSENSUS)
+#include "xvm/xsystem_contracts/xelection/xstatic_election_center.h"
+#endif
 
 using namespace top::contract_common;
 using namespace top::data::election;
@@ -54,7 +57,7 @@ void xtop_rec_standby_pool_contract_new::setup() {
     }
 
 #ifdef STATIC_CONSENSUS
-    auto const static_consensus_nodes_info = xstatic_election_center::instance().get_standby_config();
+    auto const static_consensus_nodes_info = xvm::system_contracts::xstatic_election_center::instance().get_standby_config();
     for (auto const & node_info : static_consensus_nodes_info) {
         common::xnode_id_t node_id{node_info.node_id};
         xstandby_node_info_t seed_node_info;

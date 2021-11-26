@@ -62,15 +62,17 @@ void xtop_zec_elect_consensus_group_contract_new::swap_election_result(common::x
     auto auditor_group_count = XGET_CONFIG(auditor_group_count);
     auto validator_group_count = XGET_CONFIG(validator_group_count);
     assert(auditor_group_count == 2 && validator_group_count == 4);
-    uint64_t latest_height = get_blockchain_height(sys_contract_zec_elect_consensus_addr);
+    uint64_t latest_height = state_height(common::xaccount_address_t{sys_contract_zec_elect_consensus_addr});
     if (latest_height <= 0) {
         return;
     }
     uint8_t auditor_group_start_count = common::xauditor_group_id_begin.value();
-    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
+    auto property_names = data::election::get_property_name_by_addr(address());
+    std::unordered_map<std::string, contract_common::properties::xbytes_property_t *> const properties{{m_consensus1_result.id().full_name(), std::addressof(m_consensus1_result)},
+                                                                                                       {m_consensus2_result.id().full_name(), std::addressof(m_consensus2_result)}};
     std::unordered_map<top::common::xgroup_id_t, top::data::election::xelection_result_store_t> all_cluster_election_result_store;
     for (auto const & property : property_names) {
-        auto election_result_store = serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, property);
+        auto election_result_store = contract_common::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_bytes(properties.at(property)->value());
         all_cluster_election_result_store.insert({common::xgroup_id_t{auditor_group_start_count++}, election_result_store});
     }
 
@@ -81,23 +83,23 @@ void xtop_zec_elect_consensus_group_contract_new::swap_election_result(common::x
     auto & sharding_2_result_store = all_cluster_election_result_store.at(common::xgroup_id_t{2});
 
     auto & adv_1 =
-        sharding_1_result_store.result_of(m_network_id).result_of(common::xnode_type_t::consensus_auditor).result_of(common::xdefault_cluster_id).result_of(common::xgroup_id_t{1});
+        sharding_1_result_store.result_of(network_id()).result_of(common::xnode_type_t::consensus_auditor).result_of(common::xdefault_cluster_id).result_of(common::xgroup_id_t{1});
     auto & adv_2 =
-        sharding_2_result_store.result_of(m_network_id).result_of(common::xnode_type_t::consensus_auditor).result_of(common::xdefault_cluster_id).result_of(common::xgroup_id_t{2});
+        sharding_2_result_store.result_of(network_id()).result_of(common::xnode_type_t::consensus_auditor).result_of(common::xdefault_cluster_id).result_of(common::xgroup_id_t{2});
 
-    auto & con_64 = sharding_1_result_store.result_of(m_network_id)
+    auto & con_64 = sharding_1_result_store.result_of(network_id())
                         .result_of(common::xnode_type_t::consensus_validator)
                         .result_of(common::xdefault_cluster_id)
                         .result_of(common::xgroup_id_t{64});
-    auto & con_65 = sharding_1_result_store.result_of(m_network_id)
+    auto & con_65 = sharding_1_result_store.result_of(network_id())
                         .result_of(common::xnode_type_t::consensus_validator)
                         .result_of(common::xdefault_cluster_id)
                         .result_of(common::xgroup_id_t{65});
-    auto & con_66 = sharding_2_result_store.result_of(m_network_id)
+    auto & con_66 = sharding_2_result_store.result_of(network_id())
                         .result_of(common::xnode_type_t::consensus_validator)
                         .result_of(common::xdefault_cluster_id)
                         .result_of(common::xgroup_id_t{66});
-    auto & con_67 = sharding_2_result_store.result_of(m_network_id)
+    auto & con_67 = sharding_2_result_store.result_of(network_id())
                         .result_of(common::xnode_type_t::consensus_validator)
                         .result_of(common::xdefault_cluster_id)
                         .result_of(common::xgroup_id_t{67});
@@ -134,12 +136,12 @@ void xtop_zec_elect_consensus_group_contract_new::swap_election_result(common::x
 
     auditor_group_start_count = common::xauditor_group_id_begin.value();
     for (auto const & property : property_names) {
-        serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(
-            *this, property, all_cluster_election_result_store.at(common::xgroup_id_t{auditor_group_start_count++}));
+        properties.at(property)->set(contract_common::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_bytes(
+            all_cluster_election_result_store.at(common::xgroup_id_t{auditor_group_start_count++})));
     }
 }
 void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlogic_time_t const current_time) {
-    uint64_t latest_height = get_blockchain_height(sys_contract_zec_elect_consensus_addr);
+    uint64_t latest_height = state_height(common::xaccount_address_t{sys_contract_zec_elect_consensus_addr});
     xinfo("[consensus_start_nodes] get_latest_height: %" PRIu64, latest_height);
     if (latest_height > 0) {
         executed_consensus = true;
@@ -150,7 +152,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
     using top::data::election::xelection_result_store_t;
     using top::data::election::xstandby_node_info_t;
 
-    auto property_names = data::election::get_property_name_by_addr(SELF_ADDRESS());
+    auto property_names = data::election::get_property_name_by_addr(address());
 
     auto auditor_group_count = XGET_CONFIG(auditor_group_count);
     auto validator_group_count = XGET_CONFIG(validator_group_count);
@@ -164,13 +166,16 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
     uint8_t auditor_group_id_start = common::xauditor_group_id_begin.value();
     uint8_t validator_group_id_start = common::xvalidator_group_id_begin.value();
 
+    std::unordered_map<std::string, contract_common::properties::xbytes_property_t *> const properties{{m_consensus1_result.id().full_name(), std::addressof(m_consensus1_result)},
+                                                                                                       {m_consensus2_result.id().full_name(), std::addressof(m_consensus2_result)}};
+
     for (auto const & property : property_names) {
-        auto election_result_store = serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_string_prop(*this, property);
+        auto election_result_store = contract_common::serialization::xmsgpack_t<xelection_result_store_t>::deserialize_from_bytes(properties.at(property)->value());
 
         // auditor:
         common::xnode_type_t adv_node_type = common::xnode_type_t::consensus_auditor;
         common::xgroup_id_t adv_group_id = common::xgroup_id_t{auditor_group_start_count++};
-        auto & adv_election_group_result = election_result_store.result_of(m_network_id).result_of(adv_node_type).result_of(common::xdefault_cluster_id).result_of(adv_group_id);
+        auto & adv_election_group_result = election_result_store.result_of(network_id()).result_of(adv_node_type).result_of(common::xdefault_cluster_id).result_of(adv_group_id);
 
         auto next_version = adv_election_group_result.group_version();
         if (!next_version.empty()) {
@@ -184,7 +189,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
         adv_election_group_result.start_time(current_time);
 
         // elect in:
-        auto adv_group_node_infos = xstatic_election_center::instance().get_static_consensus_election_nodes(adv_group_id.value());
+        auto adv_group_node_infos = xvm::system_contracts::xstatic_election_center::instance().get_static_consensus_election_nodes(adv_group_id.value());
         for (auto node : adv_group_node_infos) {
             xelection_info_t new_election_info{};
             new_election_info.joined_version = next_version;
@@ -202,7 +207,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
             common::xnode_type_t val_node_type = common::xnode_type_t::consensus_validator;
             common::xgroup_id_t val_group_id = common::xgroup_id_t{validator_group_start_count++};
             auto & val_election_group_result =
-                election_result_store.result_of(m_network_id).result_of(val_node_type).result_of(common::xdefault_cluster_id).result_of(val_group_id);
+                election_result_store.result_of(network_id()).result_of(val_node_type).result_of(common::xdefault_cluster_id).result_of(val_group_id);
 
             auto next_version = val_election_group_result.group_version();
             if (!next_version.empty()) {
@@ -215,7 +220,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
             val_election_group_result.timestamp(current_time);
             val_election_group_result.start_time(current_time);
 
-            auto val_group_node_infos = xstatic_election_center::instance().get_static_consensus_election_nodes(val_group_id.value());
+            auto val_group_node_infos = xvm::system_contracts::xstatic_election_center::instance().get_static_consensus_election_nodes(val_group_id.value());
             for (auto node : val_group_node_infos) {
                 xelection_info_t new_election_info{};
                 new_election_info.joined_version = next_version;
@@ -230,13 +235,13 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
             }
         }
 
-        auto const & auditor_group = election_result_store.result_of(m_network_id)
+        auto const & auditor_group = election_result_store.result_of(network_id())
                                          .result_of(common::xnode_type_t::consensus_auditor)
                                          .result_of(common::xdefault_cluster_id)
                                          .result_of(common::xgroup_id_t{auditor_group_id_start});
 
         for (auto validator_index = 0; validator_index < pre_associate; validator_index++) {
-            auto & validator_group = election_result_store.result_of(m_network_id)
+            auto & validator_group = election_result_store.result_of(network_id())
                                          .result_of(common::xnode_type_t::consensus_validator)
                                          .result_of(common::xdefault_cluster_id)
                                          .result_of(common::xgroup_id_t{validator_group_id_start++});
@@ -246,7 +251,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect_config_nodes(common::xlo
         }
         auditor_group_id_start++;
 
-        serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_string_prop(*this, property, election_result_store);
+        properties.at(property)->set(contract_common::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_bytes(election_result_store));
     }
 }
 #endif
@@ -266,7 +271,7 @@ void xtop_zec_elect_consensus_group_contract_new::on_timer(common::xlogic_time_t
     XMETRICS_TIME_RECORD(XCONSENSUS_ELECT "on_timer_all_time");
     XMETRICS_CPU_TIME_RECORD(XCONSENSUS_ELECT "on_timer_cpu_time");
 #ifdef STATIC_CONSENSUS
-    if (xstatic_election_center::instance().if_allow_elect()) {
+    if (xvm::system_contracts::xstatic_election_center::instance().if_allow_elect()) {
         if (!executed_consensus) {
             elect_config_nodes(current_time);
             return;
