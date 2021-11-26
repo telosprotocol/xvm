@@ -265,7 +265,7 @@ void xtop_zec_elect_consensus_group_contract_new::setup() {
 
     auto const & bytes = contract_common::serialization::xmsgpack_t<xelection_result_store_t>::serialize_to_bytes(election_result_store);
     m_consensus1_result.set(bytes);
-    m_consensus1_result.set(bytes);
+    m_consensus2_result.set(bytes);
 
     xbytes_t election_executed;
     m_election_executed.set(election_executed);
