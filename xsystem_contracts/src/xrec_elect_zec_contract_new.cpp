@@ -99,6 +99,7 @@ void xtop_rec_elect_zec_contract_new::setup() {
 }
 
 void xtop_rec_elect_zec_contract_new::on_timer(common::xlogic_time_t const current_time) {
+    xinfo("xrec_elect_zec_contract_new_t::on_timer");
 #ifdef STATIC_CONSENSUS
     if (xvm::system_contracts::xstatic_election_center::instance().if_allow_elect()) {
         if (!executed_zec) {
