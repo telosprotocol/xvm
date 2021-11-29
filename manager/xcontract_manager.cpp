@@ -151,6 +151,7 @@ void xtop_contract_manager::install_monitors(observer_ptr<xmessage_bus_face_t> c
                             auto event_ptr = make_object_ptr<xevent_chain_timer_t>(block);
                             bus_ptr->push_event(event_ptr);
                             xdbg("[xtop_contract_manager::install_monitors] push event");
+                            XMETRICS_GAUGE_SET_VALUE(metrics::clock_received_height, block->get_height());
                         }
                     }
                     return true;
