@@ -116,14 +116,6 @@ private:
     uint32_t get_task_id() const;
 
     /**
-     * @brief get_task_id_internal
-     *
-     * @param tasks_map_str tasks_map_str
-     * @return uint32_t
-     */
-    uint32_t get_task_id_internal(std::map<std::string, std::string> const & tasks_map_str) const;
-
-    /**
      * @brief add task
      *
      * @param task_id task id
@@ -135,43 +127,10 @@ private:
     void add_task(const uint32_t task_id, const common::xlogic_time_t current_time, const std::string & contract, const std::string & action, const std::string & params);
 
     /**
-     * @brief add_task_internal
-     *
-     * @param task_id task id
-     * @param current_time chain timer round
-     * @param contract contract address
-     * @param action action to execute
-     * @param params action parameters
-     */
-    std::pair<std::string, std::string> add_task_internal(const uint32_t task_id,
-                                                          const common::xlogic_time_t current_time,
-                                                          const std::string & contract,
-                                                          const std::string & action,
-                                                          const std::string & params);
-
-    /**
      * @brief execute all tasks
      *
      */
     void execute_task();
-
-    /**
-     * @brief execute_task_internal
-     *
-     * @param dispatch_tasks dispatch_tasks
-     * @param transfer_map transfer_map
-     * @param call_vec call_vec
-     */
-    void execute_task_internal(std::map<std::string, std::string> & dispatch_tasks,
-                               std::map<std::string, uint64_t> & transfer_map,
-                               std::vector<xstake::xreward_dispatch_task> & call_vec,
-                               std::vector<std::string> & rm_vec);
-
-    /**
-     * @brief print all tasks
-     *
-     */
-    void print_tasks();
 
     /**
      * @brief update accumulated issuance record
@@ -272,6 +231,19 @@ private:
      */
     void get_reward_param(xreward_onchain_param_t & onchain_param, xreward_property_param_t & property_param);
 
+    /**
+     * @brief calc rewards
+     *
+     * @param current_time current_time
+     * @param activation_time activation_time
+     * @param onchain_param onchain_param
+     * @param property_param property_param
+     * @param issue_detail issue_detail
+     * @param table_total_rewards table_total_rewards
+     * @param table_node_reward_detail table_node_reward_detail
+     * @param table_node_dividend_detail table_node_dividend_detail
+     * @param community_reward community_reward
+     */
     void calc_rewards(const common::xlogic_time_t current_time,
                       const common::xlogic_time_t activation_time,
                       const xreward_onchain_param_t & onchain_param,
@@ -553,14 +525,6 @@ private:
      * @return current_year
      */
     uint32_t calc_current_year(const common::xlogic_time_t time_since_active) const;
-
-    /**
-     * @brief reward_task_serialize
-     *
-     * @param task task
-     * @return task_str
-     */
-    std::string reward_task_serialize(const xstake::xreward_dispatch_task & task) const;
 
     /**
      * @brief accumulated_reward_serialize

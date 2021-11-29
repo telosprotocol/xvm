@@ -5,8 +5,11 @@
 #include "xvm/xsystem_contracts/xreward/xzec_reward_contract_new.h"
 
 #include "xchain_upgrade/xchain_data_processor.h"
+#include "xcontract_common/xfollowup_transaction_datum.h"
 #include "xdata/xgenesis_data.h"
 #include "xstake/xstake_algorithm.h"
+
+#include <iomanip>
 
 using namespace top::xstake;
 using namespace top::base;
@@ -96,20 +99,20 @@ void xtop_zec_reward_contract_new::on_timer(const common::xlogic_time_t current_
         return;
     }
 
-    // if (MAP_SIZE(XPORPERTY_CONTRACT_TASK_KEY) > 0) {
-    //     execute_task();
-    // } else {
-    auto const activation_record = get_activation_record();
-    XCONTRACT_ENSURE(current_time > activation_record.activation_time, "current_time <= activation_time");
-    if (reward_is_expire(current_time, activation_record)) {
-        xreward_onchain_param_t onchain_param;    // onchain params
-        xreward_property_param_t property_param;  // property from self and other contracts
-        get_reward_param(onchain_param, property_param);
-        reward(current_time, activation_record, onchain_param, property_param);
+    if (m_reward_task.size() > 0) {
+        execute_task();
     } else {
-        update_reg_contract_read_status(current_time);
+        auto const activation_record = get_activation_record();
+        XCONTRACT_ENSURE(current_time > activation_record.activation_time, "current_time <= activation_time");
+        if (reward_is_expire(current_time, activation_record)) {
+            xreward_onchain_param_t onchain_param;    // onchain params
+            xreward_property_param_t property_param;  // property from self and other contracts
+            get_reward_param(onchain_param, property_param);
+            reward(current_time, activation_record, onchain_param, property_param);
+        } else {
+            update_reg_contract_read_status(current_time);
+        }
     }
-    // }
 
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "on_timer_Executed", 1);
 }
@@ -272,6 +275,128 @@ void xtop_zec_reward_contract_new::add_cluster_workload(const std::string & work
         } else if (common::has<common::xnode_type_t::validator>(cluster_id.type())) {
             validator_workload_str_change[cluster_id_str] = std::string((const char *)stream.data(), stream.size());
         }
+    }
+}
+
+uint32_t xtop_zec_reward_contract_new::get_task_id() const {
+    std::map<std::string, std::string> dispatch_tasks = m_reward_task.value();
+
+    // {
+    //     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "XPORPERTY_CONTRACT_TASK_KEY_GetExecutionTime");
+    //     MAP_COPY_GET(XPORPERTY_CONTRACT_TASK_KEY, dispatch_tasks);
+    // }
+
+    uint32_t task_id = 0;
+    if (dispatch_tasks.size() > 0) {
+        auto it = dispatch_tasks.end();
+        it--;
+        task_id = base::xstring_utl::touint32(it->first);
+        task_id++;
+    }
+    return task_id;
+}
+
+void xtop_zec_reward_contract_new::add_task(const uint32_t task_id,
+                                            const uint64_t onchain_timer_round,
+                                            const std::string & contract,
+                                            const std::string & action,
+                                            const std::string & params) {
+    xreward_dispatch_task task;
+
+    task.onchain_timer_round = onchain_timer_round;
+    task.contract = contract;
+    task.action = action;
+    task.params = params;
+
+    base::xstream_t stream(base::xcontext_t::instance());
+    task.serialize_to(stream);
+    std::stringstream ss;
+    ss << std::setw(10) << std::setfill('0') << task_id;
+    auto key = ss.str();
+    // {
+    //     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "XPORPERTY_CONTRACT_TASK_KEY_SetExecutionTime");
+    //     MAP_SET(XPORPERTY_CONTRACT_TASK_KEY, key, std::string((char *)stream.data(), stream.size()));
+    // }
+    m_reward_task.set(key, std::string((char *)stream.data(), stream.size()));
+}
+
+void xtop_zec_reward_contract_new::execute_task() {
+    XMETRICS_TIME_RECORD(XREWARD_CONTRACT "execute_task_ExecutionTime");
+    XMETRICS_CPU_TIME_RECORD(XREWARD_CONTRACT "execute_task_cpu_time");
+    std::map<std::string, std::string> dispatch_tasks = m_reward_task.value();
+    xreward_dispatch_task task;
+
+    // {
+    //     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "XPORPERTY_CONTRACT_TASK_KEY_CopyGetExecutionTime");
+    //     MAP_COPY_GET(XPORPERTY_CONTRACT_TASK_KEY, dispatch_tasks);
+    // }
+
+    xdbg("[xtop_zec_reward_contract_new::execute_task] map size: %d\n", dispatch_tasks.size());
+    XMETRICS_COUNTER_SET(XREWARD_CONTRACT "currentTaskCnt", dispatch_tasks.size());
+
+    const int32_t task_num_per_round = 16;
+    for (auto i = 0; i < task_num_per_round; i++) {
+        auto it = dispatch_tasks.begin();
+        if (it == dispatch_tasks.end())
+            return;
+
+        xstream_t stream(xcontext_t::instance(), (uint8_t *)it->second.c_str(), (uint32_t)it->second.size());
+        task.serialize_from(stream);
+
+        XMETRICS_PACKET_INFO(XREWARD_CONTRACT "executeTask",
+                             "id",
+                             it->first,
+                             "logicTime",
+                             task.onchain_timer_round,
+                             "targetContractAddr",
+                             task.contract,
+                             "action",
+                             task.action,
+                             "onChainParamTaskNumPerRound",
+                             task_num_per_round);
+
+        // debug output
+        if (task.action == XREWARD_CLAIMING_ADD_NODE_REWARD || task.action == XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD) {
+            xstream_t stream_params(xcontext_t::instance(), (uint8_t *)task.params.c_str(), (uint32_t)task.params.size());
+            uint64_t onchain_timer_round;
+            std::map<std::string, top::xstake::uint128_t> rewards;
+            stream_params >> onchain_timer_round;
+            stream_params >> rewards;
+            for (auto const & r : rewards) {
+                xinfo("[xtop_zec_reward_contract_new::execute_task] contract: %s, action: %s, account: %s, reward: [%llu, %u], onchain_timer_round: %llu\n",
+                      task.contract.c_str(),
+                      task.action.c_str(),
+                      r.first.c_str(),
+                      static_cast<uint64_t>(r.second / REWARD_PRECISION),
+                      static_cast<uint32_t>(r.second % REWARD_PRECISION),
+                      task.onchain_timer_round);
+            }
+        } else if (task.action == XTRANSFER_ACTION) {
+            std::map<std::string, uint64_t> issuances;
+            base::xstream_t seo_stream(base::xcontext_t::instance(), (uint8_t *)task.params.c_str(), (uint32_t)task.params.size());
+            seo_stream >> issuances;
+            for (auto const & issue : issuances) {
+                xinfo("[xtop_zec_reward_contract_new::execute_task] action: %s, contract account: %s, issuance: %llu, onchain_timer_round: %llu\n",
+                      task.action.c_str(),
+                      issue.first.c_str(),
+                      issue.second,
+                      task.onchain_timer_round);
+                // TRANSFER(issue.first, issue.second);
+                transfer(common::xaccount_address_t{issue.first}, issue.second, contract_common::xfollowup_transaction_schedule_type_t::immediately);
+            }
+        }
+
+        if (task.action != XTRANSFER_ACTION) {
+            call(common::xaccount_address_t{task.contract}, task.action, task.params, contract_common::xfollowup_transaction_schedule_type_t::immediately);
+        }
+
+        // {
+        //     XMETRICS_TIME_RECORD(XREWARD_CONTRACT "XPORPERTY_CONTRACT_TASK_KEY_RemoveExecutionTime");
+        //     MAP_REMOVE(XPORPERTY_CONTRACT_TASK_KEY, it->first);
+        // }
+        m_reward_task.remove(it->first);
+
+        dispatch_tasks.erase(it);
     }
 }
 
@@ -1299,7 +1424,7 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
     std::vector<contract_common::xfollowup_transaction_delay_param_t> tasks;
     // dispatch table reward
     uint64_t issuance = 0;
-    // uint32_t task_id = get_task_id();
+    uint32_t task_id = get_task_id();
     for (auto const & entity : table_total_rewards) {
         auto const & contract = entity.first;
         auto const & total_award = entity.second;
@@ -1309,29 +1434,43 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
             reward += 1;
         }
         issuance += reward;
-        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
-              contract_common::xdelay_followup_type_t::transfer,
-              current_time,
-              contract.value().c_str(),
-              XTRANSFER_ACTION);
-        tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{
-            contract_common::xdelay_followup_type_t::transfer, current_time, contract, XTRANSFER_ACTION, xstring_utl::tostring(reward)});
+        // xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+        //       contract_common::xdelay_followup_type_t::transfer,
+        //       current_time,
+        //       contract.value().c_str(),
+        //       XTRANSFER_ACTION);
+        // tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{
+        //     contract_common::xdelay_followup_type_t::transfer, current_time, contract, XTRANSFER_ACTION, xstring_utl::tostring(reward)});
+        std::map<std::string, uint64_t> issuances;
+        issuances.emplace(contract.to_string(), reward);
+        base::xstream_t seo_stream(base::xcontext_t::instance());
+        seo_stream << issuances;
+
+        add_task(task_id, current_time, "", XTRANSFER_ACTION, std::string((char *)seo_stream.data(), seo_stream.size()));
+        task_id++;
     }
     xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] actual issuance: %lu", issuance);
     // dispatch community reward
     uint64_t common_funds = static_cast<uint64_t>(community_reward / REWARD_PRECISION);
     if (common_funds > 0) {
         issuance += common_funds;
-        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
-              contract_common::xdelay_followup_type_t::transfer,
-              current_time,
-              sys_contract_rec_tcc_addr,
-              XTRANSFER_ACTION);
-        tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{contract_common::xdelay_followup_type_t::transfer,
-                                                                                current_time,
-                                                                                common::xaccount_address_t{sys_contract_rec_tcc_addr},
-                                                                                XTRANSFER_ACTION,
-                                                                                xstring_utl::tostring(common_funds)});
+        // xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+        //       contract_common::xdelay_followup_type_t::transfer,
+        //       current_time,
+        //       sys_contract_rec_tcc_addr,
+        //       XTRANSFER_ACTION);
+        // tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{contract_common::xdelay_followup_type_t::transfer,
+        //                                                                         current_time,
+        //                                                                         common::xaccount_address_t{sys_contract_rec_tcc_addr},
+        //                                                                         XTRANSFER_ACTION,
+        //                                                                         xstring_utl::tostring(common_funds)});
+        std::map<std::string, uint64_t> issuances;
+        issuances.emplace(sys_contract_rec_tcc_addr, common_funds);
+        base::xstream_t seo_stream(base::xcontext_t::instance());
+        seo_stream << issuances;
+
+        add_task(task_id, current_time, "", XTRANSFER_ACTION, std::string((char *)seo_stream.data(), seo_stream.size()));
+        task_id++;
     }
     xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] common_funds: %lu", common_funds);
     // generate tasks
@@ -1349,14 +1488,16 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
         xstream_t reward_stream(xcontext_t::instance());
         reward_stream << current_time;
         reward_stream << account_awards2;
-        std::string param = std::string((char *)reward_stream.data(), reward_stream.size());
-        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
-              contract_common::xdelay_followup_type_t::call,
-              current_time,
-              contract.value().c_str(),
-              XREWARD_CLAIMING_ADD_NODE_REWARD);
-        tasks.emplace_back(
-            contract_common::xfollowup_transaction_delay_param_t{contract_common::xdelay_followup_type_t::call, current_time, contract, XREWARD_CLAIMING_ADD_NODE_REWARD, param});
+        // std::string param = std::string((char *)reward_stream.data(), reward_stream.size());
+        // xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+        //       contract_common::xdelay_followup_type_t::call,
+        //       current_time,
+        //       contract.value().c_str(),
+        //       XREWARD_CLAIMING_ADD_NODE_REWARD);
+        // tasks.emplace_back(
+        //     contract_common::xfollowup_transaction_delay_param_t{contract_common::xdelay_followup_type_t::call, current_time, contract, XREWARD_CLAIMING_ADD_NODE_REWARD, param});
+        add_task(task_id, current_time, contract.to_string(), XREWARD_CLAIMING_ADD_NODE_REWARD, std::string((char *)reward_stream.data(), reward_stream.size()));
+        task_id++;
     }
     xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] pid: %d, table_node_dividend_detail size: %d\n", getpid(), table_node_dividend_detail.size());
     for (auto const & entity : table_node_dividend_detail) {
@@ -1371,21 +1512,20 @@ void xtop_zec_reward_contract_new::dispatch_all_reward_v3(
         xstream_t reward_stream(xcontext_t::instance());
         reward_stream << current_time;
         reward_stream << auditor_vote_rewards2;
-        std::string param = std::string((char *)reward_stream.data(), reward_stream.size());
-        xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
-              contract_common::xdelay_followup_type_t::call,
-              current_time,
-              contract.value().c_str(),
-              XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD);
-        tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{
-            contract_common::xdelay_followup_type_t::call, current_time, contract, XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD, param});
+        // std::string param = std::string((char *)reward_stream.data(), reward_stream.size());
+        // xinfo("[xtop_zec_reward_contract_new::dispatch_all_reward] add delay followup, type: %d, time: %lu, recver: %s, action: %s",
+        //       contract_common::xdelay_followup_type_t::call,
+        //       current_time,
+        //       contract.value().c_str(),
+        //       XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD);
+        // tasks.emplace_back(contract_common::xfollowup_transaction_delay_param_t{
+        //     contract_common::xdelay_followup_type_t::call, current_time, contract, XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD, param});
+        add_task(task_id, current_time, contract.to_string(), XREWARD_CLAIMING_ADD_VOTER_DIVIDEND_REWARD, std::string((char *)reward_stream.data(), reward_stream.size()));
+        task_id++;
     }
 
-    delay_followup(tasks);
+    // delay_followup(tasks);
     actual_issuance = issuance;
-// #if defined(DEBUG)
-//     print_tasks();
-// #endif
 
     XMETRICS_COUNTER_INCREMENT(XREWARD_CONTRACT "dispatch_all_reward_Executed", 1);
     return;
