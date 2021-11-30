@@ -18,7 +18,7 @@
 #include <cinttypes>
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "RecElectRec_"
 #define XREC_ELECT XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -69,14 +69,14 @@ void xtop_rec_elect_rec_contract_new::setup() {
 void xtop_rec_elect_rec_contract_new::on_timer(common::xlogic_time_t const current_time) {
     XMETRICS_TIME_RECORD(XREC_ELECT "on_timer_all_time");
     XMETRICS_CPU_TIME_RECORD(XREC_ELECT "on_timer_cpu_time");
-    XCONTRACT_ENSURE(sender() == address(), "xtop_rec_elect_rec_contract_new instance is triggled by " + sender().value());
-    XCONTRACT_ENSURE(address().value() == sys_contract_rec_elect_rec_addr, "xtop_rec_elect_rec_contract_new instance is not triggled by sys_contract_rec_elect_rec_addr");
+    XCONTRACT_ENSURE(sender() == address(), "xrec_elect_rec_contract_new_t instance is triggled by " + sender().value());
+    XCONTRACT_ENSURE(address().value() == sys_contract_rec_elect_rec_addr, "xrec_elect_rec_contract_new_t instance is not triggled by sys_contract_rec_elect_rec_addr");
     // XCONTRACT_ENSURE(current_time <= TIME(), u8"xtop_rec_elect_rec_contract_new::on_timer current_time > consensus leader's time");
     XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(rec_election_interval) / 2 > time(),
-                     "xrec_elect_rec_contract_t::on_timer retried too many times. TX generated time " + std::to_string(current_time) + " TIME() " + std::to_string(time()));
+                     "xrec_elect_rec_contract_new_t::on_timer retried too many times. TX generated time " + std::to_string(current_time) + " TIME() " + std::to_string(time()));
 
     std::uint64_t random_seed = utl::xxh64_t::digest(this->random_seed());
-    xinfo("[rec committee election] on_timer random seed %" PRIu64, random_seed);
+    xinfo("[rec committee election new] on_timer random seed %" PRIu64, random_seed);
 
     auto const rec_election_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(rec_election_interval);
     auto const min_election_committee_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_election_committee_size);
@@ -105,3 +105,7 @@ void xtop_rec_elect_rec_contract_new::on_timer(common::xlogic_time_t const curre
 }
 
 NS_END2
+
+#undef XREC_ELECT
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

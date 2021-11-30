@@ -9,11 +9,9 @@
 #include "xstate_accessor/xproperties/xproperty_identifier.h"
 
 #if !defined(XZEC_MODULE)
-#    define XZEC_MODULE "sysContract_"
+#    define XZEC_MODULE "SysContract_"
 #endif
-
-#define XCONTRACT_PREFIX "workload_v2_"
-
+#define XCONTRACT_PREFIX "ZecWorkload_"
 #define XWORKLOAD_CONTRACT XZEC_MODULE XCONTRACT_PREFIX
 
 NS_BEG2(top, system_contracts)
@@ -30,10 +28,10 @@ void xtop_zec_workload_contract_new::on_receive_workload(std::string const & tab
     auto const & table_id = source_address.table_id();
     auto const & base_addr = source_address.base_address();
     if (sys_contract_sharding_statistic_info_addr != base_addr.to_string()) {
-        xwarn("[xtop_zec_workload_contract_new::on_receive_workload] invalid call from %s", source_address.c_str());
+        xwarn("[xzec_workload_contract_new_t::on_receive_workload] invalid call from %s", source_address.c_str());
         return;
     }
-    xinfo("[xtop_zec_workload_contract_new::on_receive_workload] on_receive_workload call from %s", source_address.c_str());
+    xinfo("[xzec_workload_contract_new_t::on_receive_workload] on_receive_workload call from %s", source_address.c_str());
 
     std::string activation_str;
     std::map<std::string, std::string> workload_str;
@@ -103,7 +101,7 @@ void xtop_zec_workload_contract_new::handle_workload_str(const std::string & act
         record.serialize_from(stream);
     }
 
-    xdbg("[xtop_zec_workload_contract_new::is_mainnet_activated] activated: %d\n", record.activated);
+    xdbg("[xzec_workload_contract_new_t::is_mainnet_activated] activated: %d\n", record.activated);
     if (!record.activated) {
         return;
     }
@@ -128,7 +126,7 @@ void xtop_zec_workload_contract_new::update_workload(const std::map<common::xgro
         {
             auto it = workload_str.find(group_address_str);
             if (it == workload_str.end()) {
-                xdbg("[xtop_zec_workload_contract_new::update_workload] group not exist: %s", group_address.to_string().c_str());
+                xdbg("[xzec_workload_contract_new_t::update_workload] group not exist: %s", group_address.to_string().c_str());
             } else {
                 base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)it->second.data(), it->second.size());
                 total_workload.serialize_from(stream);
@@ -140,7 +138,7 @@ void xtop_zec_workload_contract_new::update_workload(const std::map<common::xgro
             auto const & count = leader_workload.second;
             total_workload.m_leader_count[leader] += count;
             total_workload.cluster_total_workload += count;
-            xdbg("[xtop_zec_workload_contract_new::update_workload] group: %u, leader: %s, count: %d, total_count: %d, total_workload: %d",
+            xdbg("[xzec_workload_contract_new_t::update_workload] group: %u, leader: %s, count: %d, total_count: %d, total_workload: %d",
                  group_address.group_id().value(),
                  leader.c_str(),
                  count,
@@ -200,7 +198,7 @@ void xtop_zec_workload_contract_new::upload_workload_internal(common::xlogic_tim
             MAP_OBJECT_SERIALIZE2(stream, group_workload_upload);
             group_workload_upload_str = std::string((char *)stream.data(), stream.size());
 
-            xinfo("[xtop_zec_workload_contract_new::upload_workload] report workload to zec reward, group_workload_upload size: %d, timer round: %" PRIu64,
+            xinfo("[xzec_workload_contract_new_t::upload_workload] report workload to zec reward, group_workload_upload size: %d, timer round: %" PRIu64,
                   group_workload_upload.size(),
                   timestamp);
         }
@@ -226,10 +224,10 @@ void xtop_zec_workload_contract_new::on_timer(common::xlogic_time_t const timest
     auto const & source_address = sender();
     auto const & self_account = recver();
     if (self_account != source_address) {
-        xwarn("[xtop_zec_workload_contract_new::on_timer] invalid call from %s", source_address.c_str());
+        xwarn("[xzec_workload_contract_new_t::on_timer] invalid call from %s", source_address.c_str());
         return;
     }
-    xinfo("[xtop_zec_workload_contract_new::on_timer] timestamp: %lu, self: %s, src: %s", timestamp, self_account.value().c_str(), source_address.value().c_str());
+    xinfo("[xzec_workload_contract_new_t::on_timer] timestamp: %lu, self: %s, src: %s", timestamp, self_account.value().c_str(), source_address.value().c_str());
     upload_workload(timestamp);
     clear_workload();
 }

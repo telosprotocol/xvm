@@ -19,11 +19,9 @@ using top::base::xstring_utl;
 using namespace top::data;
 
 #if !defined (XZEC_MODULE)
-#    define XZEC_MODULE "sysContract_"
+#    define XZEC_MODULE "SysContract_"
 #endif
-
-#define XCONTRACT_PREFIX "vote_"
-
+#define XCONTRACT_PREFIX "ZecVote_"
 #define XVOTE_CONTRACT XZEC_MODULE XCONTRACT_PREFIX
 
 NS_BEG2(top, system_contracts)
@@ -122,19 +120,19 @@ int xzec_vote_contract_new::is_mainnet_activated() {
                     (uint8_t*)value_str.c_str(), (uint32_t)value_str.size());
         record.serialize_from(stream);
     }
-    xdbg("[xzec_vote_contract_new::is_mainnet_activated] activated: %d, pid:%d\n", record.activated, getpid());
+    xdbg("[xzec_vote_contract_new_t::is_mainnet_activated] activated: %d, pid:%d\n", record.activated, getpid());
     return record.activated;
 };
 
 bool xzec_vote_contract_new::handle_receive_shard_votes(uint64_t report_time, uint64_t last_report_time, std::map<std::string, std::string> const & contract_adv_votes, std::map<std::string, std::string> & merge_contract_adv_votes) {
-    xdbg("[xzec_vote_contract_new::handle_receive_shard_votes] report vote table size: %d, original vote table size: %d",
+    xdbg("[xzec_vote_contract_new_t::handle_receive_shard_votes] report vote table size: %d, original vote table size: %d",
             contract_adv_votes.size(), merge_contract_adv_votes.size());
     if (report_time < last_report_time) {
         return false;
     }
     if (report_time == last_report_time) {
         merge_contract_adv_votes.insert(contract_adv_votes.begin(), contract_adv_votes.end());
-        xdbg("[xzec_vote_contract_new::handle_receive_shard_votes] same batch of vote report, report vote table size: %d, total size: %d",
+        xdbg("[xzec_vote_contract_new_t::handle_receive_shard_votes] same batch of vote report, report vote table size: %d, total size: %d",
             contract_adv_votes.size(), merge_contract_adv_votes.size());
     } else {
         merge_contract_adv_votes = contract_adv_votes;
@@ -146,14 +144,14 @@ void xzec_vote_contract_new::on_receive_shard_votes_v2(uint64_t report_time, std
     XMETRICS_COUNTER_INCREMENT(XVOTE_CONTRACT "on_receive_shard_votes_Called", 1);
     XMETRICS_TIME_RECORD(XVOTE_CONTRACT "on_receive_shard_votes_ExecutionTime");
     auto const& source_account = sender();
-    xdbg("[xzec_vote_contract_new::on_receive_shard_votes_v2] contract addr: %s, contract_adv_votes size: %d, report_time: %llu, pid:%d\n",
+    xdbg("[xzec_vote_contract_new_t::on_receive_shard_votes_v2] contract addr: %s, contract_adv_votes size: %d, report_time: %llu, pid:%d\n",
         source_account.c_str(), contract_adv_votes.size(), report_time, getpid());
 
     std::string base_addr;
     uint32_t    table_id;
     if (!data::xdatautil::extract_parts(source_account.value(), base_addr, table_id) || sys_contract_sharding_vote_addr != base_addr) {
-        xwarn("[xzec_vote_contract_new::on_receive_shard_votes_v2] invalid call from %s", source_account.c_str());
-        XCONTRACT_ENSURE(false, "[xzec_vote_contract_new::on_receive_shard_votes_v2] invalid call");
+        xwarn("[xzec_vote_contract_new_t::on_receive_shard_votes_v2] invalid call from %s", source_account.c_str());
+        XCONTRACT_ENSURE(false, "[xzec_vote_contract_new_t::on_receive_shard_votes_v2] invalid call");
     }
 
     if ( !is_mainnet_activated() ) return;
@@ -167,7 +165,7 @@ void xzec_vote_contract_new::on_receive_shard_votes_v2(uint64_t report_time, std
     uint64_t last_report_time = 0;
     if (!value_str.empty()) {
         last_report_time = base::xstring_utl::touint64(value_str);
-        xdbg("[xzec_vote_contract_new::on_receive_shard_votes_v2] last_report_time: %llu", last_report_time);
+        xdbg("[xzec_vote_contract_new_t::on_receive_shard_votes_v2] last_report_time: %llu", last_report_time);
     }
     m_vote_report_time_prop.set(source_account.value(), base::xstring_utl::tostring(report_time));
 
@@ -180,7 +178,7 @@ void xzec_vote_contract_new::on_receive_shard_votes_v2(uint64_t report_time, std
             votes_stream >> auditor_votes;
         }
         if ( !handle_receive_shard_votes(report_time, last_report_time, contract_adv_votes, auditor_votes) ) {
-            XCONTRACT_ENSURE(false, "[xzec_vote_contract_new::on_receive_shard_votes_v2] handle_receive_shard_votes fail");
+            XCONTRACT_ENSURE(false, "[xzec_vote_contract_new_t::on_receive_shard_votes_v2] handle_receive_shard_votes fail");
         }
 
         xstream_t stream(xcontext_t::instance());

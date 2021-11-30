@@ -14,6 +14,12 @@
 #include "xmetrics/xmetrics.h"
 #include "xvm/xerror/xvm_error_code.h"
 
+#ifndef XSYSCONTRACT_MODULE
+#    define XSYSCONTRACT_MODULE "SysContract_"
+#endif
+#define XCONTRACT_PREFIX "TableStatistic_"
+#define XTABLE_STATISTIC XSYSCONTRACT_MODULE XCONTRACT_PREFIX
+
 using namespace top::base;
 using namespace top::data;
 using namespace top::xstake;
@@ -33,8 +39,8 @@ void xtable_statistic_info_collection_contract_new::setup() {
 }
 
 void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xstatistics_data_t const& statistic_data,  xfulltableblock_statistic_accounts const& statistic_accounts, uint64_t block_height, int64_t tgas) {
-    XMETRICS_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
-    XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_on_collect_statistic_info");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "on_collect_statistic_info");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "on_collect_statistic_info");
     XMETRICS_GAUGE(metrics::xmetrics_tag_t::contract_table_statistic_exec_fullblock, 1);
 
     auto const & source_account = sender();
@@ -57,7 +63,7 @@ void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xs
     uint64_t cur_statistic_height = 0;
     std::string value_str;
     {
-        XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_fulltable_height");
+        XMETRICS_TIME_RECORD(XTABLE_STATISTIC "get_" FULLTABLE_HEIGHT);
         if (m_extend_func_prop.exist(FULLTABLE_HEIGHT)) value_str = m_extend_func_prop.get(FULLTABLE_HEIGHT);
     }
     if (!value_str.empty()) {
@@ -83,14 +89,20 @@ void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xs
 
     std::string summarize_info_str;
     {
-        XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
-        if (m_unqualified_node_prop.exist("UNQUALIFIED_NODE")) summarize_info_str = m_unqualified_node_prop.get("UNQUALIFIED_NODE");
+        XMETRICS_TIME_RECORD(XTABLE_STATISTIC
+                             "get_"
+                             "UNQUALIFIED_NODE");
+        if (m_unqualified_node_prop.exist("UNQUALIFIED_NODE")) {
+            summarize_info_str = m_unqualified_node_prop.get("UNQUALIFIED_NODE");
+        }
     }
 
     std::string summarize_fulltableblock_num_str;
     {
-        XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_tableblock_num_key");
-        if (m_extend_func_prop.exist(FULLTABLE_NUM)) summarize_fulltableblock_num_str = m_extend_func_prop.get(FULLTABLE_NUM);
+        XMETRICS_TIME_RECORD(XTABLE_STATISTIC "get_" FULLTABLE_NUM);
+        if (m_extend_func_prop.exist(FULLTABLE_NUM)) {
+            summarize_fulltableblock_num_str = m_extend_func_prop.get(FULLTABLE_NUM);
+        }
     }
 
     xunqualified_node_info_t summarize_info;
@@ -106,8 +118,8 @@ void xtable_statistic_info_collection_contract_new::collect_slash_statistic_info
                                                                                  xfulltableblock_statistic_accounts const& statistic_accounts,
                                                                                  std::string const& summarize_info_str, std::string const& summarize_fulltableblock_num_str,
                                                                                 xunqualified_node_info_t& summarize_info, uint32_t& summarize_fulltableblock_num) {
-    XMETRICS_TIME_RECORD("sysContract_tableStatistic_collect_slash_statistic_info");
-    XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_collect_slash_statistic_info");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "collect_slash_statistic_info");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "collect_slash_statistic_info");
 
     // get the slash info
     auto const node_info = process_statistic_data(statistic_data, statistic_accounts);
@@ -128,14 +140,16 @@ void xtable_statistic_info_collection_contract_new::collect_slash_statistic_info
 
 void  xtable_statistic_info_collection_contract_new::update_slash_statistic_info( xunqualified_node_info_t const& summarize_info, uint32_t summarize_fulltableblock_num, uint64_t block_height) {
     {
-        XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_unqualified_node_key");
+        XMETRICS_TIME_RECORD(XTABLE_STATISTIC
+                             "set_"
+                             "UNQUALIFIED_NODE");
         base::xstream_t stream(base::xcontext_t::instance());
         summarize_info.serialize_to(stream);
         m_unqualified_node_prop.set("UNQUALIFIED_NODE", std::string{reinterpret_cast<char *>(stream.data()), static_cast<size_t>(stream.size())});
     }
 
     {
-        XMETRICS_TIME_RECORD("sysContract_tableStatistic_set_property_contract_extended_function_key");
+        XMETRICS_TIME_RECORD(XTABLE_STATISTIC "set_" FULLTABLE_HEIGHT "_" FULLTABLE_NUM);
         auto value_str = base::xstring_utl::tostring(block_height);
         m_extend_func_prop.set(FULLTABLE_HEIGHT, {value_str.begin(), value_str.end()});
         summarize_fulltableblock_num++;
@@ -161,8 +175,8 @@ void  xtable_statistic_info_collection_contract_new::accumulate_node_info(xunqua
 }
 
 xunqualified_node_info_t  xtable_statistic_info_collection_contract_new::process_statistic_data(top::data::xstatistics_data_t const& block_statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts) {
-    XMETRICS_TIME_RECORD("sysContract_tableStatistic_process_statistic_data");
-    XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_process_statistic_data");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "process_statistic_data");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "process_statistic_data");
     xunqualified_node_info_t res_node_info;
 
     // process one full tableblock statistic data
@@ -207,8 +221,8 @@ xunqualified_node_info_t  xtable_statistic_info_collection_contract_new::process
 
 
 void xtable_statistic_info_collection_contract_new::report_summarized_statistic_info(common::xlogic_time_t timestamp) {
-    XMETRICS_TIME_RECORD("sysContract_tableStatistic_report_summarized_statistic_info");
-    XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_report_summarized_statistic_info");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "report_summarized_statistic_info");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "report_summarized_statistic_info");
     auto const & source_account = sender();
     auto const & self_account = address();
 
@@ -228,8 +242,10 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
     uint32_t summarize_fulltableblock_num = 0;
     std::string value_str;
     {
-        XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_tableblock_num_key");
-        if (m_extend_func_prop.exist(FULLTABLE_NUM)) value_str = m_extend_func_prop.get(FULLTABLE_NUM);
+        XMETRICS_TIME_RECORD(XTABLE_STATISTIC "get_" FULLTABLE_NUM);
+        if (m_extend_func_prop.exist(FULLTABLE_NUM)) {
+            value_str = m_extend_func_prop.get(FULLTABLE_NUM);
+        }
     }
     if (!value_str.empty()) {
         summarize_fulltableblock_num = base::xstring_utl::touint32(value_str);
@@ -250,12 +266,16 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
          getpid());
 
     {
-        XMETRICS_TIME_RECORD("sysContractc_slash_report_statistic_info");
+        XMETRICS_TIME_RECORD(XTABLE_STATISTIC "summarize_slash_info");
         xunqualified_node_info_t summarize_info;
         value_str.clear();
         {
-            XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_unqualified_node_key");
-            if (m_unqualified_node_prop.exist("UNQUALIFIED_NODE")) value_str = m_unqualified_node_prop.get("UNQUALIFIED_NODE");
+            XMETRICS_TIME_RECORD(XTABLE_STATISTIC
+                                 "get_"
+                                 "UNQUALIFIED_NODE");
+            if (m_unqualified_node_prop.exist("UNQUALIFIED_NODE")) {
+                value_str = m_unqualified_node_prop.get("UNQUALIFIED_NODE");
+            }
         }
         if (!value_str.empty()) {
             base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)value_str.data(), value_str.size());
@@ -266,8 +286,10 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
         value_str.clear();
         uint64_t cur_statistic_height = 0;
         {
-            XMETRICS_TIME_RECORD("sysContract_tableStatistic_get_property_contract_fulltable_height_key");
-            if (m_extend_func_prop.exist(FULLTABLE_HEIGHT)) value_str = m_extend_func_prop.get(FULLTABLE_HEIGHT);
+            XMETRICS_TIME_RECORD(XTABLE_STATISTIC "get_" FULLTABLE_HEIGHT);
+            if (m_extend_func_prop.exist(FULLTABLE_HEIGHT)) {
+                value_str = m_extend_func_prop.get(FULLTABLE_HEIGHT);
+            }
         }
         if (!value_str.empty()) {
             cur_statistic_height = base::xstring_utl::touint64(value_str);
@@ -288,11 +310,13 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
                 getpid());
 
         {
-            XMETRICS_TIME_RECORD("sysContract_tableStatistic_remove_property_contract_unqualified_node_key");
+            XMETRICS_TIME_RECORD(XTABLE_STATISTIC
+                                 "remove_"
+                                 "UNQUALIFIED_NODE");
             m_unqualified_node_prop.remove("UNQUALIFIED_NODE");
         }
         {
-            XMETRICS_TIME_RECORD("sysContract_tableStatistic_remove_property_contract_tableblock_num_key");
+            XMETRICS_TIME_RECORD(XTABLE_STATISTIC "remove_" FULLTABLE_NUM);
             m_extend_func_prop.remove(FULLTABLE_NUM);
         }
 
@@ -304,17 +328,14 @@ void xtable_statistic_info_collection_contract_new::report_summarized_statistic_
             call(common::xaccount_address_t{sys_contract_zec_slash_info_addr}, "summarize_slash_info", std::string((char *)stream.data(), stream.size()),
                     contract_common::xfollowup_transaction_schedule_type_t::immediately);
         }
-
     }
 
-
     upload_workload();
-
 }
 
 std::map<common::xgroup_address_t, xgroup_workload_t> xtable_statistic_info_collection_contract_new::get_workload_from_data(xstatistics_data_t const & statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts) {
-    XMETRICS_TIME_RECORD("sysContractc_workload_get_workload_from_data");
-    XMETRICS_CPU_TIME_RECORD("sysContractc_workload_get_workload_from_data");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "get_workload_from_data");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "get_workload_from_data");
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload;
     auto workload_per_tableblock = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tableblock);
     auto workload_per_tx = XGET_ONCHAIN_GOVERNANCE_PARAMETER(workload_per_tx);
@@ -401,8 +422,8 @@ void xtable_statistic_info_collection_contract_new::set_workload(common::xgroup_
 }
 
 void xtable_statistic_info_collection_contract_new::update_workload(std::map<common::xgroup_address_t, xgroup_workload_t> const & group_workload) {
-    XMETRICS_TIME_RECORD("sysContractc_workload_update_workload");
-    XMETRICS_CPU_TIME_RECORD("sysContractc_workload_update_workload");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "update_workload");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "update_workload");
     for (auto const & one_group_workload : group_workload) {
         auto const & group_address = one_group_workload.first;
         auto const & workload = one_group_workload.second;
@@ -437,8 +458,8 @@ void xtable_statistic_info_collection_contract_new::update_tgas(int64_t table_pl
 }
 
 void xtable_statistic_info_collection_contract_new::upload_workload() {
-    XMETRICS_TIME_RECORD("sysContractc_workload_upload_workload");
-    XMETRICS_CPU_TIME_RECORD("sysContractc_workload_upload_workload");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "upload_workload");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "upload_workload");
     std::map<std::string, std::string> group_workload_str;
     std::map<common::xgroup_address_t, xgroup_workload_t> group_workload_upload;
 
@@ -512,8 +533,8 @@ void xtable_statistic_info_collection_contract_new::upload_workload() {
 }
 
 void xtable_statistic_info_collection_contract_new::process_workload_statistic_data(xstatistics_data_t const & statistic_data, xfulltableblock_statistic_accounts const& statistic_accounts, const int64_t tgas) {
-    XMETRICS_TIME_RECORD("sysContract_tableStatistic_process_workload_statistic_data");
-    XMETRICS_CPU_TIME_RECORD("sysContract_tableStatistic_process_workload_statistic_data");
+    XMETRICS_TIME_RECORD(XTABLE_STATISTIC "process_workload_statistic_data");
+    XMETRICS_CPU_TIME_RECORD(XTABLE_STATISTIC "process_workload_statistic_data");
     auto const & group_workload = get_workload_from_data(statistic_data, statistic_accounts);
     if (!group_workload.empty()) {
         update_workload(group_workload);
@@ -524,5 +545,8 @@ void xtable_statistic_info_collection_contract_new::process_workload_statistic_d
     }
 }
 
-
 NS_END2
+
+#undef XTABLE_STATISTIC
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

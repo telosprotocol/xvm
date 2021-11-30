@@ -17,7 +17,7 @@
 #include <cinttypes>
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "ZecStandby_"
 #define XZEC_STANDBY XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -84,3 +84,7 @@ void xtop_zec_standby_pool_contract_new::on_timer(common::xlogic_time_t const cu
 }
 
 NS_END2
+
+#undef XZEC_STANDBY
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

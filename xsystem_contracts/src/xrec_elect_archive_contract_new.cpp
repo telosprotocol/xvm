@@ -24,7 +24,7 @@
 #endif
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "RecElectArchive_"
 #define XARCHIVE_ELECT XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -48,7 +48,7 @@ bool executed_archive{false};
 
 void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time_t const current_time) {
     uint64_t latest_height = state_height(common::xaccount_address_t{sys_contract_rec_elect_archive_addr});
-    xinfo("[archive_start_nodes] get_latest_height: %" PRIu64, latest_height);
+    xinfo("[archive_start_nodes new] get_latest_height: %" PRIu64, latest_height);
     if (latest_height > 0) {
         executed_archive = true;
         return;
@@ -80,7 +80,7 @@ void xtop_rec_elect_archive_contract_new::elect_config_nodes(common::xlogic_time
         }
         auto nodes_info = xvm::system_contracts::xstatic_election_center::instance().get_static_election_nodes(static_node_str);
         if (nodes_info.empty()) {
-            xinfo("[archive_start_nodes] get empty node_info: %s gid: %d", static_node_str.c_str(), archive_gid.value());
+            xinfo("[archive_start_nodes new] get empty node_info: %s gid: %d", static_node_str.c_str(), archive_gid.value());
             continue;
         }
         auto & election_group_result = election_result_store.result_of(network_id()).result_of(node_type).result_of(common::xdefault_cluster_id).result_of(archive_gid);
@@ -136,10 +136,10 @@ void xtop_rec_elect_archive_contract_new::on_timer(const uint64_t current_time) 
     XMETRICS_CPU_TIME_RECORD(XARCHIVE_ELECT "on_timer_cpu_time");
     XCONTRACT_ENSURE(sender() == address(), "xrec_elect_archive_contract_t instance is triggled by others");
     XCONTRACT_ENSURE(address().value() == sys_contract_rec_elect_archive_addr,
-                     "xrec_elect_archive_contract_t instance is not triggled by sys_contract_rec_elect_archive_addr");
+                     "xrec_elect_archive_contract_new_t instance is not triggled by sys_contract_rec_elect_archive_addr");
     // XCONTRACT_ENSURE(current_time <= TIME(), "xrec_elect_archive_contract_t::on_timer current_time > consensus leader's time");
     XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval) / 2 > time(), "xrec_elect_archive_contract_t::on_timer retried too many times");
-    xinfo("xrec_elect_archive_contract_t::archive_elect %" PRIu64, current_time);
+    xinfo("xrec_elect_archive_contract_new_t::archive_elect %" PRIu64, current_time);
 
     xrange_t<config::xgroup_size_t> archive_group_range{ 1, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size) };
     xrange_t<config::xgroup_size_t> full_node_group_range{ 0, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size) };
@@ -153,7 +153,7 @@ void xtop_rec_elect_archive_contract_new::on_timer(const uint64_t current_time) 
 #if defined(DEBUG)
     for (auto const & r : standby_network_result) {
         auto const node_type = top::get<common::xnode_type_t const>(r);
-        xdbg("xrec_elect_archive_contract_t::archive_elect seeing %s", common::to_string(node_type).c_str());
+        xdbg("xrec_elect_archive_contract_new_t::archive_elect seeing %s", common::to_string(node_type).c_str());
     }
 #endif
 
@@ -183,7 +183,7 @@ common::xnode_type_t xtop_rec_elect_archive_contract_new::standby_type(common::x
 }
 
 void xtop_rec_elect_archive_contract_new::elect_archive(common::xlogic_time_t const current_time, data::election::xstandby_network_result_t const & standby_network_result) {
-    xkinfo("[xrec_elect_archive_contract_t] archive_gid: %s, insert %s",
+    xkinfo("[xrec_elect_archive_contract_new_t] archive_gid: %s, insert %s",
            common::xarchive_group_id.to_string().c_str(),
            data::election::get_property_by_group_id(common::xarchive_group_id).c_str());
 
@@ -203,7 +203,7 @@ void xtop_rec_elect_archive_contract_new::elect_archive(common::xlogic_time_t co
 }
 
 void xtop_rec_elect_archive_contract_new::elect_fullnode(common::xlogic_time_t const current_time, data::election::xstandby_network_result_t const & standby_network_result) {
-    xkinfo("[xrec_elect_archive_contract_t] archive_gid: %s, insert %s",
+    xkinfo("[xrec_elect_archive_contract_new_t] archive_gid: %s, insert %s",
            common::xfull_node_group_id.to_string().c_str(),
            data::election::get_property_by_group_id(common::xfull_node_group_id).c_str());
 
@@ -223,3 +223,7 @@ void xtop_rec_elect_archive_contract_new::elect_fullnode(common::xlogic_time_t c
 }
 
 NS_END2
+
+#undef XARCHIVE_ELECT
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

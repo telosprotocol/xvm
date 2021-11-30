@@ -22,6 +22,12 @@
 #include <cinttypes>
 #include <ctime>
 
+#ifndef XSYSCONTRACT_MODULE
+#    define XSYSCONTRACT_MODULE "SysContract_"
+#endif
+#define XCONTRACT_PREFIX "RecTcc_"
+#define XREC_TCC XSYSCONTRACT_MODULE XCONTRACT_PREFIX
+
 using namespace top::data;
 
 NS_BEG2(top, system_contracts)
@@ -44,7 +50,7 @@ bool xtop_rec_tcc_contract::get_proposal_info(const std::string & proposal_id, t
     try {
         value = m_tcc_proposal_ids.get(proposal_id);
     } catch (top::error::xtop_error_t const &) {
-        xdbg("[xtop_rec_tcc_contract::get_proposal_info] can't find proposal for id: %s", proposal_id.c_str());
+        xdbg("[xrec_tcc_contract_t::get_proposal_info] can't find proposal for id: %s", proposal_id.c_str());
         return false;  // not exist
     }
 
@@ -56,7 +62,7 @@ bool xtop_rec_tcc_contract::get_proposal_info(const std::string & proposal_id, t
 void xtop_rec_tcc_contract::charge(std::string const & token_name, uint64_t token_amount) {
     // withdraw from src action(account) state
     auto token = withdraw(token_amount);
-    xdbg("[xtop_rec_tcc_contract::charge] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
+    xdbg("[xrec_tcc_contract_t::charge] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
 
     // serialize token to target action(account)
     asset_to_next_action(std::move(token));
@@ -66,14 +72,14 @@ void xtop_rec_tcc_contract::submitProposal(const std::string & target,
                                            const std::string & value,
                                            tcc::proposal_type type,
                                            uint64_t effective_timer_height) {
-    XMETRICS_TIME_RECORD("sysContract_recTccProposal_submit_proposal");
-    XMETRICS_CPU_TIME_RECORD("sysContract_recTccProposal_submit_proposal_cpu");
+    XMETRICS_TIME_RECORD(XREC_TCC "submit_proposal");
+    XMETRICS_CPU_TIME_RECORD(XREC_TCC "submit_proposal_cpu");
 
-    // XCONTRACT_ENSURE(modification_description.size() <= MODIFICATION_DESCRIPTION_SIZE, "[xtop_rec_tcc_contract::submitProposal] description size too big!");
-    XCONTRACT_ENSURE(is_valid_proposal_type(type) == true, "[xtop_rec_tcc_contract::submitProposal] input invalid proposal type!");
+    // XCONTRACT_ENSURE(modification_description.size() <= MODIFICATION_DESCRIPTION_SIZE, "[xrec_tcc_contract_t::submitProposal] description size too big!");
+    XCONTRACT_ENSURE(is_valid_proposal_type(type) == true, "[xrec_tcc_contract_t::submitProposal] input invalid proposal type!");
 
     auto const & src_account = sender();
-    xdbg("[xtop_rec_tcc_contract::submitProposal] account: %s, target: %s, value: %s, type: %d, effective_timer_height: %" PRIu64,
+    xdbg("[xrec_tcc_contract_t::submitProposal] account: %s, target: %s, value: %s, type: %d, effective_timer_height: %" PRIu64,
          src_account.c_str(), target.c_str(), value.c_str(), type, effective_timer_height);
 
 
@@ -82,38 +88,38 @@ void xtop_rec_tcc_contract::submitProposal(const std::string & target,
     {
     case tcc::proposal_type::proposal_update_parameter:
         {
-            XCONTRACT_ENSURE(m_tcc_parameters.exist(target), "[xtop_rec_tcc_contract::submitProposal] proposal_add_parameter target do not exist");
+            XCONTRACT_ENSURE(m_tcc_parameters.exist(target), "[xrec_tcc_contract_t::submitProposal] proposal_add_parameter target do not exist");
             auto config_value = m_tcc_parameters.get(target);
             if (config_value.empty()) {
-                xwarn("[xtop_rec_tcc_contract::submitProposal] parameter: %s, not found", target.c_str());
+                xwarn("[xrec_tcc_contract_t::submitProposal] parameter: %s, not found", target.c_str());
                 top::error::throw_error(error::xerrc_t::proposal_not_found);
             }
 
             if (config_value == value) {
-                xwarn("[xtop_rec_tcc_contract::submitProposal] parameter: %s, provide onchain value: %s, new value: %s", target.c_str(), config_value.c_str(), value.c_str());
+                xwarn("[xrec_tcc_contract_t::submitProposal] parameter: %s, provide onchain value: %s, new value: %s", target.c_str(), config_value.c_str(), value.c_str());
                 top::error::throw_error(error::xerrc_t::proposal_not_changed);
             }
         }
         break;
 
     case tcc::proposal_type::proposal_update_asset:
-        XCONTRACT_ENSURE(xverifier::xtx_utl::address_is_valid(target) == xverifier::xverifier_error::xverifier_success, "[xtop_rec_tcc_contract::submitProposal] proposal_update_asset type proposal, target invalid!");
+        XCONTRACT_ENSURE(xverifier::xtx_utl::address_is_valid(target) == xverifier::xverifier_error::xverifier_success, "[xrec_tcc_contract_t::submitProposal] proposal_update_asset type proposal, target invalid!");
         break;
     case tcc::proposal_type::proposal_add_parameter:
-        XCONTRACT_ENSURE(!m_tcc_parameters.exist(target), "[xtop_rec_tcc_contract::submitProposal] proposal_add_parameter target already exist");
+        XCONTRACT_ENSURE(!m_tcc_parameters.exist(target), "[xrec_tcc_contract_t::submitProposal] proposal_add_parameter target already exist");
         break;
     case tcc::proposal_type::proposal_delete_parameter:
-        XCONTRACT_ENSURE(m_tcc_parameters.exist(target), "[xtop_rec_tcc_contract::submitProposal] proposal_add_parameter target do not exist");
+        XCONTRACT_ENSURE(m_tcc_parameters.exist(target), "[xrec_tcc_contract_t::submitProposal] proposal_add_parameter target do not exist");
         break;
     case tcc::proposal_type::proposal_update_parameter_incremental_add:
     case tcc::proposal_type::proposal_update_parameter_incremental_delete:
         // current only support whitelist
-        XCONTRACT_ENSURE(target == "whitelist", "[xtop_rec_tcc_contract::submitProposal] current target cannot support proposal_update_parameter_increamental_add/delete");
+        XCONTRACT_ENSURE(target == "whitelist", "[xrec_tcc_contract_t::submitProposal] current target cannot support proposal_update_parameter_increamental_add/delete");
         check_bwlist_proposal(value);
         break;
     default:
         assert(false);
-        xwarn("[xtop_rec_tcc_contract::submitProposal] proposal type %u current not support", type);
+        xwarn("[xrec_tcc_contract_t::submitProposal] proposal type %u current not support", type);
         top::error::throw_error(error::xerrc_t::unknown_proposal_type);
         break;
     }
@@ -125,19 +131,19 @@ void xtop_rec_tcc_contract::submitProposal(const std::string & target,
     assert(!ec);
     top::error::throw_error(ec);
 
-    xdbg("[xtop_rec_tcc_contract::submitProposal] the sender transaction token: %s, amount: %" PRIu64, token.symbol().c_str(), token_amount);
+    xdbg("[xrec_tcc_contract_t::submitProposal] the sender transaction token: %s, amount: %" PRIu64, token.symbol().c_str(), token_amount);
     auto min_tcc_proposal_deposit = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_tcc_proposal_deposit);
-    XCONTRACT_ENSURE(token.amount() >= min_tcc_proposal_deposit * TOP_UNIT, "[xtop_rec_tcc_contract::submitProposal] deposit less than minimum proposal deposit!");
+    XCONTRACT_ENSURE(token.amount() >= min_tcc_proposal_deposit * TOP_UNIT, "[xrec_tcc_contract_t::submitProposal] deposit less than minimum proposal deposit!");
 
     uint32_t proposal_expire_time = XGET_ONCHAIN_GOVERNANCE_PARAMETER(tcc_proposal_expire_time);
     std::string expire_time = m_tcc_parameters.get("tcc_proposal_expire_time");
     if (expire_time.empty()) {
-        xwarn("[xtop_rec_tcc_contract::submitProposal] parameter tcc_proposal_expire_time not found in blockchain");
+        xwarn("[xrec_tcc_contract_t::submitProposal] parameter tcc_proposal_expire_time not found in blockchain");
     } else {
         try {
             proposal_expire_time = std::stoi(expire_time);
         } catch (std::exception & e) {
-            xwarn("[xtop_rec_tcc_contract::submitProposal] parameter tcc_proposal_expire_time in tcc chain: %s", expire_time.c_str());
+            xwarn("[xrec_tcc_contract_t::submitProposal] parameter tcc_proposal_expire_time in tcc chain: %s", expire_time.c_str());
         }
     }
 
@@ -166,23 +172,23 @@ void xtop_rec_tcc_contract::submitProposal(const std::string & target,
 
     m_tcc_proposal_ids.set(proposal.proposal_id, proposal_value);
     m_tcc_next_unused_proposal_id.set(proposal.proposal_id);
-    xinfo("[xtop_rec_tcc_contract::submitProposal] timer round: %" PRIu64 ", added new proposal: %s, stream detail size: %zu", time(), proposal.proposal_id.c_str(), value.size());
-    XMETRICS_PACKET_INFO("sysContract_recTccProposal_submit_proposal", "timer round", std::to_string(time()), "proposal id", proposal.proposal_id);
+    xinfo("[xrec_tcc_contract_t::submitProposal] timer round: %" PRIu64 ", added new proposal: %s, stream detail size: %zu", time(), proposal.proposal_id.c_str(), value.size());
+    XMETRICS_PACKET_INFO(XREC_TCC "submit_proposal", "timer round", std::to_string(time()), "proposal id", proposal.proposal_id);
     delete_expired_proposal();
 }
 
 void xtop_rec_tcc_contract::withdrawProposal(const std::string & proposal_id) {
-    XMETRICS_TIME_RECORD("sysContract_recTccProposal_withdraw_proposal");
-    XMETRICS_CPU_TIME_RECORD("sysContract_recTccProposal_withdraw_proposal_cpu");
+    XMETRICS_TIME_RECORD(XREC_TCC "withdraw_proposal");
+    XMETRICS_CPU_TIME_RECORD(XREC_TCC "withdraw_proposal_cpu");
     auto src_account = sender();
-    xdbg("[xtop_rec_tcc_contract::withdrawProposal] proposal_id: %s, account: %s", proposal_id.c_str(), src_account.c_str());
+    xdbg("[xrec_tcc_contract_t::withdrawProposal] proposal_id: %s, account: %s", proposal_id.c_str(), src_account.c_str());
 
     tcc::proposal_info proposal;
     if (!get_proposal_info(proposal_id, proposal)) {
-        xdbg("[xtop_rec_tcc_contract::withdrawProposal] can't find proposal: %s", proposal_id.c_str());
+        xdbg("[xrec_tcc_contract_t::withdrawProposal] can't find proposal: %s", proposal_id.c_str());
         top::error::throw_error(error::xerrc_t::proposal_not_found);
     }
-    XCONTRACT_ENSURE(src_account.value() == proposal.proposal_client_address, "[xtop_rec_tcc_contract::withdrawProposal] only proposer can cancel the proposal!");
+    XCONTRACT_ENSURE(src_account.value() == proposal.proposal_client_address, "[xrec_tcc_contract_t::withdrawProposal] only proposer can cancel the proposal!");
 
     // if (proposal.voting_status != status_none) {
     //     // cosigning in phase one is done automatically,
@@ -195,34 +201,34 @@ void xtop_rec_tcc_contract::withdrawProposal(const std::string & proposal_id) {
     }
     m_tcc_proposal_ids.remove(proposal_id);
 
-    xdbg("[xtop_rec_tcc_contract::withdrawProposal] transfer deposit back, proposal id: %s, account: %s, deposit: %" PRIu64, proposal_id.c_str(), src_account.c_str(), proposal.deposit);
+    xdbg("[xrec_tcc_contract_t::withdrawProposal] transfer deposit back, proposal id: %s, account: %s, deposit: %" PRIu64, proposal_id.c_str(), src_account.c_str(), proposal.deposit);
     transfer(common::xaccount_address_t{proposal.proposal_client_address}, proposal.deposit, contract_common::xfollowup_transaction_schedule_type_t::immediately);
     delete_expired_proposal();
 
 }
 
 void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option) {
-    XMETRICS_TIME_RECORD("sysContract_recTccProposal_tcc_vote");
-    XMETRICS_CPU_TIME_RECORD("sysContract_recTccProposal_tcc_vote_cpu");
+    XMETRICS_TIME_RECORD(XREC_TCC "tcc_vote");
+    XMETRICS_CPU_TIME_RECORD(XREC_TCC "tcc_vote_cpu");
     auto const & src_account = sender();
-    xdbg("[xtop_rec_tcc_contract::tccVote] tccVote start, proposal_id: %s, account: %s vote: %d", proposal_id.c_str(), src_account.c_str(), option);
+    xdbg("[xrec_tcc_contract_t::tccVote] tccVote start, proposal_id: %s, account: %s vote: %d", proposal_id.c_str(), src_account.c_str(), option);
 
     // check if the voting client address exists in initial comittee
     if (!voter_in_committee(src_account.value())) {
-        xwarn("[xtop_rec_tcc_contract::tccVote] source addr is not a commitee voter: %s", src_account.c_str());
+        xwarn("[xrec_tcc_contract_t::tccVote] source addr is not a commitee voter: %s", src_account.c_str());
         top::error::throw_error(error::xerrc_t::invalid_proposer);
     }
 
     tcc::proposal_info proposal;
     if (!get_proposal_info(proposal_id, proposal)) {
-        xwarn("[xtop_rec_tcc_contract::tccVote] can't find proposal: %s", proposal_id.c_str());
+        xwarn("[xrec_tcc_contract_t::tccVote] can't find proposal: %s", proposal_id.c_str());
         top::error::throw_error(error::xerrc_t::proposal_not_found);
     }
 
     if (proposal.voting_status == tcc::status_none) {
         proposal.voting_status = tcc::voting_in_progress;
     } else if (proposal.voting_status == tcc::voting_failure || proposal.voting_status == tcc::voting_success) {
-        xdbg("[xtop_rec_tcc_contract::tccVote] proposal: %s already voted done, status: %d", proposal_id.c_str(), proposal.voting_status);
+        xdbg("[xrec_tcc_contract_t::tccVote] proposal: %s already voted done, status: %d", proposal_id.c_str(), proposal.voting_status);
         return;
     }
 
@@ -271,7 +277,7 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
                 proposal.voting_status = tcc::voting_failure;
             }
         }
-        xdbg("[xtop_rec_tcc_contract::tccVote] proposal: %s has expired, priority: %" PRIu8 ", yes voters: %u, no voters: %u, not yet voters: %u, voting status: %d",
+        xdbg("[xrec_tcc_contract_t::tccVote] proposal: %s has expired, priority: %" PRIu8 ", yes voters: %u, no voters: %u, not yet voters: %u, voting status: %d",
              proposal_id.c_str(),
              proposal.priority,
              yes_voters,
@@ -282,7 +288,7 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
     } else {
         auto it = voting_result.find(src_account.value());
         if (it != voting_result.end()) {
-            xinfo("[xtop_rec_tcc_contract::tccVote] client addr(%s) already voted", src_account.c_str());
+            xinfo("[xrec_tcc_contract_t::tccVote] client addr(%s) already voted", src_account.c_str());
             top::error::throw_error(error::xerrc_t::proposal_already_voted);
         }
         // record the voting for this client address
@@ -319,7 +325,7 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
                 proposal.voting_status = tcc::voting_failure;
             }
         }
-        xdbg("[xtop_rec_tcc_contract::tccVote] proposal: %s has NOT expired, priority: %" PRIu8 ", yes voters: %u, no voters: %u, not yet voters: %u, voting status: %d",
+        xdbg("[xrec_tcc_contract_t::tccVote] proposal: %s has NOT expired, priority: %" PRIu8 ", yes voters: %u, no voters: %u, not yet voters: %u, voting status: %d",
              proposal_id.c_str(),
              proposal.priority,
              yes_voters,
@@ -329,7 +335,7 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
     }
 
     if (proposal.voting_status == tcc::voting_failure || proposal.voting_status == tcc::voting_success) {
-        xdbg("[xtop_rec_tcc_contract::tccVote] proposal: %s, status: %d, transfer (%lu) deposit to client: %s",
+        xdbg("[xrec_tcc_contract_t::tccVote] proposal: %s, status: %d, transfer (%lu) deposit to client: %s",
              proposal_id.c_str(),
              proposal.voting_status,
              proposal.deposit,
@@ -379,7 +385,7 @@ void xtop_rec_tcc_contract::tccVote(std::string const & proposal_id, bool option
 
             default:
                 assert(false);
-                xwarn("[xtop_rec_tcc_contract::tccVote] proposal type %u current not support", proposal.type);
+                xwarn("[xrec_tcc_contract_t::tccVote] proposal type %u current not support", proposal.type);
                 top::error::throw_error(error::xerrc_t::unknown_proposal_type);
                 break;
             }
@@ -427,14 +433,14 @@ bool xtop_rec_tcc_contract::is_valid_proposal_type(tcc::proposal_type type) {
 void xtop_rec_tcc_contract::check_bwlist_proposal(std::string const& bwlist) {
     std::vector<std::string> vec_member;
     uint32_t size = base::xstring_utl::split_string(bwlist, ',', vec_member);
-    XCONTRACT_ENSURE(size > 0, "[xtop_rec_tcc_contract::check_bwlist_proposal] target value error, size zero");
+    XCONTRACT_ENSURE(size > 0, "[xrec_tcc_contract_t::check_bwlist_proposal] target value error, size zero");
     for (auto const& v: vec_member) {
-        XCONTRACT_ENSURE(top::xverifier::xverifier_success == top::xverifier::xtx_utl::address_is_valid(v), "[xtop_rec_tcc_contract::check_bwlist_proposal]  target value error, addr invalid");
+        XCONTRACT_ENSURE(top::xverifier::xverifier_success == top::xverifier::xtx_utl::address_is_valid(v), "[xrec_tcc_contract_t::check_bwlist_proposal]  target value error, addr invalid");
     }
 
     std::sort(vec_member.begin(), vec_member.end());
     vec_member.erase(std::unique(vec_member.begin(), vec_member.end()), vec_member.end());
-    XCONTRACT_ENSURE(vec_member.size() == size, "[xtop_rec_tcc_contract::check_bwlist_proposal]  target value error, addr duplicated");
+    XCONTRACT_ENSURE(vec_member.size() == size, "[xrec_tcc_contract_t::check_bwlist_proposal]  target value error, addr duplicated");
 }
 
 bool xtop_rec_tcc_contract::voter_in_committee(const std::string & voter_client_addr) {
@@ -466,9 +472,13 @@ void xtop_rec_tcc_contract::delete_expired_proposal() {
                 m_tcc_vote_ids.remove(proposal.proposal_id);
             }
 
-            xkinfo("[xtop_rec_tcc_contract::delete_expired_proposal] delete proposal id: %s", proposal.proposal_id.c_str());
+            xkinfo("[xrec_tcc_contract_t::delete_expired_proposal] delete proposal id: %s", proposal.proposal_id.c_str());
         }
     }
 }
 
 NS_END2
+
+#undef XREC_TCC
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

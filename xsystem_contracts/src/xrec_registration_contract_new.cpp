@@ -17,10 +17,9 @@ using namespace top::store;
 using namespace top::xstake;
 
 #if !defined (XREC_MODULE)
-#    define XREC_MODULE "sysContract_"
+#    define XREC_MODULE "SysContract_"
 #endif
-#define XCONTRACT_PREFIX "registration_"
-
+#define XCONTRACT_PREFIX "Registration_"
 #define XREG_CONTRACT XREC_MODULE XCONTRACT_PREFIX
 
 NS_BEG2(top, system_contracts)
@@ -161,27 +160,11 @@ void xtop_rec_registration_contract_new::setup() {
     m_genesis_prop.set(std::string((char *)stream.data(), stream.size()));
 #endif
 
-    xdbg("[xrec_registration_contract::setup] pid:%d", getpid());
+    xdbg("[xrec_registration_contract_new_t::setup] pid:%d", getpid());
     xreg_node_info node_info;
     {
         common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
-        // const std::vector<node_info_t> & seed_nodes = xrootblock_t::get_seed_nodes();
-        std::vector<node_info_t> const seed_nodes{
-            node_info_t{"T00000LNi53Ub726HcPXZfC4z6zLgTo5ks6GzTUp", "BNRHeRGw4YZnTHeNGxYtuAsvSslTV7THMs3A9RJM+1Vg63gyQ4XmK2i8HW+f3IaM7KavcH7JMhTPFzKtWp7IXW4="},
-            node_info_t{"T00000LeXNqW7mCCoj23LEsxEmNcWKs8m6kJH446", "BN9IQux1NQ0ByBCYAAVds5Si538gazH3gNIS5sODadNRA2zvvKDTSKhfwX5GNWtvb0nmoGHjQp9J9ElMyOUwBkk="},
-            node_info_t{"T00000LVpL9XRtVdU5RwfnmrCtJhvQFxJ8TB46gB", "BP+s96ilurhraFU7RD2Ua60rD8CpgDxCjWcp67yq7D500gf0ej5vBGiwqZ2GwoEWAcXFHqUlTQW8IqIWHCk5eKk="},
-            node_info_t{"T00000LLJ8AsN4hREDtCpuKAxJFwqka9LwiAon3M", "BDulJhE2hcVccX6ipiQQ7lerTjiiLOPHFRVIhFqFpFGEcgQlEH1lxMc2TxkVOmycwPkdaDJDyeMAoEWxFRkhB7o="},
-            node_info_t{"T00000LefzYnVUayJSgeX3XdKCgB4vk7BVUoqsum", "BPIMyevRyVoKNoghbcdMZurSNjHES5ltO0BhYMCToDOT4aBlLBu4SlVSgUGZdLor80KuZbu5CxTl9cefeFNSEfU="},
-            node_info_t{"T00000LXqp1NkfooMAw7Bty2iXTxgTCfsygMnxrT", "BFyhA6BP2mTbgOsmsQFjQ09r9iXn+f3fmceOb+O1aYmr6qDo7KwDv25iOMRV8nBOgunv6EUAtjDKidvME9YkuBQ="},
-            node_info_t{"T00000LaFmRAybSKTKjE8UXyf7at2Wcw8iodkoZ8", "BMpn9t4PDeHodoUeiamiipsS3bnNGT4Mbk/ynGJY1pnIuqv4nlEhVOv1CUZ5JbeNcWV/VNTin3xuvl/sOKNx1LU="},
-            node_info_t{"T00000LhCXUC5iQCREefnRPRFhxwDJTEbufi41EL", "BFyUBEG/eO5SomaDQZidofp7n0s0eq/9scRAxWp8w+fbb3CnOSffdN3CeNHzJKYgBBmK5anXtvXkkBYCmW7+tiU="},
-            node_info_t{"T00000LTSip8Xbjutrtm8RkQzsHKqt28g97xdUxg", "BETTgEv6HFFtxTVCQZBioXc5M2oXb5iPQgoO6qlXlPEzTPK4D2yuz4pAfQqfxwABRvi0nf1EY0CVy9Z3HJf2+CQ="},
-            node_info_t{"T00000LcNfcqFPH9vy3EYApkrcXLcQN2hb1ygZWE", "BC81J2PldKUM2+JjkgzmLWcHrAbQy7W9OZFYHdc3myToIMlrXYHuraEp+ncSfGEOkxw3BXYZQtAzp6gD7UKShDU="},
-            node_info_t{"T00000LUv7e8RZLNtnE1K9sEfE9SYe74rwYkzEub", "BF7e2Et86zY3PIJ2Bh/wgxcKTTdgxffuvaHJ3AbR99bQr9jAgUNKCyG9qbYDbgU74eUTDZFcoKycGWe7UF4ScFo="},
-            node_info_t{"T00000LKfBYfwTcNniDSQqj8fj5atiDqP8ZEJJv6", "BFFVnheBS2yJLwlb+q6xH/DL+RotbvRdd9YeJKug1tP+WppTdB36KzMOHxmHTsh5u9BKgPDgXppFvyBeqYUxoTU="},
-            node_info_t{"T00000LXRSDkzrUsseZmfJFnSSBsgm754XwV9SLw", "BDL1+u+QBTf15/susP8JHAr0cbrHrz8iXRnLfZ47izaFtc1ZGhD2OTuCEMUNO0cQC0LhnvZ6QhkaiiPuPb6tC58="},
-            node_info_t{"T00000Lgv7jLC3DQ3i3guTVLEVhGaStR4RaUJVwA", "BMmlycOO/y8Z/MDrCUw598nIU0GZlxAgYX+/3MEi6UvguDfnivjdULHO7L2yRkM9hWy3Ch3mKKyqMvIMG2W+Pyk="},
-        };
+        std::vector<node_info_t> const & seed_nodes = xrootblock_t::get_seed_nodes();
         for (size_t i = 0; i < seed_nodes.size(); i++) {
             node_info_t node_data = seed_nodes[i];
 
@@ -195,7 +178,7 @@ void xtop_rec_registration_contract_new::setup() {
             node_info.m_network_ids.insert(network_id);
             node_info.nickname              = std::string("bootnode") + std::to_string(i + 1);
             node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
-            //xdbg("[xrec_registration_contract::setup] pid:%d,node account: %s, public key: %s\n", getpid(), node_data.m_account.c_str(), node_data.m_publickey.c_str());
+            //xdbg("[xrec_registration_contract_new_t::setup] pid:%d,node account: %s, public key: %s\n", getpid(), node_data.m_account.c_str(), node_data.m_publickey.c_str());
             update_node_info(node_info);
         }
     }
@@ -204,7 +187,7 @@ void xtop_rec_registration_contract_new::setup() {
 void xrec_registration_contract_new_t::mortgage(std::string const & token_name, uint64_t token_amount) {
     // withdraw from src action(account) state
     auto token = withdraw(token_amount);
-    xdbg("[xrec_registration_contract::mortgage] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
+    xdbg("[xrec_registration_contract_new_t::mortgage] at_source_action_stage, token name: %s, amount: %" PRIu64, token_name.c_str(), token_amount);
 
     // serialize token to target action(account)
     asset_to_next_action(std::move(token));
@@ -216,7 +199,7 @@ void xrec_registration_contract_new_t::confirm_deposit(std::string const& token_
     auto token = last_action_asset(ec);
     assert(!ec);
     top::error::throw_error(ec);
-    xdbg("[xrec_registration_contract::confirm_deposit] at_confirm_action_stage, token name: %s, amount: %" PRIu64, token.symbol().c_str(), token.amount());
+    xdbg("[xrec_registration_contract_new_t::confirm_deposit] at_confirm_action_stage, token name: %s, amount: %" PRIu64, token.symbol().c_str(), token.amount());
     deposit(std::move(token));
 }
 
@@ -259,7 +242,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
 #else
     auto const & account = sender();
 #endif
-    xdbg("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, balance: %lld, account: %s, node_types: %s, signing_key: %s, dividend_rate: %u",
+    xdbg("[xrec_registration_contract_new_t::registerNode2] call xregistration_contract registerNode() pid:%d, balance: %lld, account: %s, node_types: %s, signing_key: %s, dividend_rate: %u",
          getpid(),
          balance(),
          account.c_str(),
@@ -269,11 +252,11 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
 
     xreg_node_info node_info;
     auto ret = get_node_info(account.value(), node_info);
-    XCONTRACT_ENSURE(ret != 0, "xrec_registration_contract::registerNode2: node exist!");
+    XCONTRACT_ENSURE(ret != 0, "xrec_registration_contract_new_t::registerNode2: node exist!");
     common::xrole_type_t role_type = common::to_role_type(role_type_name);
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
-    XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::registerNode: invalid nickname");
-    XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::registerNode: dividend_rate must be >=0 and be <= 100");
+    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract_new_t::registerNode2: invalid node_type!");
+    XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract_new_t::registerNode: invalid nickname");
+    XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract_new_t::registerNode: dividend_rate must be >=0 and be <= 100");
 
     std::error_code ec;
     auto token = last_action_asset(ec);
@@ -294,7 +277,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
     node_info.consensus_public_key      = xpublic_key_t{signing_key};
     node_info.m_support_ratio_numerator = dividend_rate;
     if (network_ids.empty()) {
-        xdbg("[xrec_registration_contract::registerNode2] network_ids empty");
+        xdbg("[xrec_registration_contract_new_t::registerNode2] network_ids empty");
         common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
         node_info.m_network_ids.insert(nid);
     } else {
@@ -302,7 +285,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
         for (auto const & net_id : network_ids) {
             network_ids_str += net_id.to_string() + ' ';
         }
-        xdbg("[xrec_registration_contract::registerNode2] network_ids %s", network_ids_str.c_str());
+        xdbg("[xrec_registration_contract_new_t::registerNode2] network_ids %s", network_ids_str.c_str());
         node_info.m_network_ids = network_ids;
     }
 
@@ -317,7 +300,7 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
         }
     }
     uint64_t min_deposit = node_info.get_required_min_deposit();
-    xdbg(("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, transaction_type:%d, source action type: %d, m_deposit: %" PRIu64
+    xdbg(("[xrec_registration_contract_new_t::registerNode2] call xregistration_contract registerNode() pid:%d, transaction_type:%d, source action type: %d, m_deposit: %" PRIu64
           ", min_deposit: %" PRIu64 ", account: %s"),
          getpid(),
          transaction_type(),
@@ -325,8 +308,8 @@ void xtop_rec_registration_contract_new::registerNode2(const std::string & role_
          token_amount,
          min_deposit,
          account.c_str());
-    XCONTRACT_ENSURE(token_amount >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
-    XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::registerNode2: mortgage must be greater than minimum deposit");
+    XCONTRACT_ENSURE(token_amount >= min_deposit, "xrec_registration_contract_new_t::registerNode2: mortgage must be greater than minimum deposit");
+    XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract_new_t::registerNode2: mortgage must be greater than minimum deposit");
 
     update_node_info(node_info);
     check_and_set_genesis_stage();
@@ -340,18 +323,18 @@ void xtop_rec_registration_contract_new::unregisterNode() {
     XMETRICS_TIME_RECORD(XREG_CONTRACT "unregisterNode_ExecutionTime");
     uint64_t cur_time = time();
     std::string const& account = sender().to_string();
-    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode(), balance: %lld, account: %s", balance(), account.c_str());
+    xdbg("[xrec_registration_contract_new_t::unregisterNode] call xregistration_contract unregisterNode(), balance: %lld, account: %s", balance(), account.c_str());
 
     xreg_node_info node_info;
     auto ret = get_node_info(account, node_info);
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::unregisterNode: node not exist");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::unregisterNode: node not exist");
 
     xslash_info s_info;
     if (get_slash_info(account, s_info) == 0 && s_info.m_staking_lock_time > 0) {
-        XCONTRACT_ENSURE(cur_time - s_info.m_punish_time >= s_info.m_staking_lock_time, "[xrec_registration_contract::unregisterNode]: has punish time, cannot deregister now");
+        XCONTRACT_ENSURE(cur_time - s_info.m_punish_time >= s_info.m_staking_lock_time, "[xrec_registration_contract_new_t::unregisterNode]: has punish time, cannot deregister now");
     }
 
-    xdbg("[xrec_registration_contract::unregisterNode] call xregistration_contract unregisterNode() pid:%d, balance:%lld, account: %s, refund: %lld",
+    xdbg("[xrec_registration_contract_new_t::unregisterNode] call xregistration_contract unregisterNode() pid:%d, balance:%lld, account: %s, refund: %lld",
          getpid(),
          balance(),
          account.c_str(),
@@ -363,7 +346,7 @@ void xtop_rec_registration_contract_new::unregisterNode() {
 
     delete_node_info(account);
 
-    xdbg("[xrec_registration_contract::unregisterNode] finish call xregistration_contract unregisterNode() pid:%d", getpid());
+    xdbg("[xrec_registration_contract_new_t::unregisterNode] finish call xregistration_contract unregisterNode() pid:%d", getpid());
 
     XMETRICS_COUNTER_DECREMENT(XREG_CONTRACT "registeredUserCnt", 1);
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "unregisterNode_Executed", 1);
@@ -375,7 +358,7 @@ void xtop_rec_registration_contract_new::updateNodeInfo(const std::string & nick
 
     auto const & source_account = sender();
 
-    xdbg("[xrec_registration_contract::updateNodeInfo] call xregistration_contract updateNodeInfo() pid:%d, balance: %lld, account: %s, nickname: %s, updateDepositType: %u, deposit: %llu, dividend_rate: %u, node_types: %s, node_sign_key: %s",
+    xdbg("[xrec_registration_contract_new_t::updateNodeInfo] call xregistration_contract updateNodeInfo() pid:%d, balance: %lld, account: %s, nickname: %s, updateDepositType: %u, deposit: %llu, dividend_rate: %u, node_types: %s, node_sign_key: %s",
          getpid(),
          balance(),
          source_account.c_str(),
@@ -388,12 +371,12 @@ void xtop_rec_registration_contract_new::updateNodeInfo(const std::string & nick
 
     xreg_node_info node_info;
     auto ret = get_node_info(source_account.value(), node_info);
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::updateNodeInfo: node does not exist!");
-    XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::updateNodeInfo: invalid nickname");
-    XCONTRACT_ENSURE(updateDepositType == 1 || updateDepositType == 2, "xrec_registration_contract::updateNodeInfo: invalid updateDepositType");
-    XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::updateNodeInfo: dividend_rate must be greater than or be equal to zero");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::updateNodeInfo: node does not exist!");
+    XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract_new_t::updateNodeInfo: invalid nickname");
+    XCONTRACT_ENSURE(updateDepositType == 1 || updateDepositType == 2, "xrec_registration_contract_new_t::updateNodeInfo: invalid updateDepositType");
+    XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract_new_t::updateNodeInfo: dividend_rate must be greater than or be equal to zero");
     common::xrole_type_t role_type = common::to_role_type(node_types);
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
+    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "xrec_registration_contract_new_t::updateNodeInfo: invalid node_type!");
 
     node_info.nickname          = nickname;
     node_info.m_registered_role = role_type;
@@ -407,10 +390,10 @@ void xtop_rec_registration_contract_new::updateNodeInfo(const std::string & nick
         assert(!ec);
         top::error::throw_error(ec);
         node_info.m_account_mortgage += token_amount;
-        XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::updateNodeInfo: deposit not enough");
+        XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract_new_t::updateNodeInfo: deposit not enough");
     } else {
 
-        XCONTRACT_ENSURE(deposit <= node_info.m_account_mortgage && node_info.m_account_mortgage - deposit >= min_deposit, "xrec_registration_contract::updateNodeInfo: unstake deposit too big");
+        XCONTRACT_ENSURE(deposit <= node_info.m_account_mortgage && node_info.m_account_mortgage - deposit >= min_deposit, "xrec_registration_contract_new_t::updateNodeInfo: unstake deposit too big");
         if (deposit > 0) {
             transfer(source_account, deposit, contract_common::xfollowup_transaction_schedule_type_t::immediately);
         }
@@ -421,7 +404,7 @@ void xtop_rec_registration_contract_new::updateNodeInfo(const std::string & nick
         uint64_t cur_time = time();
         auto SDR_INTERVAL = XGET_ONCHAIN_GOVERNANCE_PARAMETER(dividend_ratio_change_interval);
         XCONTRACT_ENSURE(node_info.m_last_update_time == 0 || cur_time - node_info.m_last_update_time >= SDR_INTERVAL,
-                     "xrec_registration_contract::updateNodeInfo: set must be longer than or equal to SDR_INTERVAL");
+                     "xrec_registration_contract_new_t::updateNodeInfo: set must be longer than or equal to SDR_INTERVAL");
 
         node_info.m_support_ratio_numerator = dividend_rate;
         node_info.m_last_update_time = cur_time;
@@ -447,14 +430,14 @@ void xtop_rec_registration_contract_new::redeemNodeDeposit() {
     XMETRICS_TIME_RECORD(XREG_CONTRACT "redeemNodeDeposit_ExecutionTime");
     uint64_t cur_time = time();
     auto const & source_account = sender();
-    xdbg("[xrec_registration_contract::redeemNodeDeposit] pid:%d, balance: %lld, account: %s\n", getpid(), balance(), source_account.c_str());
+    xdbg("[xrec_registration_contract_new_t::redeemNodeDeposit] pid:%d, balance: %lld, account: %s\n", getpid(), balance(), source_account.c_str());
 
     xrefund_info refund;
     auto ret = get_refund(source_account.value(), refund);
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::redeemNodeDeposit: refund not exist");
-    XCONTRACT_ENSURE(cur_time - refund.create_time >= REDEEM_INTERVAL, "xrec_registration_contract::redeemNodeDeposit: interval must be greater than or equal to REDEEM_INTERVAL");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::redeemNodeDeposit: refund not exist");
+    XCONTRACT_ENSURE(cur_time - refund.create_time >= REDEEM_INTERVAL, "xrec_registration_contract_new_t::redeemNodeDeposit: interval must be greater than or equal to REDEEM_INTERVAL");
 
-    xdbg("[xrec_registration_contract::redeemNodeDeposit] pid:%d, balance:%llu, account: %s, refund amount: %llu\n", getpid(), balance(), source_account.c_str(), refund.refund_amount);
+    xdbg("[xrec_registration_contract_new_t::redeemNodeDeposit] pid:%d, balance:%llu, account: %s, refund amount: %llu\n", getpid(), balance(), source_account.c_str(), refund.refund_amount);
     // refund
     // transfer(source_account, refund.refund_amount, contract_common::xfollowup_transaction_schedule_type_t::delay);
 
@@ -471,9 +454,9 @@ void xtop_rec_registration_contract_new::setDividendRatio(uint32_t dividend_rate
     xreg_node_info node_info;
     auto ret = get_node_info(source_account.value(), node_info);
 
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::setDividendRatio: node not exist");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::setDividendRatio: node not exist");
 
-    xdbg("[xrec_registration_contract::setDividendRatio] pid:%d, balance: %lld, account: %s, dividend_rate: %u, cur_time: %llu, last_update_time: %llu\n",
+    xdbg("[xrec_registration_contract_new_t::setDividendRatio] pid:%d, balance: %lld, account: %s, dividend_rate: %u, cur_time: %llu, last_update_time: %llu\n",
          getpid(),
          balance(),
          source_account.c_str(),
@@ -483,10 +466,10 @@ void xtop_rec_registration_contract_new::setDividendRatio(uint32_t dividend_rate
 
     auto SDR_INTERVAL = XGET_ONCHAIN_GOVERNANCE_PARAMETER(dividend_ratio_change_interval);
     XCONTRACT_ENSURE(node_info.m_last_update_time == 0 || cur_time - node_info.m_last_update_time >= SDR_INTERVAL,
-                     "xrec_registration_contract::setDividendRatio: set must be longer than or equal to SDR_INTERVAL");
-    XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract::setDividendRatio: dividend_rate must be >=0 and be <= 100");
+                     "xrec_registration_contract_new_t::setDividendRatio: set must be longer than or equal to SDR_INTERVAL");
+    XCONTRACT_ENSURE(dividend_rate >= 0 && dividend_rate <= 100, "xrec_registration_contract_new_t::setDividendRatio: dividend_rate must be >=0 and be <= 100");
 
-    xdbg("[xrec_registration_contract::setDividendRatio] call xregistration_contract registerNode() pid:%d, balance:%lld, account: %s\n",
+    xdbg("[xrec_registration_contract_new_t::setDividendRatio] call xregistration_contract registerNode() pid:%d, balance:%lld, account: %s\n",
          getpid(),
          balance(),
          source_account.c_str());
@@ -502,14 +485,14 @@ void xtop_rec_registration_contract_new::setNodeName(const std::string & nicknam
     XMETRICS_TIME_RECORD(XREG_CONTRACT "setNodeName_ExecutionTime");
     auto const & source_account = sender();
 
-    XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract::setNodeName: invalid nickname");
+    XCONTRACT_ENSURE(is_valid_name(nickname) == true, "xrec_registration_contract_new_t::setNodeName: invalid nickname");
 
     xreg_node_info node_info;
     auto ret = get_node_info(source_account.value(), node_info);
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::setNodeName: node not exist");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::setNodeName: node not exist");
 
-    xdbg("[xrec_registration_contract::setNodeName] pid:%d, balance: %lld, account: %s, nickname: %s\n", getpid(), balance(), source_account.c_str(), nickname.c_str());
-    XCONTRACT_ENSURE(node_info.nickname != nickname, "xrec_registration_contract::setNodeName: nickname can not be same");
+    xdbg("[xrec_registration_contract_new_t::setNodeName] pid:%d, balance: %lld, account: %s, nickname: %s\n", getpid(), balance(), source_account.c_str(), nickname.c_str());
+    XCONTRACT_ENSURE(node_info.nickname != nickname, "xrec_registration_contract_new_t::setNodeName: nickname can not be same");
 
     node_info.nickname = nickname;
     update_node_info(node_info);
@@ -523,10 +506,10 @@ void xtop_rec_registration_contract_new::updateNodeSignKey(const std::string & n
 
     xreg_node_info node_info;
     auto ret = get_node_info(source_account.value(), node_info);
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::updateNodeSignKey: node not exist");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::updateNodeSignKey: node not exist");
 
-    xdbg("[xrec_registration_contract::updateNodeSignKey] pid:%d, balance: %lld, account: %s, node_sign_key: %s\n", getpid(), balance(), source_account.c_str(), node_sign_key.c_str());
-    XCONTRACT_ENSURE(node_info.consensus_public_key.to_string() != node_sign_key, "xrec_registration_contract::updateNodeSignKey: node_sign_key can not be same");
+    xdbg("[xrec_registration_contract_new_t::updateNodeSignKey] pid:%d, balance: %lld, account: %s, node_sign_key: %s\n", getpid(), balance(), source_account.c_str(), node_sign_key.c_str());
+    XCONTRACT_ENSURE(node_info.consensus_public_key.to_string() != node_sign_key, "xrec_registration_contract_new_t::updateNodeSignKey: node_sign_key can not be same");
 
     node_info.consensus_public_key = xpublic_key_t{node_sign_key};
     update_node_info(node_info);
@@ -536,7 +519,7 @@ void xtop_rec_registration_contract_new::updateNodeSignKey(const std::string & n
 // void xtop_rec_registration_contract_new::update_node_credit(std::set<std::string> const& accounts) {
 //     std::string source_address = SOURCE_ADDRESS();
 //     if (sys_contract_zec_workload_addr != source_address) {
-//         xwarn("[xrec_registration_contract::update_node_credit] invalid call from %s", source_address.c_str());
+//         xwarn("[xrec_registration_contract_new_t::update_node_credit] invalid call from %s", source_address.c_str());
 //         return;
 //     }
 
@@ -566,11 +549,11 @@ void xtop_rec_registration_contract_new::delete_node_info(std::string const & ac
 }
 
 int32_t xtop_rec_registration_contract_new::get_node_info(const std::string & account, xreg_node_info & node_info) {
-    xdbg("[xrec_registration_contract] get_node_info account(%s) pid:%d\n", account.c_str(), getpid());
+    xdbg("[xrec_registration_contract_new_t] get_node_info account(%s) pid:%d\n", account.c_str(), getpid());
 
     auto value_str = m_reg_prop.get(account);
     if (value_str.empty()) {
-        xdbg("[xrec_registration_contract] account(%s) not exist pid:%d\n", account.c_str(), getpid());
+        xdbg("[xrec_registration_contract_new_t] account(%s) not exist pid:%d\n", account.c_str(), getpid());
         return enum_xstore_error_type::xaccount_property_not_exist;
     }
 
@@ -631,7 +614,7 @@ int32_t xtop_rec_registration_contract_new::get_refund(const std::string & accou
     auto value_str = m_refund_prop.get(account);
 
     if (value_str.empty()) {
-        xdbg("[xrec_registration_contract::get_refund] account(%s) not exist pid:%d\n", account.c_str(), getpid());
+        xdbg("[xrec_registration_contract_new_t::get_refund] account(%s) not exist pid:%d\n", account.c_str(), getpid());
         return xaccount_property_not_exist;
     }
 
@@ -752,7 +735,7 @@ void xtop_rec_registration_contract_new::update_batch_stake_v2(uint64_t report_t
             votes_stream >> auditor_votes;
         }
         if ( !handle_receive_shard_votes(report_time, last_report_time, contract_adv_votes, auditor_votes) ) {
-            XCONTRACT_ENSURE(false, "[xrec_registration_contract::on_receive_shard_votes_v2] handle_receive_shard_votes fail");
+            XCONTRACT_ENSURE(false, "[xrec_registration_contract_new_t::on_receive_shard_votes_v2] handle_receive_shard_votes fail");
         }
 
         xstream_t stream(xcontext_t::instance());
@@ -819,7 +802,7 @@ void xtop_rec_registration_contract_new::check_and_set_genesis_stage() {
         record.serialize_from(stream);
     }
     if (record.activated) {
-        xinfo("[xrec_registration_contract::check_and_set_genesis_stage] activated: %d, activation_time: %llu, pid:%d\n", record.activated, record.activation_time, getpid());
+        xinfo("[xrec_registration_contract_new_t::check_and_set_genesis_stage] activated: %d, activation_time: %llu, pid:%d\n", record.activated, record.activation_time, getpid());
         return;
     }
 
@@ -889,7 +872,7 @@ void xtop_rec_registration_contract_new::stakeDeposit() {
     auto const& source_account = sender();
     xreg_node_info node_info;
     auto ret = get_node_info(source_account.value(), node_info);
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::stakeDeposit: node not exist");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::stakeDeposit: node not exist");
 
     std::error_code ec;
     auto token = last_action_asset(ec);
@@ -898,8 +881,8 @@ void xtop_rec_registration_contract_new::stakeDeposit() {
     assert(!ec);
     top::error::throw_error(ec);
 
-    xdbg("[xrec_registration_contract::stakeDeposit] pid: %d, balance: %lld, account: %s, stake deposit: %llu\n", getpid(), balance(), source_account.c_str(), token_amount);
-    XCONTRACT_ENSURE(token_amount != 0, "xrec_registration_contract::stakeDeposit: stake deposit can not be zero");
+    xdbg("[xrec_registration_contract_new_t::stakeDeposit] pid: %d, balance: %lld, account: %s, stake deposit: %llu\n", getpid(), balance(), source_account.c_str(), token_amount);
+    XCONTRACT_ENSURE(token_amount != 0, "xrec_registration_contract_new_t::stakeDeposit: stake deposit can not be zero");
 
     node_info.m_account_mortgage += token_amount;
     update_node_info(node_info);
@@ -912,14 +895,14 @@ void xtop_rec_registration_contract_new::unstakeDeposit(uint64_t unstake_deposit
     auto const& source_account = sender();
     xreg_node_info node_info;
     auto ret = get_node_info(source_account.value(), node_info);
-    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::unstakeDeposit: node not exist");
+    XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract_new_t::unstakeDeposit: node not exist");
 
-    xdbg("[xrec_registration_contract::unstakeDeposit] pid: %d, balance: %lld, account: %s, unstake deposit: %llu, account morgage: %llu\n",
+    xdbg("[xrec_registration_contract_new_t::unstakeDeposit] pid: %d, balance: %lld, account: %s, unstake deposit: %llu, account morgage: %llu\n",
         getpid(), balance(), source_account.c_str(), unstake_deposit, node_info.m_account_mortgage);
-    XCONTRACT_ENSURE(unstake_deposit != 0, "xrec_registration_contract::unstakeDeposit: unstake deposit can not be zero");
+    XCONTRACT_ENSURE(unstake_deposit != 0, "xrec_registration_contract_new_t::unstakeDeposit: unstake deposit can not be zero");
 
     uint64_t min_deposit = node_info.get_required_min_deposit();
-    XCONTRACT_ENSURE(unstake_deposit <= node_info.m_account_mortgage && node_info.m_account_mortgage - unstake_deposit >= min_deposit, "xrec_registration_contract::unstakeDeposit: unstake deposit too big");
+    XCONTRACT_ENSURE(unstake_deposit <= node_info.m_account_mortgage && node_info.m_account_mortgage - unstake_deposit >= min_deposit, "xrec_registration_contract_new_t::unstakeDeposit: unstake deposit too big");
     transfer(source_account, unstake_deposit, contract_common::xfollowup_transaction_schedule_type_t::immediately);
 
     node_info.m_account_mortgage -= unstake_deposit;
@@ -930,7 +913,7 @@ void xtop_rec_registration_contract_new::unstakeDeposit(uint64_t unstake_deposit
 int32_t xtop_rec_registration_contract_new::get_slash_info(std::string const & account, xslash_info & node_slash_info) {
     auto value_str = m_slash_prop.get(account);
     if (value_str.empty()) {
-        xdbg("[xrec_registration_contract][get_slash_info] account(%s) not exist,  pid:%d\n", account.c_str(), getpid());
+        xdbg("[xrec_registration_contract_new_t][get_slash_info] account(%s) not exist,  pid:%d\n", account.c_str(), getpid());
         return xaccount_property_not_exist;
     }
 
@@ -998,12 +981,12 @@ void xtop_rec_registration_contract_new::slash_unqualified_node(std::string cons
         }
 
         if (value.action_type) {  // punish
-            xkinfo("[xrec_registration_contract][slash_unqualified_node] effective slash credit & staking time, node addr: %s", addr.c_str());
+            xkinfo("[xrec_registration_contract_new_t][slash_unqualified_node] effective slash credit & staking time, node addr: %s", addr.c_str());
             XMETRICS_PACKET_INFO("sysContract_zecSlash", "effective slash credit & staking time, node addr", addr);
             reg_node.slash_credit_score(value.node_type);
             slash_staking_time(addr);
         } else {
-            xkinfo("[xrec_registration_contract][slash_unqualified_node] effective award credit, node addr: %s", addr.c_str());
+            xkinfo("[xrec_registration_contract_new_t][slash_unqualified_node] effective award credit, node addr: %s", addr.c_str());
             XMETRICS_PACKET_INFO("sysContract_zecSlash", "effective award credit, node addr", addr)
             reg_node.award_credit_score(value.node_type);
         }
@@ -1025,5 +1008,4 @@ NS_END2
 
 #undef XREG_CONTRACT
 #undef XCONTRACT_PREFIX
-#undef XZEC_MODULE
-
+#undef XREC_MODULE

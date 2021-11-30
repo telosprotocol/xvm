@@ -26,7 +26,7 @@
 #endif
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "ZecElectConsensus_"
 #define XCONSENSUS_ELECT XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -292,12 +292,12 @@ void xtop_zec_elect_consensus_group_contract_new::on_timer(common::xlogic_time_t
         return;
     }
 #endif
-    XCONTRACT_ENSURE(sender() == address(), "xzec_elect_consensus_group_contract_t instance is triggled by others");
+    XCONTRACT_ENSURE(sender() == address(), "xzec_elect_consensus_group_contract_new_t instance is triggled by others");
     XCONTRACT_ENSURE(address().value() == sys_contract_zec_elect_consensus_addr,
-                     "xzec_elect_consensus_group_contract_t instance is not triggled by sys_contract_zec_elect_consensus_addr");
-    // XCONTRACT_ENSURE(current_time <= TIME(), "xzec_elect_consensus_group_contract_t::on_timer current_time > consensus leader's time");
+                     "xzec_elect_consensus_group_contract_new_t instance is not triggled by sys_contract_zec_elect_consensus_addr");
+    // XCONTRACT_ENSURE(current_time <= TIME(), "xzec_elect_consensus_group_contract_new_t::on_timer current_time > consensus leader's time");
     XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_election_interval) / 2 > time(),
-                     "xzec_elect_consensus_group_contract_t::on_timer retried too many times. TX generated time " + std::to_string(current_time) + " TIME() " + std::to_string(time()) + " election interval " + std::to_string(XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_election_interval)));
+                     "xzec_elect_consensus_group_contract_new_t::on_timer retried too many times. TX generated time " + std::to_string(current_time) + " TIME() " + std::to_string(time()) + " election interval " + std::to_string(XGET_ONCHAIN_GOVERNANCE_PARAMETER(cluster_election_interval)));
 
     std::uint64_t random_seed = utl::xxh64_t::digest(this->random_seed());
     elect(common::xconsensus_zone_id, common::xdefault_cluster_id, random_seed, current_time);
@@ -317,7 +317,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
         state_accessor::properties::xtypeless_property_identifier_t{data::XPROPERTY_CONTRACT_STANDBYS_KEY}, common::xaccount_address_t{sys_contract_rec_standby_pool_addr}, read_height);
 
     if (result.empty()) {
-        xwarn("[zec contract][elect_non_genesis] get rec_standby_pool_addr property fail, block height %" PRIu64, read_height);
+        xwarn("[xzec_elect_consensus_group_contract_new_t::elect] get rec_standby_pool_addr property fail, block height %" PRIu64, read_height);
         return;
     }
 #if 0
@@ -325,11 +325,11 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
     do {
         base::xauto_ptr<xblock_t> block_ptr = get_block_by_height(sys_contract_rec_standby_pool_addr, read_height);
         if (block_ptr == nullptr) {
-            xwarn("[zec contract][elect_non_genesis] get nullptr, block height %" PRIu64, read_height);
+            xwarn("[xzec_elect_consensus_group_contract_new_t][elect_non_genesis] get nullptr, block height %" PRIu64, read_height);
             return;
         }
         ret = block_ptr->get_native_property().native_string_get(data::XPROPERTY_CONTRACT_STANDBYS_KEY, result);
-        xdbg("[zec contract][elect_non_genesis] see block_height % " PRIu64 " ,result size: %zu", read_height, result.size());
+        xdbg("[xzec_elect_consensus_group_contract_new_t][elect_non_genesis] see block_height % " PRIu64 " ,result size: %zu", read_height, result.size());
         if ((ret || result.empty()) && read_height > 0) {
             read_height--;
         } else {
@@ -337,7 +337,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
         }
     } while (read_height);
 #endif
-    xwarn("[zec contract][elect_non_genesis] elect zone %" PRIu16 " cluster %" PRIu16 " random nonce %" PRIu64 " logic time %" PRIu64 " read_height: %" PRIu64,
+    xwarn("[xzec_elect_consensus_group_contract_new_t::elect] elect zone %" PRIu16 " cluster %" PRIu16 " random nonce %" PRIu64 " logic time %" PRIu64 " read_height: %" PRIu64,
           static_cast<std::uint16_t>(zone_id.value()),
           static_cast<std::uint16_t>(cluster_id.value()),
           random_seed,
@@ -349,7 +349,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
     auto const standby_network_result = standby_result_store.result_of(network_id()).network_result();
 
     if (standby_network_result.empty()) {
-        xwarn("[zec contract][elect_non_genesis] no standby nodes");
+        xwarn("[xzec_elect_consensus_group_contract_new_t::elect] no standby nodes");
         return;
     }
 
@@ -358,7 +358,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
     auto const & election_association_result_store =
         contract_common::serialization::xmsgpack_t<xelection_association_result_store_t>::deserialize_from_bytes(election_assoc_result_store_bytes_property.value());
     if (election_association_result_store.empty()) {
-        xerror("[zec contract][elect_non_genesis] no association info");
+        xerror("[xzec_elect_consensus_group_contract_new_t::elect] no association info");
         return;
     }
 
@@ -372,7 +372,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
         }
     }
 
-    xdbg("[zec contract][elect_non_genesis] elect sees standbys %s", log.c_str());
+    xdbg("[xzec_elect_consensus_group_contract_new_t::elect] elect sees standbys %s", log.c_str());
 
 #endif
 
@@ -396,7 +396,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
 
     for (auto index = 0; index < auditor_group_count; ++index) {
         top::common::xgroup_id_t auditor_gid{static_cast<top::common::xgroup_id_t::value_type>(common::xauditor_group_id_value_begin + index)};
-        xdbg("[zec contract][elect_non_genesis] index: %d ,auditor_gid: %s,insert %s",
+        xdbg("[xzec_elect_consensus_group_contract_new_t::elect] index: %d ,auditor_gid: %s,insert %s",
              index,
              auditor_gid.to_string().c_str(),
              data::election::get_property_by_group_id(auditor_gid).c_str());
@@ -420,7 +420,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
             int const election_interval_wave_range = total_group_count + index;
             int const election_interval_wave_offset = random_seed % election_interval_wave_range - election_interval_wave_range / 2;
             auto const rotation_time = election_interval_wave_offset + cluster_election_interval;
-            xdbg("[zec contract][elect_non_genesis] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": rotation interval %d",
+            xdbg("[xzec_elect_consensus_group_contract_new_t::elect] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": rotation interval %d",
                  static_cast<std::uint16_t>(zone_id.value()),
                  static_cast<std::uint16_t>(cluster_id.value()),
                  static_cast<std::uint16_t>(auditor_group_id.value()),
@@ -429,7 +429,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
             rotation_flag = (election_timestamp - auditor_group.timestamp()) >= rotation_time;
         }
         if (!rotation_flag) {
-            xdbg("[zec contract][elect_non_genesis] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": not this rotation, pass ",
+            xdbg("[xzec_elect_consensus_group_contract_new_t::elect] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": not this rotation, pass ",
                  static_cast<std::uint16_t>(zone_id.value()),
                  static_cast<std::uint16_t>(cluster_id.value()),
                  static_cast<std::uint16_t>(auditor_group_id.value()));
@@ -446,7 +446,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
                                     standby_network_result,
                                     all_cluster_election_result_store)) {
             ++auditor_rotation_num;
-            xwarn("[zec contract][elect_non_genesis] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : success. read_height: %" PRIu64,
+            xwarn("[xzec_elect_consensus_group_contract_new_t::elect] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : success. read_height: %" PRIu64,
                   static_cast<std::uint16_t>(zone_id.value()),
                   static_cast<std::uint16_t>(cluster_id.value()),
                   static_cast<std::uint16_t>(auditor_group_id.value()),
@@ -459,11 +459,11 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
             auto serialized_election_result_store_data = codec::msgpack_encode(election_result_store);
             auto base64str =
                 base::xstring_utl::base64_encode(serialized_election_result_store_data.data(), static_cast<std::uint32_t>(serialized_election_result_store_data.size()));
-            xdbg("[zec contract][elect] election result hash value %" PRIx64, utl::xxh64_t::digest(base64str));
+            xdbg("[xzec_elect_consensus_group_contract_new_t::elect] election result hash value %" PRIx64, utl::xxh64_t::digest(base64str));
 #endif
 
         } else {
-            xwarn("[zec contract][elect_non_genesis] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : failed. read_height: %" PRIu64,
+            xwarn("[xzec_elect_consensus_group_contract_new_t::elect] elect zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 " : failed. read_height: %" PRIu64,
                   static_cast<std::uint16_t>(zone_id.value()),
                   static_cast<std::uint16_t>(cluster_id.value()),
                   static_cast<std::uint16_t>(auditor_group_id.value()),
@@ -471,7 +471,7 @@ void xtop_zec_elect_consensus_group_contract_new::elect(common::xzone_id_t const
         }
     }
     if (!genesis_elected()) {
-        xinfo("[zec contract] zone %" PRIu16 " cluster %" PRIu16 " check genesis election",
+        xinfo("[xzec_elect_consensus_group_contract_new_t::elect_genesis] zone %" PRIu16 " cluster %" PRIu16 " check genesis election",
               static_cast<std::uint16_t>(zone_id.value()),
               static_cast<std::uint16_t>(cluster_id.value()));
         auto const & election_association_result = election_association_result_store.result_of(cluster_id);
@@ -503,7 +503,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_auditor_validator(common
                                                                           data::election::xelection_association_result_store_t const & association_result_store,
                                                                           data::election::xstandby_network_result_t const & standby_network_result,
                                                                           std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> & all_cluster_election_result_store) {
-    std::string log_prefix = "[zec contract][elect_auditor_validator] zone " + zone_id.to_string() + u8" cluster " + cluster_id.to_string() + " group " + auditor_group_id.to_string();
+    std::string log_prefix = "[xzec_elect_consensus_group_contract_new_t::elect_auditor_validator] zone " + zone_id.to_string() + u8" cluster " + cluster_id.to_string() + " group " + auditor_group_id.to_string();
     bool election_success{false};
     std::string election_result_log;
 
@@ -664,7 +664,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_auditor_validator(common
         assert(auditor_group.start_time() == start_time);
         assert(auditor_group.timestamp() == election_timestamp);
 
-        xwarn("[zec contract][election_group_result] version %s size %zu timestamp %" PRIu64 " start time %" PRIu64,
+        xwarn("[xzec_elect_consensus_group_contract_new_t::elect_auditor_validator] version %s size %zu timestamp %" PRIu64 " start time %" PRIu64,
               auditor_group.group_version().to_string().c_str(),
               auditor_group.size(),
               auditor_group.timestamp(),
@@ -680,7 +680,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_auditor_validator(common
             assert(validator_group.start_time() == start_time);
             assert(validator_group.timestamp() == election_timestamp);
 
-            xwarn("[zec contract][election_group_result] version %s size %zu timestamp %" PRIu64 " start time %" PRIu64,
+            xwarn("[xzec_elect_consensus_group_contract_new_t::elect_auditor_validator] version %s size %zu timestamp %" PRIu64 " start time %" PRIu64,
                   validator_group.group_version().to_string().c_str(),
                   validator_group.size(),
                   validator_group.timestamp(),
@@ -688,7 +688,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_auditor_validator(common
         }
     }
 
-    xwarn("[zec contract][election_group_result] in version %s:%s", auditor_group.group_version().to_string().c_str(), election_result_log.c_str());
+    xwarn("[xzec_elect_consensus_group_contract_new_t::elect_auditor_validator] in version %s:%s", auditor_group.group_version().to_string().c_str(), election_result_log.c_str());
     return election_success;
 }
 
@@ -703,7 +703,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_auditor(common::xzone_id
     auto const min_auditor_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_auditor_group_size);
     auto const max_auditor_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_auditor_group_size);
 
-    xdbg("[zec contract] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
+    xdbg("[xzec_elect_consensus_group_contract_new_t] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
          static_cast<std::uint16_t>(zid.value()),
          static_cast<std::uint16_t>(cid.value()),
          static_cast<std::uint16_t>(gid.value()),
@@ -712,7 +712,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_auditor(common::xzone_id
 
     if (max_auditor_group_size < min_auditor_group_size) {
         assert(false);
-        xwarn("[zec contract] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
+        xwarn("[xzec_elect_consensus_group_contract_new_t] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
               static_cast<std::uint16_t>(zid.value()),
               static_cast<std::uint16_t>(cid.value()),
               static_cast<std::uint16_t>(gid.value()),
@@ -745,7 +745,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_validator(common::xzone_
     auto const min_validator_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_validator_group_size);
     auto const max_validator_group_size = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_validator_group_size);
 
-    xdbg("[zec contract] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
+    xdbg("[xzec_elect_consensus_group_contract_new_t] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
          static_cast<std::uint16_t>(zid.value()),
          static_cast<std::uint16_t>(cid.value()),
          static_cast<std::uint16_t>(validator_gid.value()),
@@ -754,7 +754,7 @@ bool xtop_zec_elect_consensus_group_contract_new::elect_validator(common::xzone_
 
     if (max_validator_group_size < min_validator_group_size) {
         assert(false);
-        xwarn("[zec contract] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
+        xwarn("[xzec_elect_consensus_group_contract_new_t] zone %" PRIu16 " cluster %" PRIu16 " group %" PRIu16 ": group size [%" PRIu16 ", %" PRIu16 "]",
               static_cast<std::uint16_t>(zid.value()),
               static_cast<std::uint16_t>(cid.value()),
               static_cast<std::uint16_t>(validator_gid.value()),

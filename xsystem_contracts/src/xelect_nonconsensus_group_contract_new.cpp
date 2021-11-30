@@ -15,7 +15,7 @@
 #include <cinttypes>
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "NonConsensusElection_"
 #define XNONCONSENSUS_ELECTION XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -113,3 +113,7 @@ bool xtop_elect_nonconsensus_group_contract_new::elect_group(common::xzone_id_t 
 }
 
 NS_END2
+
+#undef XNONCONSENSUS_ELECTION
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

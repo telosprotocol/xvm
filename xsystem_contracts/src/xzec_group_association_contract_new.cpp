@@ -42,7 +42,7 @@ void xtop_group_association_contract_new::setup() {
         assert(static_cast<std::uint16_t>(associated_advance_gid.value() - common::xauditor_group_id_value_begin) < auditor_group_count);
 
         election_association_result.insert({ consensus_gid, associated_advance_gid });
-        xkinfo("[zec contract][group_association] default association: %s belongs to %s",
+        xkinfo("[xgroup_association_contract_new_t::setup] default association: %s belongs to %s",
                consensus_gid.to_string().c_str(),
                associated_advance_gid.to_string().c_str());
     }

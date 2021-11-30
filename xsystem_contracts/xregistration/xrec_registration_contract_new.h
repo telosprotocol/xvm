@@ -57,7 +57,7 @@ public:
      * @param nickname
      * @param signing_key
      */
-    void registerNode(const std::string & node_types,
+    void registerNode(const std::string & miner_type,
                       const std::string & nickname,
                       const std::string & signing_key,
                       const uint32_t dividend_rate

@@ -23,7 +23,7 @@ using namespace top::state_accessor;
 using namespace top::state_accessor::properties;
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "RecStandby_"
 #define XREC_STANDBY XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -95,15 +95,15 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     auto const & map_nodes = get_property<contract_common::properties::xmap_property_t<std::string, xbytes_t>>(
         state_accessor::properties::xtypeless_property_identifier_t{XPORPERTY_CONTRACT_REG_KEY}, common::xaccount_address_t{sys_contract_rec_registration_addr});
 
-    XCONTRACT_ENSURE(map_nodes.exist(node_id.value()), "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: did not find the node in contract map");
+    XCONTRACT_ENSURE(map_nodes.exist(node_id.value()), "[xrec_standby_pool_contract_new_t][nodeJoinNetwork] fail: did not find the node in contract map");
 
     auto const & value_bytes = map_nodes.get(node_id.value());
     base::xstream_t stream(base::xcontext_t::instance(), const_cast<uint8_t *>(value_bytes.data()), value_bytes.size());
     xstake::xreg_node_info node;
     node.serialize_from(stream);
 
-    XCONTRACT_ENSURE(node.m_account == node_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] storage data messed up?");
-    XCONTRACT_ENSURE(node.m_network_ids.find(joined_network_id) != std::end(node.m_network_ids), "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched. Joined network id: " + joined_network_id.to_string());
+    XCONTRACT_ENSURE(node.m_account == node_id, "[xrec_standby_pool_contract_new_t][nodeJoinNetwork] storage data messed up?");
+    XCONTRACT_ENSURE(node.m_network_ids.find(joined_network_id) != std::end(node.m_network_ids), "[xrec_standby_pool_contract_new_t][nodeJoinNetwork] network id is not matched. Joined network id: " + joined_network_id.to_string());
 
     auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_bytes(m_standby_prop.value());
 
@@ -120,7 +120,7 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     std::set<common::xnetwork_id_t> network_ids{};
     common::xnetwork_id_t nid{top::config::to_chainid(XGET_CONFIG(chain_name))};
     assert(nid == joined_network_id);
-    XCONTRACT_ENSURE(nid == joined_network_id, "[xrec_standby_pool_contract_t][nodeJoinNetwork] network id is not matched");
+    XCONTRACT_ENSURE(nid == joined_network_id, "[xrec_standby_pool_contract_new_t][nodeJoinNetwork] network id is not matched");
     network_ids.insert(nid);
 
     bool rec = common::has<common::xrole_type_t::advance>(role_type);
@@ -144,7 +144,7 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
     param_stream << consensus_public_key;
     param_stream << static_cast<uint32_t>(0);
     param_stream << node_id;
-    xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork][mock_zec_stake to registration] node_id:%s,role_type:%s",
+    xdbg("[xrec_standby_pool_contract_new_t][nodeJoinNetwork][mock_zec_stake to registration] node_id:%s,role_type:%s",
          node_id.c_str(),
          role_type_string.c_str(),
          consensus_public_key.c_str());
@@ -153,10 +153,10 @@ void xtop_rec_standby_pool_contract_new::nodeJoinNetwork2(common::xaccount_addre
          "registerNode",
          std::string{reinterpret_cast<char *>(param_stream.data()), static_cast<std::size_t>(param_stream.size())},
          xenum_followup_transaction_schedule_type::immediately);
-    xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork][mock_zec_stake to registration] finish CALL registration contract");
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
+    xdbg("[xrec_standby_pool_contract_new_t][nodeJoinNetwork][mock_zec_stake to registration] finish CALL registration contract");
+    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "[xrec_standby_pool_contract_new_t][nodeJoinNetwork] fail: find invalid role in MAP");
 
-    xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node_id.c_str());
+    xdbg("[xrec_standby_pool_contract_new_t][nodeJoinNetwork] %s", node_id.c_str());
 
     // auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY);
     auto standby_result_store = serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_bytes(m_standby_prop.value());
@@ -255,11 +255,11 @@ bool xtop_rec_standby_pool_contract_new::nodeJoinNetworkImpl(std::string const &
     }
 
     auto role_type = node.get_role_type();
-    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
+    XCONTRACT_ENSURE(role_type != common::xrole_type_t::invalid, "[xrec_standby_pool_contract_new_t][nodeJoinNetwork] fail: find invalid role in MAP");
     XCONTRACT_ENSURE(node.get_required_min_deposit() <= node.m_account_mortgage,
-                     "[xrec_standby_pool_contract_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() + ", role_type : " + common::to_string(role_type));
+                     "[xrec_standby_pool_contract_new_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() + ", role_type : " + common::to_string(role_type));
 
-    xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node.m_account.c_str());
+    xdbg("[xrec_standby_pool_contract_new_t][nodeJoinNetwork] %s", node.m_account.c_str());
 
     xstandby_node_info_t new_node_info;
 
@@ -400,14 +400,14 @@ void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const cu
     return;
 #endif
     XMETRICS_TIME_RECORD(XREC_STANDBY "on_timer_all_time");
-    XCONTRACT_ENSURE(sender() == address(), "xrec_standby_pool_contract_t instance is triggled by others");
-    XCONTRACT_ENSURE(address().value() == sys_contract_rec_standby_pool_addr, "xrec_standby_pool_contract_t instance is not triggled by xrec_standby_pool_contract_t");
-    // XCONTRACT_ENSURE(current_time <= TIME(), "xrec_standby_pool_contract_t::on_timer current_time > consensus leader's time");
+    XCONTRACT_ENSURE(sender() == address(), "xrec_standby_pool_contract_new_t instance is triggled by others");
+    XCONTRACT_ENSURE(address().value() == sys_contract_rec_standby_pool_addr, "xrec_standby_pool_contract_new_t instance is not triggled by xrec_standby_pool_contract_new_t");
+    // XCONTRACT_ENSURE(current_time <= TIME(), "xrec_standby_pool_contract_new_t::on_timer current_time > consensus leader's time");
 
     auto const & map_nodes = get_property<contract_common::properties::xmap_property_t<std::string, xbytes_t>>(
         state_accessor::properties::xtypeless_property_identifier_t{XPORPERTY_CONTRACT_REG_KEY}, common::xaccount_address_t{sys_contract_rec_registration_addr});
 
-    xdbg("[xrec_standby_pool_contract_t][on_timer] registration data size %zu", map_nodes.size());
+    xdbg("[xrec_standby_pool_contract_new_t][on_timer] registration data size %zu", map_nodes.size());
 
     std::map<common::xnode_id_t, xreg_node_info> registration_data;
     for (auto const & item : map_nodes.value()) {
@@ -416,7 +416,7 @@ void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const cu
 
         node_info.serialize_from(stream);
         registration_data[common::xnode_id_t{item.first}] = node_info;
-        xdbg("[xrec_standby_pool_contract_t][on_timer] found from registration contract node %s", item.first.c_str());
+        xdbg("[xrec_standby_pool_contract_new_t][on_timer] found from registration contract node %s", item.first.c_str());
     }
     XCONTRACT_ENSURE(!registration_data.empty(), "read registration data failed");
 
@@ -437,10 +437,14 @@ void xtop_rec_standby_pool_contract_new::on_timer(common::xlogic_time_t const cu
     }
 
     if (update_standby_result_store(registration_data, standby_result_store, activation_record)) {
-        xdbg("[xrec_standby_pool_contract_t][on_timer] standby pool updated");
+        xdbg("[xrec_standby_pool_contract_new_t][on_timer] standby pool updated");
         // serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_string_prop(*this, XPROPERTY_CONTRACT_STANDBYS_KEY, standby_result_store);
         m_standby_prop.set(serialization::xmsgpack_t<xstandby_result_store_t>::serialize_to_bytes(standby_result_store));
     }
 }
 
 NS_END2
+
+#undef XREC_STANDBY
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

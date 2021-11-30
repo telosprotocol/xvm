@@ -16,13 +16,11 @@ using namespace top::base;
 using namespace top::state_accessor;
 using namespace top::state_accessor::properties;
 
-#if !defined(XZEC_MODULE)
-#    define XZEC_MODULE "sysContract_"
+#ifndef XSYSCONTRACT_MODULE
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
-
-#define XCONTRACT_PREFIX "reward_"
-
-#define XREWARD_CONTRACT XZEC_MODULE XCONTRACT_PREFIX
+#define XCONTRACT_PREFIX "Reward_"
+#define XREWARD_CONTRACT XSYSCONTRACT_MODULE XCONTRACT_PREFIX
 
 #define VALID_EDGER(node) (node.get_deposit() > 0)
 #define VALID_ARCHIVER(node) (node.get_deposit() > 0 && node.is_valid_archive_node())

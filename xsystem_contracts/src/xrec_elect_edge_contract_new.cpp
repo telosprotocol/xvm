@@ -24,7 +24,7 @@
 #endif
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "RecElectEdge_"
 #define XEDGE_ELECT XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -50,10 +50,10 @@ uint64_t before_elect_config_edge_height{UINT64_MAX};
 
 void xtop_rec_elect_edge_contract_new::elect_config_nodes(common::xlogic_time_t const current_time) {
     uint64_t latest_height = state_height(common::xaccount_address_t{sys_contract_rec_elect_edge_addr});
-    xinfo("[edge_start_nodes] get_latest_height: %" PRIu64, latest_height);
+    xinfo("[edge_start_nodes new] get_latest_height: %" PRIu64, latest_height);
     if (latest_height > before_elect_config_edge_height) {
         // already elect config edge before
-        xinfo("[edge_start_nodes] already elect config edge before. get_latest_height: %" PRIu64 " | %" PRIu64, latest_height, before_elect_config_edge_height);
+        xinfo("[edge_start_nodes new] already elect config edge before. get_latest_height: %" PRIu64 " | %" PRIu64, latest_height, before_elect_config_edge_height);
         executed_config_edge = true;
         return;
     }
@@ -105,7 +105,7 @@ void xtop_rec_elect_edge_contract_new::setup() {
 void xtop_rec_elect_edge_contract_new::on_timer(const uint64_t current_time) {
 #ifdef STATIC_CONSENSUS
     if (!executed_rec_edge_first) {
-        xinfo("[STATIC_CONSENSUS] edge election should elect seed nodes first");
+        xinfo("[xrec_elect_edge_contract_new_t] edge election should elect seed nodes first");
         executed_rec_edge_first = true;
     } else {
         if (xvm::system_contracts::xstatic_election_center::instance().if_allow_elect()) {
@@ -124,14 +124,14 @@ void xtop_rec_elect_edge_contract_new::on_timer(const uint64_t current_time) {
 
     XMETRICS_TIME_RECORD(XEDGE_ELECT "on_timer_all_time");
     XMETRICS_CPU_TIME_RECORD(XEDGE_ELECT "on_timer_cpu_time");
-    XCONTRACT_ENSURE(sender() == address(), "xrec_elect_edge_contract_t instance is triggled by others");
+    XCONTRACT_ENSURE(sender() == address(), "xrec_elect_edge_contract_new_t instance is triggled by others");
     XCONTRACT_ENSURE(address().value() == sys_contract_rec_elect_edge_addr,
-                     "xrec_elect_edge_contract_t instance is not triggled by sys_contract_rec_elect_edge_addr");
+                     "xrec_elect_edge_contract_new_t instance is not triggled by sys_contract_rec_elect_edge_addr");
     // XCONTRACT_ENSURE(current_time <= TIME(), u8"xrec_elect_edge_contract_t::on_timer current_time > consensus leader's time");
     XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(edge_election_interval) / 2 > time(),
-                     "xrec_elect_edge_contract_t::on_timer retried too many times. current_time=" + std::to_string(current_time) +
+                     "xrec_elect_edge_contract_new_t::on_timer retried too many times. current_time=" + std::to_string(current_time) +
                          ";edge_election_interval=" + std::to_string(XGET_ONCHAIN_GOVERNANCE_PARAMETER(edge_election_interval)) + ";TIME=" + std::to_string(time()));
-    xinfo("xrec_elect_edge_contract_t::edge_elect %" PRIu64, current_time);
+    xinfo("xrec_elect_edge_contract_new_t::edge_elect %" PRIu64, current_time);
 
     xrange_t<config::xgroup_size_t> range{0, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_edge_group_size)};
 
@@ -161,3 +161,7 @@ common::xnode_type_t xtop_rec_elect_edge_contract_new::standby_type(common::xzon
 }
 
 NS_END2
+
+#undef XEDGE_ELECT
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE

@@ -26,7 +26,7 @@ using top::data::election::xstandby_node_info_t;
 using top::data::election::xstandby_result_t;
 
 #ifndef XSYSCONTRACT_MODULE
-#    define XSYSCONTRACT_MODULE "sysContract_"
+#    define XSYSCONTRACT_MODULE "SysContract_"
 #endif
 #define XCONTRACT_PREFIX "ConsensusElection_"
 #define XCONSENSUS_ELECTION XSYSCONTRACT_MODULE XCONTRACT_PREFIX
@@ -628,3 +628,7 @@ bool xtop_elect_consensus_group_contract_new::do_shrink_election(common::xzone_i
 }
 
 NS_END2
+
+#undef XCONSENSUS_ELECTION 
+#undef XCONTRACT_PREFIX
+#undef XSYSCONTRACT_MODULE
