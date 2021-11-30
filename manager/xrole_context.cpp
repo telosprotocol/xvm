@@ -239,6 +239,11 @@ bool xrole_context_t::runtime_stand_alone(const uint64_t timer_round, common::xa
     }
 
     auto account = m_store->query_account(sys_addr.value());
+    if (nullptr == account) {
+        xerror("xrole_context_t::runtime_stand_alone fail-query account.address=%s", sys_addr.value().c_str());
+        xassert(nullptr != account);
+        return false;
+    }
     return 0 == account->get_chain_height();
 }
 
@@ -338,7 +343,11 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
         tx->make_tx_run_contract(asset_out, info->action, action_params);
         tx->set_same_source_target_address(address.value());
         xaccount_ptr_t account = m_store->query_account(address.value());
-        assert(account != nullptr);
+        if (nullptr == account) {
+            xerror("xrole_context_t::call_contract fail-query account.address=%s", address.value().c_str());
+            xassert(nullptr != account);
+            return;
+        }
         tx->set_last_trans_hash_and_nonce(account->account_send_trans_hash(), account->account_send_trans_number());
         tx->set_fire_timestamp(timestamp);
         tx->set_expire_duration(300);
@@ -380,7 +389,11 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
     tx->make_tx_run_contract(info->action, action_params);
     tx->set_same_source_target_address(address.value());
     xaccount_ptr_t account = m_store->query_account(address.value());
-    assert(account != nullptr);
+    if (nullptr == account) {
+        xerror("xrole_context_t::call_contract fail-query account.address=%s", address.value().c_str());
+        xassert(nullptr != account);
+        return;
+    }
     tx->set_last_trans_hash_and_nonce(account->account_send_trans_hash(), account->account_send_trans_number());
     tx->set_fire_timestamp(timestamp);
     tx->set_expire_duration(300);
@@ -415,7 +428,11 @@ void xrole_context_t::on_fulltableblock_event(common::xaccount_address_t const& 
     tx->make_tx_run_contract(action_name, action_params);
     tx->set_same_source_target_address(address.value());
     xaccount_ptr_t account = m_store->query_account(address.value());
-    assert(account != nullptr);
+    if (nullptr == account) {
+        xerror("xrole_context_t::on_fulltableblock_event fail-query account.address=%s", address.c_str());
+        xassert(nullptr != account);
+        return;
+    }
     tx->set_last_trans_hash_and_nonce(account->account_send_trans_hash(), account->account_send_trans_number());
     tx->set_fire_timestamp(timestamp);
     tx->set_expire_duration(300);
