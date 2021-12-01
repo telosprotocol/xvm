@@ -20,6 +20,7 @@
 
 NS_BEG2(top, contract)
 using base::xstring_utl;
+const uint16_t EXPIRE_DURATION = 300;
 xrole_context_t::xrole_context_t(const observer_ptr<xstore_face_t> & store,
                                  const observer_ptr<store::xsyncvstore_t> & syncstore,
                                  const std::shared_ptr<xtxpool_service_v2::xrequest_tx_receiver_face> & unit_service,
@@ -335,24 +336,16 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
             xinfo("[xrole_context_t] call_contract in consensus mode, address timer unorder, not create tx", address.value().c_str());
             continue;
         }
-#ifdef RPC_V2
-        xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_2);
-#else
-        xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_1);
-#endif
-        tx->make_tx_run_contract(asset_out, info->action, action_params);
-        tx->set_same_source_target_address(address.value());
+
         xaccount_ptr_t account = m_store->query_account(address.value());
         if (nullptr == account) {
             xerror("xrole_context_t::call_contract fail-query account.address=%s", address.value().c_str());
             xassert(nullptr != account);
             return;
         }
-        tx->set_last_trans_hash_and_nonce(account->account_send_trans_hash(), account->account_send_trans_number());
-        tx->set_fire_timestamp(timestamp);
-        tx->set_expire_duration(300);
-        tx->set_digest();
-        tx->set_len();
+        xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(), 
+                                                         account->account_send_trans_number(), account->account_send_trans_hash(), 
+                                                         info->action, action_params, timestamp, EXPIRE_DURATION);
 
         if (info->call_way == enum_call_action_way_t::consensus) {
             int32_t r = m_unit_service->request_transaction_consensus(tx, true);
@@ -381,24 +374,17 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
         xinfo("[xrole_context_t] call_contract in consensus mode, address timer unorder, not create tx", address.c_str());
         return;
     }
-#ifdef RPC_V2
-    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_2);
-#else
-    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_1);
-#endif
-    tx->make_tx_run_contract(info->action, action_params);
-    tx->set_same_source_target_address(address.value());
+
     xaccount_ptr_t account = m_store->query_account(address.value());
     if (nullptr == account) {
         xerror("xrole_context_t::call_contract fail-query account.address=%s", address.value().c_str());
         xassert(nullptr != account);
         return;
     }
-    tx->set_last_trans_hash_and_nonce(account->account_send_trans_hash(), account->account_send_trans_number());
-    tx->set_fire_timestamp(timestamp);
-    tx->set_expire_duration(300);
-    tx->set_digest();
-    tx->set_len();
+    xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(), 
+                                                     account->account_send_trans_number(), account->account_send_trans_hash(), 
+                                                     info->action, action_params, timestamp, EXPIRE_DURATION);
+
     if (info->call_way == enum_call_action_way_t::consensus) {
         int32_t r = m_unit_service->request_transaction_consensus(tx, true);
         xinfo("[xrole_context_t] call_contract in consensus mode with return code : %d, %s, %s %s %ld, %lld",
@@ -420,25 +406,15 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
 
 void xrole_context_t::on_fulltableblock_event(common::xaccount_address_t const& contract_name, std::string const& action_name, std::string const& action_params, uint64_t timestamp, uint16_t table_id) {
     auto const address = xcontract_address_map_t::calc_cluster_address(contract_name, table_id);
-#ifdef RPC_V2
-    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_2);
-#else
-    xtransaction_ptr_t tx = data::xtx_factory::create_tx(data::xtransaction_version_1);
-#endif
-    tx->make_tx_run_contract(action_name, action_params);
-    tx->set_same_source_target_address(address.value());
     xaccount_ptr_t account = m_store->query_account(address.value());
     if (nullptr == account) {
         xerror("xrole_context_t::on_fulltableblock_event fail-query account.address=%s", address.c_str());
         xassert(nullptr != account);
         return;
     }
-    tx->set_last_trans_hash_and_nonce(account->account_send_trans_hash(), account->account_send_trans_number());
-    tx->set_fire_timestamp(timestamp);
-    tx->set_expire_duration(300);
-    tx->set_digest();
-    tx->set_len();
-
+    xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(), 
+                                                     account->account_send_trans_number(), account->account_send_trans_hash(), 
+                                                     action_name, action_params, timestamp, EXPIRE_DURATION);
 
     auto const & driver_ids = m_driver->table_ids();
     auto result = find(driver_ids.begin(), driver_ids.end(), table_id);
