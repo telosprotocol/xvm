@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "xchain_timer/xchain_timer_face.h"
-#include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xchain_fork/xchain_upgrade_center.h"
 #include "xdata/xfull_tableblock.h"
 #include "xdata/xtx_factory.h"
 #include "xmbus/xevent_timer.h"
@@ -42,8 +42,8 @@ void xrole_context_t::on_block_to_db(const xblock_ptr_t & block, bool & event_br
         return;
     }
 
-    auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
-    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_clock())) {
+    auto fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    if (chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_clock())) {
         // process block event
         if (m_contract_info->has_block_monitors()) {
             auto block_owner = block->get_block_owner();
@@ -155,8 +155,8 @@ void xrole_context_t::on_block_timer(const xevent_ptr_t & e) {
             if (info->type == enum_monitor_type_t::timer) {
                 xdbg("==== timer monitor");
                 if (m_contract_info->address == common::xaccount_address_t{sys_contract_sharding_statistic_info_addr}) {
-                    auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
-                    if (!chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_height())) {
+                    auto fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+                    if (!chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, block->get_height())) {
                         return;
                     }
                 }

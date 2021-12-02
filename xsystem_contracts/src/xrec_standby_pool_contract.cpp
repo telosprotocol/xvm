@@ -7,7 +7,7 @@
 #include "generated/version.h"
 #include "xbasic/xcrypto_key.h"
 #include "xbasic/xutility.h"
-#include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xchain_fork/xchain_upgrade_center.h"
 #include "xcodec/xmsgpack_codec.hpp"
 #include "xcommon/xrole_type.h"
 #include "xdata/xcodec/xmsgpack/xstandby_result_store_codec.hpp"
