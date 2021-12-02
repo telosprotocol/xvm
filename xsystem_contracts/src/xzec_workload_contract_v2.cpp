@@ -4,7 +4,7 @@
 
 #include "xvm/xsystem_contracts/xworkload/xzec_workload_contract_v2.h"
 
-#include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xchain_fork/xchain_upgrade_center.h"
 #include "xconfig/xpredefined_configurations.h"
 #include "xdata/xblock_statistics_data.h"
 #include "xdata/xfull_tableblock.h"
@@ -504,8 +504,8 @@ void xzec_workload_contract_v2::clear_workload() {
 void xzec_workload_contract_v2::on_timer(common::xlogic_time_t const timestamp) {
     XMETRICS_TIME_RECORD(XWORKLOAD_CONTRACT "on_timer");
     XMETRICS_CPU_TIME_RECORD(XWORKLOAD_CONTRACT "on_timer_cpu_time");
-    auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
-    if (chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, TIME())) {
+    auto fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    if (chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, TIME())) {
         upload_workload(timestamp);
         clear_workload();
     } else {

@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "xchain_upgrade/xchain_data_processor.h"
-#include "xchain_upgrade/xchain_upgrade_center.h"
+#include "xchain_fork/xchain_upgrade_center.h"
 #include "xcommon/xip.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xfull_tableblock.h"
@@ -193,8 +193,8 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     xunqualified_node_info_t summarize_info = present_summarize_info;
     uint32_t summarize_tableblock_count = present_tableblock_count;
 
-    auto fork_config = top::chain_upgrade::xtop_chain_fork_config_center::chain_fork_config();
-    if (!top::chain_upgrade::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, TIME())) {
+    auto fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    if (!top::chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.table_statistic_info_fork_point, TIME())) {
 
         /**
          * start process this time's fulltable block info, accumulate the block info & num
