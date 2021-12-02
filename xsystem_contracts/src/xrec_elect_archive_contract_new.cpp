@@ -125,7 +125,7 @@ void xtop_rec_elect_archive_contract_new::on_timer(const uint64_t current_time) 
             return;
         }
 #ifndef ELECT_WHEREAFTER
-    return;
+        return;
 #endif
     } else {
         return;
@@ -134,11 +134,11 @@ void xtop_rec_elect_archive_contract_new::on_timer(const uint64_t current_time) 
 
     XMETRICS_TIME_RECORD(XARCHIVE_ELECT "on_timer_all_time");
     XMETRICS_CPU_TIME_RECORD(XARCHIVE_ELECT "on_timer_cpu_time");
-    XCONTRACT_ENSURE(sender() == address(), "xrec_elect_archive_contract_t instance is triggled by others");
+    XCONTRACT_ENSURE(sender() == address(), "xrec_elect_archive_contract_new_t instance is triggled by others");
     XCONTRACT_ENSURE(address().value() == sys_contract_rec_elect_archive_addr,
                      "xrec_elect_archive_contract_new_t instance is not triggled by sys_contract_rec_elect_archive_addr");
-    // XCONTRACT_ENSURE(current_time <= TIME(), "xrec_elect_archive_contract_t::on_timer current_time > consensus leader's time");
-    XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval) / 2 > time(), "xrec_elect_archive_contract_t::on_timer retried too many times");
+    // XCONTRACT_ENSURE(current_time <= TIME(), "xrec_elect_archive_contract_new_t::on_timer current_time > consensus leader's time");
+    XCONTRACT_ENSURE(current_time + XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval) / 2 > time(), "xrec_elect_archive_contract_new_t::on_timer retried too many times");
     xinfo("xrec_elect_archive_contract_new_t::archive_elect %" PRIu64, current_time);
 
     xrange_t<config::xgroup_size_t> archive_group_range{ 1, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size) };
@@ -203,6 +203,10 @@ void xtop_rec_elect_archive_contract_new::elect_archive(common::xlogic_time_t co
 }
 
 void xtop_rec_elect_archive_contract_new::elect_fullnode(common::xlogic_time_t const current_time, data::election::xstandby_network_result_t const & standby_network_result) {
+    if (standby_network_result.empty(common::xnode_type_t::storage_full_node)) {
+        return;
+    }
+
     xkinfo("[xrec_elect_archive_contract_new_t] archive_gid: %s, insert %s",
            common::xfull_node_group_id.to_string().c_str(),
            data::election::get_property_by_group_id(common::xfull_node_group_id).c_str());
