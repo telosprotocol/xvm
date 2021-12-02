@@ -111,7 +111,7 @@ void xtable_statistic_info_collection_contract_new::on_collect_statistic_info(xs
                                     summarize_info, summarize_fulltableblock_num);
     update_slash_statistic_info(summarize_info, summarize_fulltableblock_num, block_height);
 
-    // process_workload_statistic_data(statistic_data, statistic_accounts, tgas);
+    process_workload_statistic_data(statistic_data, statistic_accounts, tgas);
 }
 
 void xtable_statistic_info_collection_contract_new::collect_slash_statistic_info(xstatistics_data_t const& statistic_data,
