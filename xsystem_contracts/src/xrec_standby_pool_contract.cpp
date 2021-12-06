@@ -137,14 +137,14 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
     bool const validator = xstake::could_be<common::xnode_type_t::consensus_validator>(miner_type);
     bool const edge = xstake::could_be<common::xnode_type_t::edge>(miner_type);
     bool const archive = xstake::could_be<common::xnode_type_t::storage_archive>(miner_type);
-    bool const full_node = xstake::could_be<common::xnode_type_t::storage_full_node>(miner_type);
+    bool const exchange = xstake::could_be<common::xnode_type_t::storage_exchange>(miner_type);
 
     std::string const role_type_string = common::to_string(miner_type);
     assert(role_type_string == common::XMINER_TYPE_EDGE      ||
            role_type_string == common::XMINER_TYPE_ADVANCE   ||
            role_type_string == common::XMINER_TYPE_VALIDATOR ||
            role_type_string == common::XMINER_TYPE_ARCHIVE   ||
-           role_type_string == common::XMINER_TYPE_FULL_NODE);
+           role_type_string == common::XMINER_TYPE_EXCHANGE);
 
     top::base::xstream_t param_stream(base::xcontext_t::instance());
     std::string nickname{"nickname"};
@@ -210,8 +210,8 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
             new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
 
-        if (full_node) {
-            new_node_info.stake_container[common::xnode_type_t::storage_full_node] = stake;
+        if (exchange) {
+            new_node_info.stake_container[common::xnode_type_t::storage_exchange] = stake;
             new_node |= standby_result_store.result_of(network_id).insert({ node_id, new_node_info }).second;
         }
     }
@@ -232,9 +232,9 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
     std::set<common::xnetwork_id_t> network_ids = node.m_network_ids;
 
     auto consensus_public_key = node.consensus_public_key;
-    uint64_t rec_stake{ 0 }, zec_stake{ 0 }, auditor_stake{ 0 }, validator_stake{ 0 }, edge_stake{ 0 }, archive_stake{ 0 }, full_node_stake{ 0 };
+    uint64_t rec_stake{ 0 }, zec_stake{ 0 }, auditor_stake{ 0 }, validator_stake{ 0 }, edge_stake{ 0 }, archive_stake{ 0 }, exchange_stake{ 0 };
     bool const rec{node.can_be_rec()}, zec{node.can_be_zec()}, auditor{node.can_be_auditor()}, validator{node.can_be_validator()}, edge{node.can_be_edge()},
-        archive{archive_miner_enabled ? node.can_be_archive() : node.legacy_can_be_archive()}, full_node{node.can_be_full_node()};
+        archive{archive_miner_enabled ? node.can_be_archive() : node.legacy_can_be_archive()}, exchange{node.can_be_exchange()};
     if (rec) {
         rec_stake = node.rec_stake();
     }
@@ -259,8 +259,8 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
         archive_stake = node.archive_stake();
     }
 
-    if (full_node) {
-        full_node_stake = node.full_node_stake();
+    if (exchange) {
+        exchange_stake = node.exchange_stake();
     }
 
     auto const role_type = node.get_role_type();
@@ -307,8 +307,8 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
             xdbg("archive standby: %s", node.m_account.c_str());
         }
 
-        if (full_node) {
-            new_node_info.stake_container[common::xnode_type_t::storage_full_node] = full_node_stake;
+        if (exchange) {
+            new_node_info.stake_container[common::xnode_type_t::storage_exchange] = exchange_stake;
         }
 
         new_node |= standby_result_store.result_of(network_id).insert2({node.m_account, new_node_info}).second;
@@ -352,8 +352,8 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
     if (reg_node.can_be_edge()) {
         new_node_info.stake_container.insert({ common::xnode_type_t::edge, reg_node.edge_stake() });
     }
-    if (reg_node.can_be_full_node()) {
-        new_node_info.stake_container.insert({ common::xnode_type_t::storage_full_node, reg_node.full_node_stake() });
+    if (reg_node.can_be_exchange()) {
+        new_node_info.stake_container.insert({ common::xnode_type_t::storage_exchange, reg_node.exchange_stake() });
     }
     new_node_info.consensus_public_key = reg_node.consensus_public_key;
     new_node_info.program_version = standby_node_info.program_version;
