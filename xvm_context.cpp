@@ -17,7 +17,8 @@ using base::xstream_t;
 
 xvm_context::xvm_context(xvm_service& vm_service, const xtransaction_ptr_t& trx, xaccount_context_t* account_context, xtransaction_trace_ptr trace_ptr)
 :m_vm_service(vm_service)
-, m_current_action(trx->get_target_action())
+, m_action_name(trx->get_target_action_name())
+, m_action_para(trx->get_target_action_para())
 , m_contract_account(common::xaccount_address_t{ trx->get_target_addr() })
 , m_exec_account(trx->get_source_addr())
 , m_contract_helper(std::make_shared<xcontract_helper>(account_context, m_contract_account, m_exec_account))
@@ -42,7 +43,7 @@ void xvm_context::exec()
     }
 
     //get account code and check the function is native
-    auto native = m_vm_service.get_native_handler(m_current_action.get_action_name());
+    auto native = m_vm_service.get_native_handler(m_action_name);
     if (native) {
         //todo check the code is validate
         (*native)(this);

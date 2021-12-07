@@ -62,8 +62,8 @@ void do_action(T* obj, top::base::xstream_t& stream, Callable&& callable, void (
  *
  */
 #define BEGIN_CONTRACT_WITH_PARAM(class_name) void exec(top::xvm::xvm_context* vm_ctx) {\
-    auto& func_name = vm_ctx->m_current_action.get_action_name();\
-    const auto& params = vm_ctx->m_current_action.get_action_param();\
+    auto& func_name = vm_ctx->m_action_name;\
+    const auto& params = vm_ctx->m_action_para;\
     xcontract_base::set_contract_helper(vm_ctx->m_contract_helper);\
     base::xstream_t stream(base::xcontext_t::instance(), (uint8_t*)params.data(), params.size());\
     CONTRACT_FUNCTION_PARAM(class_name, setup);\

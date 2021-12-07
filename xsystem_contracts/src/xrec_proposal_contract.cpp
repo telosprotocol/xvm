@@ -117,7 +117,7 @@ void xrec_proposal_contract::submitProposal(const std::string & target,
 
 
     const xtransaction_ptr_t trx_ptr = GET_TRANSACTION();
-    top::base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)trx_ptr->get_source_action().get_action_param().data(), trx_ptr->get_source_action().get_action_param().size());
+    top::base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)trx_ptr->get_source_action_para().data(), trx_ptr->get_source_action_para().size());
 
     data::xproperty_asset asset_out{0};
     stream >> asset_out.m_token_name;
