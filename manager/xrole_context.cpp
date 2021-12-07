@@ -444,7 +444,7 @@ void xrole_context_t::broadcast(const xblock_ptr_t & block_ptr, common::xnode_ty
     block_ptr->full_block_serialize_to(stream);
     auto message = xmessage_t({stream.data(), stream.data() + stream.size()}, xmessage_block_broadcast_id);
 
-    if (common::has<common::xnode_type_t::all>(types)) {
+    if (common::has<common::xnode_type_t::real_part_mask>(types)) {
         common::xnode_address_t dest{common::xcluster_address_t{m_driver->network_id()}};
         std::error_code ec;
         m_driver->broadcast(common::xip2_t{m_driver->network_id()}, message, ec);
