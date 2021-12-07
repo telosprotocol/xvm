@@ -234,12 +234,6 @@ void xrec_registration_contract::registerNode2(const std::string & miner_type_na
     auto const miner_type = common::to_miner_type(miner_type_name);
     XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "xrec_registration_contract::registerNode2: invalid node_type!");
 
-    // support archive miner type only after fork point.
-    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
-    if (!chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_archive_miner_type_fork_point, TIME())) {
-        XCONTRACT_ENSURE(!common::has<common::xminer_type_t::archive>(miner_type), "miner of type archive is not supported yet");
-    }
-
 #if defined(XENABLE_MOCK_ZEC_STAKE)
     auto const & account = registration_account;
 #else   // #if defined(XENABLE_MOCK_ZEC_STAKE)
@@ -826,8 +820,8 @@ void xrec_registration_contract::check_and_set_genesis_stage() {
     }
 
     auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
-    auto const enable_archive_miner = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_archive_miner_type_fork_point, TIME());
-    bool active = check_registered_nodes_active(map_nodes, enable_archive_miner);
+    auto const fullnode_enabled = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
+    bool active = check_registered_nodes_active(map_nodes, fullnode_enabled);
     if (active) {
         record.activated = 1;
         record.activation_time = TIME();
