@@ -18,7 +18,7 @@ xvm_service::xvm_service()
 }
 
 xtransaction_trace_ptr xvm_service::deal_transaction(const xtransaction_ptr_t& trx, xaccount_context_t* account_context) {
-    xinfo_lua("source action:%s",trx->get_source_action_str().c_str());
+    xinfo_lua("source action:%s",trx->get_source_addr().c_str());
     xinfo_lua("target action:%s",trx->get_target_action_str().c_str());
 
     xtransaction_trace_ptr trace = std::make_shared<xtransaction_trace>();
