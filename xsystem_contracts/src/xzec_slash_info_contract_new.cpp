@@ -3,7 +3,6 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "xchain_upgrade/xchain_data_processor.h"
-#include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xcommon/xip.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xfull_tableblock.h"
