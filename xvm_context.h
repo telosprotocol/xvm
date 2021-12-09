@@ -24,7 +24,8 @@ public:
     void exec();
 public:
     xvm_service&                m_vm_service;
-    const xaction_t&            m_current_action;
+    std::string                 m_action_name;
+    std::string                 m_action_para;
     common::xaccount_address_t  m_parent_account;
     common::xaccount_address_t  m_contract_account;
     const std::string           m_exec_account;

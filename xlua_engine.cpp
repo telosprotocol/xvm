@@ -170,15 +170,15 @@ void xlua_engine::process(common::xaccount_address_t const &contract_account, co
     lua_setuserdata(m_lua_mgr, reinterpret_cast<void*>(ctx.m_contract_helper.get()));
     init_gas(ctx, CALC_GAS_TRUE);
 
-    lua_getglobal(m_lua_mgr, ctx.m_current_action.get_action_name().c_str());
+    lua_getglobal(m_lua_mgr, ctx.m_action_name.c_str());
 
     try {
-        if (ctx.m_current_action.get_action_name() == "init") {
+        if (ctx.m_action_name == "init") {
             std::error_code ec{ enum_xvm_error_code::enum_lua_abi_input_error };
             top::error::throw_error(ec, "can't call init function");
         }
 
-        if (lua_pcall(m_lua_mgr, arg_parse(ctx.m_current_action.get_action_param()), 0, 0)) {
+        if (lua_pcall(m_lua_mgr, arg_parse(ctx.m_action_para), 0, 0)) {
             string error_msg = lua_tostring(m_lua_mgr, -1);
             xkinfo_lua("lua_pcall:%s", error_msg.c_str());
             std::error_code ec{ enum_xvm_error_code::enum_lua_code_pcall_error };

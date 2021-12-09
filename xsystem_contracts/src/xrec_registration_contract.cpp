@@ -270,7 +270,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
     XCONTRACT_ENSURE(!account.empty(),
                      "xrec_registration_contract::registerNode: account must be not empty");
 
-    xstream_t stream(xcontext_t::instance(), (uint8_t *)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
+    xstream_t stream(xcontext_t::instance(), (uint8_t *)trans_ptr->get_source_action_para().data(), trans_ptr->get_source_action_para().size());
 
     data::xproperty_asset asset_out{0};
     stream >> asset_out.m_token_name;
@@ -314,7 +314,7 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
           ", min_deposit: %" PRIu64 ", account: %s"),
          getpid(),
          trans_ptr->get_tx_type(),
-         trans_ptr->get_source_action().get_action_type(),
+         trans_ptr->get_source_action_type(),
          asset_out.m_amount,
          min_deposit,
          account.c_str());
@@ -393,8 +393,8 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
         const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
         XCONTRACT_ENSURE(!account.empty(),
                          "xrec_registration_contract::updateNodeInfo: account must be not empty");
-        if (trans_ptr->get_source_action().get_action_param().size() > 0) {
-            xstream_t stream(xcontext_t::instance(), (uint8_t *)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
+        if (trans_ptr->get_source_action_para().size() > 0) {
+            xstream_t stream(xcontext_t::instance(), (uint8_t *)trans_ptr->get_source_action_para().data(), trans_ptr->get_source_action_para().size());
             data::xproperty_asset asset_out{0};
             stream >> asset_out.m_token_name;
             stream >> asset_out.m_amount;
@@ -902,8 +902,8 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
     XCONTRACT_ENSURE(!account.empty(), "xrec_registration_contract::updateNodeType: account must be not empty");
 
-    if (trans_ptr->get_source_action().get_action_param().size() > 0) {
-        xstream_t stream(xcontext_t::instance(), (uint8_t*)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
+    if (trans_ptr->get_source_action_para().size() > 0) {
+        xstream_t stream(xcontext_t::instance(), (uint8_t*)trans_ptr->get_source_action_para().data(), trans_ptr->get_source_action_para().size());
 
         data::xproperty_asset asset_out{0};
         stream >> asset_out.m_token_name;
@@ -945,7 +945,7 @@ void xrec_registration_contract::stakeDeposit() {
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
 
-    xstream_t stream(xcontext_t::instance(), (uint8_t*)trans_ptr->get_source_action().get_action_param().data(), trans_ptr->get_source_action().get_action_param().size());
+    xstream_t stream(xcontext_t::instance(), (uint8_t*)trans_ptr->get_source_action_para().data(), trans_ptr->get_source_action_para().size());
 
     data::xproperty_asset asset_out{0};
     stream >> asset_out.m_token_name;
