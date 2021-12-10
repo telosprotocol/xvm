@@ -16,7 +16,7 @@ NS_BEG2(top, xstake)
 using namespace xvm;
 using namespace xvm::xcontract;
 
-class xrec_registration_contract final : public xcontract_base {
+class xrec_registration_contract final: public xcontract_base {
     using xbase_t = xcontract_base;
 public:
     XDECLARE_DELETED_COPY_DEFAULTED_MOVE_SEMANTICS(xrec_registration_contract);
@@ -257,6 +257,14 @@ private:
      * @return false
      */
     bool        handle_receive_shard_votes(uint64_t report_time, uint64_t last_report_time, std::map<std::string, std::string> const & contract_adv_votes, std::map<std::string, std::string> & merge_contract_adv_votes);
+
+
+    /**
+     * @brief init validator/auditor node credit
+     *
+     * @param node_info
+     */
+    void    init_node_credit(xreg_node_info& node_info, bool isforked);
 };
 
 

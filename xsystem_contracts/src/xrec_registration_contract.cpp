@@ -9,6 +9,7 @@
 #include "xbase/xmem.h"
 #include "xbase/xutl.h"
 #include "xbasic/xutility.h"
+#include "xchain_fork/xchain_upgrade_center.h"
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
@@ -32,6 +33,7 @@ using namespace top::data;
 NS_BEG2(top, xstake)
 
 #define TIMER_ADJUST_DENOMINATOR 10
+const std::string INITIAL_CREDITSCORE = "initial_creditscore";
 
 xrec_registration_contract::xrec_registration_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
@@ -299,16 +301,10 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
         node_info.m_network_ids = network_ids;
     }
 
-    if (node_info.is_validator_node()) {
-        if (node_info.m_validator_credit_numerator == 0) {
-            node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
-        }
-    }
-    if (node_info.is_auditor_node()) {
-        if (node_info.m_auditor_credit_numerator == 0) {
-            node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
-        }
-    }
+    auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    bool isforked = chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
+    init_node_credit(node_info, isforked);
+
     uint64_t min_deposit = node_info.get_required_min_deposit();
     xdbg(("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, transaction_type:%d, source action type: %d, m_deposit: %" PRIu64
           ", min_deposit: %" PRIu64 ", account: %s"),
@@ -422,16 +418,9 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
         node_info.m_last_update_time = cur_time;
     }
     node_info.consensus_public_key = xpublic_key_t{node_sign_key};
-    if (node_info.is_validator_node()) {
-        if (node_info.m_validator_credit_numerator == 0) {
-            node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
-        }
-    }
-    if (node_info.is_auditor_node()) {
-        if (node_info.m_auditor_credit_numerator == 0) {
-            node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
-        }
-    }
+    auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    bool isforked = chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
+    init_node_credit(node_info, isforked);
 
     update_node_info(node_info);
     XMETRICS_COUNTER_INCREMENT(XREG_CONTRACT "updateNodeInfo_Executed", 1);
@@ -918,17 +907,9 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
         min_deposit, account.c_str(), node_info.m_account_mortgage);
     XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::updateNodeType: deposit not enough");
 
-    if (node_info.is_validator_node()) {
-        if (node_info.m_validator_credit_numerator == 0) {
-            node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
-        }
-    }
-    if (node_info.is_auditor_node()) {
-        if (node_info.m_auditor_credit_numerator == 0) {
-            node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
-        }
-    }
-
+    auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    bool isforked = chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
+    init_node_credit(node_info, isforked);
     update_node_info(node_info);
     check_and_set_genesis_stage();
 
@@ -1077,6 +1058,32 @@ bool xrec_registration_contract::is_valid_name(const std::string & nickname) con
 
     return std::find_if(nickname.begin(), nickname.end(), [](unsigned char c) { return !std::isalnum(c) && c != '_'; }) == nickname.end();
 };
+
+void  xrec_registration_contract::init_node_credit(xreg_node_info& node_info, bool isforked) {
+    if (node_info.is_validator_node()) {
+        if (node_info.m_validator_credit_numerator == 0 ) {
+            if (isforked) {
+                auto const& initial_credit = config::config_register.value_or<std::string>(std::string{""}, INITIAL_CREDITSCORE);
+                xdbg("[xrec_registration_contract::init_node_credit] initial credit: %s", initial_credit.c_str());
+                node_info.m_validator_credit_numerator = base::xstring_utl::touint64(initial_credit);
+            } else {
+                node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
+            }
+        }
+    }
+    if (node_info.is_auditor_node()) {
+        if (node_info.m_auditor_credit_numerator == 0) {
+            if (isforked) {
+                auto const& initial_credit = config::config_register.value_or<std::string>(std::string{""}, INITIAL_CREDITSCORE);
+                xdbg("[xrec_registration_contract::init_node_credit] initial credit: %s", initial_credit.c_str());
+                node_info.m_auditor_credit_numerator = base::xstring_utl::touint64(initial_credit);
+            } else {
+                node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
+            }
+        }
+    }
+
+}
 
 NS_END2
 
