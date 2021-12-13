@@ -491,26 +491,17 @@ static void get_election_result_property_data(observer_ptr<store::xstore_face_t 
     }
 }
 
-std::unordered_map<common::xnode_type_t, string> node_type_map = {
-    {common::xnode_type_t::consensus_auditor, "auditor"},
-    {common::xnode_type_t::consensus_validator, "validator"},
-    {common::xnode_type_t::edge, "edge"},
-    {common::xnode_type_t::storage_archive, "archive"},
-    {common::xnode_type_t::rec, "root_beacon"},
-    {common::xnode_type_t::zec, "sub_beacon"},
-    {common::xnode_type_t::storage_exchange, "exchange"}
-};
-
 static void get_election_result_property_data(observer_ptr<store::xstore_face_t const> store,
                                               common::xaccount_address_t const & contract_address,
                                               std::string const & property_name,
                                               xjson_format_t const json_format,
                                               xJson::Value & json) {
-    assert(contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
-           contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
-           contract_address == xaccount_address_t{sys_contract_rec_elect_edge_addr} ||     // NOLINT
-           contract_address == xaccount_address_t{sys_contract_rec_elect_archive_addr} ||  // NOLINT
-           contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr});
+    assert(contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr}       ||  // NOLINT
+           contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr}       ||  // NOLINT
+           contract_address == xaccount_address_t{sys_contract_rec_elect_edge_addr}      ||  // NOLINT
+           contract_address == xaccount_address_t{sys_contract_rec_elect_archive_addr}   ||  // NOLINT
+           contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr} ||  // NOLINT
+           contract_address == xaccount_address_t{sys_contract_rec_elect_fullnode_addr});
 
     std::string serialized_value{};
     if (store->string_get(contract_address.value(), property_name, serialized_value) == 0 && !serialized_value.empty()) {
@@ -521,7 +512,7 @@ static void get_election_result_property_data(observer_ptr<store::xstore_face_t 
 
             for (auto const & election_result_info : election_network_result) {
                 auto const node_type = top::get<common::xnode_type_t const>(election_result_info);
-                std::string node_type_str = node_type_map.at(node_type);
+                std::string node_type_str = common::to_presentation_string(node_type);
                 auto const & election_result = top::get<data::election::xelection_result_t>(election_result_info);
                 xJson::Value jn;
                 for (auto const & election_cluster_result_info : election_result) {
@@ -588,7 +579,8 @@ static void get_election_result_property_data(const xaccount_ptr_t unitstate,
            contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
            contract_address == xaccount_address_t{sys_contract_rec_elect_edge_addr} ||     // NOLINT
            contract_address == xaccount_address_t{sys_contract_rec_elect_archive_addr} ||  // NOLINT
-           contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr});
+           contract_address == xaccount_address_t{sys_contract_zec_elect_consensus_addr} ||
+           contract_address == xaccount_address_t{sys_contract_rec_elect_fullnode_addr});
 
     std::string serialized_value{};
     if (unitstate->string_get(property_name, serialized_value) && !serialized_value.empty()) {
@@ -599,7 +591,7 @@ static void get_election_result_property_data(const xaccount_ptr_t unitstate,
 
             for (auto const & election_result_info : election_network_result) {
                 auto const node_type = top::get<common::xnode_type_t const>(election_result_info);
-                std::string node_type_str = node_type_map.at(node_type);
+                std::string node_type_str = common::to_presentation_string(node_type);
                 auto const & election_result = top::get<data::election::xelection_result_t>(election_result_info);
                 xJson::Value jn;
                 for (auto const & election_cluster_result_info : election_result) {
@@ -672,7 +664,7 @@ static void get_rec_standby_pool_property_data(observer_ptr<store::xstore_face_t
             auto const & standby_network_result = top::get<data::election::xstandby_network_storage_result_t>(standby_network_result_info).all_network_result();
             for (auto const & standby_result_info : standby_network_result) {
                 auto const node_type = top::get<common::xnode_type_t const>(standby_result_info);
-                std::string node_type_str = node_type_map.at(node_type);
+                std::string node_type_str = common::to_presentation_string(node_type);
                 auto const standby_result = top::get<data::election::xstandby_result_t>(standby_result_info);
                 for (auto const & node_info : standby_result) {
                     auto const & node_id = top::get<common::xnode_id_t const>(node_info);
