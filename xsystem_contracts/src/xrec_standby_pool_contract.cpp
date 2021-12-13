@@ -232,8 +232,8 @@ void xtop_rec_standby_pool_contract::nodeJoinNetwork2(common::xaccount_address_t
 bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & program_version,
                                                          xstake::xreg_node_info const & node,
                                                          data::election::xstandby_result_store_t & standby_result_store) {
-    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
-    auto const archive_miner_enabled = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
+    auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
+    auto const archive_miner_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
 
     std::set<common::xnetwork_id_t> network_ids = node.m_network_ids;
 
@@ -287,7 +287,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
 
     new_node_info.is_genesis_node = node.is_genesis_node();
 
-    auto const fullnode_enabled = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
 
     bool new_node{false};
     for (const auto network_id : network_ids) {
@@ -339,8 +339,8 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
     return false;
 #endif
 
-    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
-    auto const fullnode_enabled = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, current_logic_time);
+    auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, current_logic_time);
 
     election::xstandby_node_info_t new_node_info;
     if (reg_node.can_be_rec()) {

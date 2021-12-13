@@ -11,7 +11,6 @@
 #include "xbasic/xutility.h"
 #include "xchain_fork/xchain_upgrade_center.h"
 #include "xchain_upgrade/xchain_data_processor.h"
-#include "xchain_upgrade/xchain_upgrade_center.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
 #include "xdata/xproperty.h"
@@ -819,8 +818,8 @@ void xrec_registration_contract::check_and_set_genesis_stage() {
         xdbg("[xrec_registration_contract::check_and_set_genesis_stage] MAP COPY GET error:%s", e.what());
     }
 
-    auto const & fork_config = chain_upgrade::xchain_fork_config_center_t::chain_fork_config();
-    auto const fullnode_enabled = chain_upgrade::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
+    auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
     bool active = check_registered_nodes_active(map_nodes, fullnode_enabled);
     if (active) {
         record.activated = 1;
