@@ -353,6 +353,9 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
         if (reg_node.can_be_fullnode()) {
             new_node_info.stake_container.insert({common::xnode_type_t::fullnode, reg_node.fullnode_stake()});
         }
+        if (reg_node.can_be_archive()) {
+            new_node_info.stake_container.insert({common::xnode_type_t::storage_archive, reg_node.archive_stake()});
+        }
     } else {
         if (reg_node.legacy_can_be_archive()) {
             new_node_info.stake_container.insert({common::xnode_type_t::storage_archive, reg_node.archive_stake()});
