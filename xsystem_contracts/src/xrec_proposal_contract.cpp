@@ -11,6 +11,7 @@
 #include "xmetrics/xmetrics.h"
 #include "xverifier/xverifier_errors.h"
 #include "xverifier/xverifier_utl.h"
+#include "xvledger/xvaccount.h"
 
 #include <algorithm>
 #include <cinttypes>
@@ -97,15 +98,19 @@ void xrec_proposal_contract::submitProposal(const std::string & target,
         XCONTRACT_ENSURE(xverifier::xtx_utl::address_is_valid(target) == xverifier::xverifier_error::xverifier_success, "[xrec_proposal_contract::submitProposal] proposal_update_asset type proposal, target invalid!");
         break;
     case proposal_type::proposal_add_parameter:
-        XCONTRACT_ENSURE(not MAP_FIELD_EXIST(ONCHAIN_PARAMS, target), "[xrec_proposal_contract::submitProposal] proposal_add_parameter target already exist");
+        {
+            XCONTRACT_ENSURE(not MAP_FIELD_EXIST(ONCHAIN_PARAMS, target), "[xrec_proposal_contract::submitProposal] proposal_add_parameter target already exist");
+            if (target == "whitelist" || target == "blacklist") check_bwlist_proposal(value);
+        }
+
         break;
     case proposal_type::proposal_delete_parameter:
         XCONTRACT_ENSURE(MAP_FIELD_EXIST(ONCHAIN_PARAMS, target), "[xrec_proposal_contract::submitProposal] proposal_add_parameter target do not exist");
         break;
     case proposal_type::proposal_update_parameter_incremental_add:
     case proposal_type::proposal_update_parameter_incremental_delete:
-        // current only support whitelist
-        XCONTRACT_ENSURE(target == "whitelist", "[xrec_proposal_contract::submitProposal] current target cannot support proposal_update_parameter_increamental_add/delete");
+        // current only support whitelist/blacklist
+        XCONTRACT_ENSURE(target == "whitelist" || target == "blacklist", "[xrec_proposal_contract::submitProposal] current target cannot support proposal_update_parameter_increamental_add/delete");
         check_bwlist_proposal(value);
         break;
     default:
@@ -351,7 +356,7 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
             stream.reset();
             proposal.serialize(stream);
             std::string voted_proposal((char *)stream.data(), stream.size());
-            std::string new_whitelist{""};
+            std::string new_list{""};
             switch (proposal.type)
             {
             case proposal_type::proposal_update_parameter:
@@ -372,13 +377,13 @@ void xrec_proposal_contract::tccVote(std::string & proposal_id, bool option) {
                 STRING_SET(CURRENT_VOTED_PROPOSAL, voted_proposal);
                 break;
             case proposal_type::proposal_update_parameter_incremental_add:
-                new_whitelist = top::config::xconfig_utl::incremental_add_bwlist(XGET_ONCHAIN_GOVERNANCE_PARAMETER(whitelist), proposal.new_value);
-                MAP_SET(ONCHAIN_PARAMS, proposal.parameter, new_whitelist);
+                new_list = top::config::xconfig_utl::incremental_add_bwlist(MAP_GET(ONCHAIN_PARAMS, proposal.parameter), proposal.new_value);
+                MAP_SET(ONCHAIN_PARAMS, proposal.parameter, new_list);
                 STRING_SET(CURRENT_VOTED_PROPOSAL, voted_proposal);
                 break;
             case proposal_type::proposal_update_parameter_incremental_delete:
-                new_whitelist = top::config::xconfig_utl::incremental_delete_bwlist(XGET_ONCHAIN_GOVERNANCE_PARAMETER(whitelist), proposal.new_value);
-                MAP_SET(ONCHAIN_PARAMS, proposal.parameter, new_whitelist);
+                new_list = top::config::xconfig_utl::incremental_delete_bwlist(MAP_GET(ONCHAIN_PARAMS, proposal.parameter), proposal.new_value);
+                MAP_SET(ONCHAIN_PARAMS, proposal.parameter, new_list);
                 STRING_SET(CURRENT_VOTED_PROPOSAL, voted_proposal);
                 break;
 
@@ -434,6 +439,10 @@ void xrec_proposal_contract::check_bwlist_proposal(std::string const& bwlist) {
     uint32_t size = base::xstring_utl::split_string(bwlist, ',', vec_member);
     XCONTRACT_ENSURE(size > 0, "[xrec_proposal_contract::check_bwlist_proposal] target value error, size zero");
     for (auto const& v: vec_member) {
+        XCONTRACT_ENSURE(v.size() > top::base::xvaccount_t::enum_vaccount_address_prefix_size, "[xrec_proposal_contract::check_bwlist_proposal]  target value error, addr not support");
+        auto const addr_type = top::base::xvaccount_t::get_addrtype_from_account(v);
+        XCONTRACT_ENSURE(addr_type == top::base::enum_vaccount_addr_type::enum_vaccount_addr_type_secp256k1_eth_user_account || addr_type == top::base::enum_vaccount_addr_type::enum_vaccount_addr_type_secp256k1_user_account,
+                            "[xrec_proposal_contract::check_bwlist_proposal]  target value error, addr type not support");
         XCONTRACT_ENSURE(top::xverifier::xverifier_success == top::xverifier::xtx_utl::address_is_valid(v), "[xrec_proposal_contract::check_bwlist_proposal]  target value error, addr invalid");
     }
 
