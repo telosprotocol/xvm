@@ -13,6 +13,7 @@
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
+#include "xdata/xnative_contract_address.h"
 #include "xdata/xproperty.h"
 #include "xdata/xrootblock.h"
 #include "xdata/xslash.h"

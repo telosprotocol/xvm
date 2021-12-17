@@ -9,6 +9,7 @@
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
+#include "xdata/xnative_contract_address.h"
 #include "xmetrics/xmetrics.h"
 #include "xutility/xhash.h"
 

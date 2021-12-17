@@ -5,6 +5,7 @@
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xcommon/xip.h"
 #include "xdata/xgenesis_data.h"
+#include "xdata/xnative_contract_address.h"
 #include "xdata/xfull_tableblock.h"
 #include "xstake/xstake_algorithm.h"
 #include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract_new.h"

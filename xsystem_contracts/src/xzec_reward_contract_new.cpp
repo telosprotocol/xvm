@@ -7,6 +7,7 @@
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xcontract_common/xfollowup_transaction_datum.h"
 #include "xdata/xgenesis_data.h"
+#include "xdata/xnative_contract_address.h"
 #include "xstake/xstake_algorithm.h"
 
 #include <iomanip>

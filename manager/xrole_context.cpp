@@ -5,6 +5,7 @@
 #include "xchain_timer/xchain_timer_face.h"
 #include "xchain_fork/xchain_upgrade_center.h"
 #include "xdata/xfull_tableblock.h"
+#include "xdata/xnative_contract_address.h"
 #include "xdata/xtx_factory.h"
 #include "xmbus/xevent_timer.h"
 #include "xmbus/xevent_store.h"

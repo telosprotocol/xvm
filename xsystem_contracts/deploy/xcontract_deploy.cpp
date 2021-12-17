@@ -7,6 +7,7 @@
 #include "xbase/xutl.h"
 #include "xcommon/xnode_type.h"
 #include "xdata/xgenesis_data.h"
+#include "xdata/xnative_contract_address.h"
 #include "xconfig/xpredefined_configurations.h"
 
 NS_BEG2(top, contract)

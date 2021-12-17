@@ -13,6 +13,7 @@
 #include "xdata/xcodec/xmsgpack/xstandby_result_store_codec.hpp"
 #include "xdata/xelection/xelection_result_property.h"
 #include "xdata/xgenesis_data.h"
+#include "xdata/xnative_contract_address.h"
 #include "xdata/xrootblock.h"
 
 #include <cinttypes>
