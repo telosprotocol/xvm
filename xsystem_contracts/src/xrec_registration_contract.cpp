@@ -301,8 +301,9 @@ void xrec_registration_contract::registerNode2(const std::string & role_type_nam
         node_info.m_network_ids = network_ids;
     }
 
-    auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
-    bool isforked = chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
+    // auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    bool isforked = false;
+    //chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
     init_node_credit(node_info, isforked);
 
     uint64_t min_deposit = node_info.get_required_min_deposit();
@@ -418,8 +419,8 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
         node_info.m_last_update_time = cur_time;
     }
     node_info.consensus_public_key = xpublic_key_t{node_sign_key};
-    auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
-    bool isforked = chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
+    // auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    bool isforked = false;  // chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
     init_node_credit(node_info, isforked);
 
     update_node_info(node_info);
@@ -907,8 +908,9 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
         min_deposit, account.c_str(), node_info.m_account_mortgage);
     XCONTRACT_ENSURE(node_info.m_account_mortgage >= min_deposit, "xrec_registration_contract::updateNodeType: deposit not enough");
 
-    auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
-    bool isforked = chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
+    // auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    // bool isforked = chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.node_initial_credit_fork_point, TIME());
+    bool isforked = false;
     init_node_credit(node_info, isforked);
     update_node_info(node_info);
     check_and_set_genesis_stage();
