@@ -330,14 +330,35 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         throw;
     }
 
-    auto punish_interval_table_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_table_block);
-    auto punish_interval_time_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_time_block);
 
-    // get filter param
-    auto slash_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_publishment_threshold_value);
-    auto slash_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_publishment_threshold_value);
-    auto award_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_reward_threshold_value);
-    auto award_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_reward_threshold_value);
+    uint32_t punish_interval_table_block_param{0};
+    uint32_t punish_interval_time_block_param{0};
+    uint32_t slash_vote{0};
+    uint32_t slash_persent{0};
+    uint32_t award_vote{0};
+    uint32_t award_persent{0};
+
+    auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
+    if (!chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.blacklist_function_fork_point, logic_clock)) {
+        punish_interval_table_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_table_block);
+        punish_interval_time_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_time_block);
+
+        // get filter param
+        slash_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_publishment_threshold_value);
+        slash_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_publishment_threshold_value);
+        award_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_reward_threshold_value);
+        award_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_reward_threshold_value);
+    } else {
+        punish_interval_table_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(slash_interval_table_block);
+        punish_interval_time_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(slash_interval_time_block);
+
+        // get filter param
+        slash_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_publishment_threshold_value);
+        slash_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_publishment_threshold_value);
+        award_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_reward_threshold_value);
+        award_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_reward_threshold_value);
+    }
+
 
     // do slash
     std::vector<xaction_node_info_t> node_to_action;
