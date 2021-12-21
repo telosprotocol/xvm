@@ -2,7 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "xbasic/xerror/xthrow_error.h"
 #include "xchain_fork/xchain_upgrade_center.h"
 #include "xcontract_helper.h"
 #include "xstore/xstore_error.h"

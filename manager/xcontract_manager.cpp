@@ -106,6 +106,19 @@ void xtop_contract_manager::setup_blockchains(xvblockstore_t * blockstore) {
     }
 }
 
+void xtop_contract_manager::register_address() {
+    for (auto const & pair : xcontract_deploy_t::instance().get_map()) {
+        if (data::is_sys_sharding_contract_address(pair.first)) {
+            for (auto i = 0; i < enum_vbucket_has_tables_count; i++) {
+                auto addr = data::make_address_by_prefix_and_subaddr(pair.first.value(), i);
+                register_contract_cluster_address(pair.first, addr);
+            }
+        } else {
+            register_contract_cluster_address(pair.first, pair.first);
+        }
+    }
+}
+
 xcontract_base * xtop_contract_manager::get_contract(common::xaccount_address_t const & address) {
     xcontract_base * pc{};
     if (data::is_sys_contract_address(address)) {  // by cluster address

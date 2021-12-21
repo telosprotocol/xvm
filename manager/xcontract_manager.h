@@ -65,6 +65,11 @@ public:
     void setup_blockchains(xvblockstore_t * blockstore);
 
     /**
+     * @brief register_address
+     */
+    void register_address();
+
+    /**
      * @brief install monitors
      *
      * @param bus message bus
