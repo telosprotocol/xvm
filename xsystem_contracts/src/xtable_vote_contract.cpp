@@ -6,6 +6,7 @@
 
 #include "xbase/xutl.h"
 #include "xbasic/xutility.h"
+#include "xchain_fork/xchain_upgrade_center.h"
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xcommon/xrole_type.h"
 #include "xdata/xgenesis_data.h"
@@ -227,7 +228,8 @@ void xtable_vote_contract::calc_advance_tickets(common::xaccount_address_t const
         node_total_votes -= votes;
     } else {
         auto const& fork_config = top::chain_fork::xtop_chain_fork_config_center::chain_fork_config();
-        if (!chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.blacklist_function_fork_point, logic_clock)) {
+        auto logic_clock = (top::base::xtime_utl::gmttime() - top::base::TOP_BEGIN_GMTIME) / 10;
+        if (!chain_fork::xtop_chain_fork_config_center::is_forked(fork_config.onchain_parameter_name_fork_point, logic_clock)) {
             auto min_votes_num = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_votes_num);
             XCONTRACT_ENSURE(votes >= min_votes_num, "xtable_vote_contract::handle_votes: lower than lowest votes");
         } else {
