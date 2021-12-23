@@ -330,14 +330,15 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
         throw;
     }
 
-    auto punish_interval_table_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_table_block);
-    auto punish_interval_time_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(punish_interval_time_block);
+    auto punish_interval_table_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(slash_interval_table_block);
+    auto punish_interval_time_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(slash_interval_time_block);
 
-    // get filter param
-    auto slash_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_publishment_threshold_value);
-    auto slash_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_publishment_threshold_value);
-    auto award_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_reward_threshold_value);
-    auto award_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_reward_threshold_value);
+        // get filter param
+    auto slash_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_slash_threshold_value);
+    auto slash_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_slash_threshold_value);
+    auto award_vote = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_awardcredit_threshold_value);
+    auto award_persent = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_awardcredit_threshold_value);
+
 
     // do slash
     std::vector<xaction_node_info_t> node_to_action;
