@@ -114,7 +114,7 @@ void xzec_vote_contract_new::setup() {
 int xzec_vote_contract_new::is_mainnet_activated() {
     xstake::xactivation_record record;
     auto const genesis_stage = get_property<contract_common::properties::xstring_property_t>(
-        state_accessor::properties::xtypeless_property_identifier_t{xstake::XPORPERTY_CONTRACT_REG_KEY}, common::xaccount_address_t{sys_contract_rec_registration_addr});
+        state_accessor::properties::xtypeless_property_identifier_t{xstake::XPORPERTY_CONTRACT_GENESIS_STAGE_KEY}, common::xaccount_address_t{sys_contract_rec_registration_addr});
     std::string value_str = genesis_stage.value();
     if (!value_str.empty()) {
         base::xstream_t stream(base::xcontext_t::instance(),
