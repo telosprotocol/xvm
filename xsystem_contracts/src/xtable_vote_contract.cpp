@@ -30,7 +30,7 @@ void xtable_vote_contract::setup() {
         xwarn("[xtable_vote_contract::setup] EXTRACT_TABLE_ID failed, node reward pid: %d, account: %s\n", getpid(), SELF_ADDRESS().c_str());
         return;
     }
-    
+
     // vote related
     std::map<std::string, uint64_t> adv_get_votes_detail;
     for (auto i = 1; i <= xstake::XPROPERTY_SPLITED_NUM; i++) {
@@ -91,7 +91,7 @@ void xtable_vote_contract::setup() {
 void xtable_vote_contract::voteNode(vote_info_map_t const & vote_info) {
     XMETRICS_TIME_RECORD("sysContract_tableVote_vote_node");
 
-    auto const & account = common::xaccount_address_t{SOURCE_ADDRESS()}; 
+    auto const & account = common::xaccount_address_t{SOURCE_ADDRESS()};
     xinfo("[xtable_vote_contract::voteNode] timer round: %" PRIu64 ", src_addr: %s, self addr: %s, pid: %d\n", TIME(), account.c_str(), SELF_ADDRESS().c_str(), getpid());
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
@@ -105,7 +105,7 @@ void xtable_vote_contract::voteNode(vote_info_map_t const & vote_info) {
 void xtable_vote_contract::unvoteNode(vote_info_map_t const & vote_info) {
     XMETRICS_TIME_RECORD("sysContract_tableVote_unvote_node");
 
-    auto const & account = common::xaccount_address_t{SOURCE_ADDRESS()}; 
+    auto const & account = common::xaccount_address_t{SOURCE_ADDRESS()};
     xinfo("[xtable_vote_contract::unvoteNode] timer round: %" PRIu64 ", src_addr: %s, self addr: %s, pid: %d\n", TIME(), account.c_str(), SELF_ADDRESS().c_str(), getpid());
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
@@ -172,7 +172,7 @@ std::map<std::string, uint64_t> xtable_vote_contract::get_table_votes_detail(com
         // here if not success, means account has no vote info yet, so vote_info_str is empty, using above default votes_table directly
         if (MAP_GET2(property, account.to_string(), vote_info_str)){
             xwarn("[xtable_vote_contract::handle_votes] get property empty, account %s", account.c_str());
-        }   
+        }
         if (!vote_info_str.empty()) {
             base::xstream_t stream(base::xcontext_t::instance(), (uint8_t *)vote_info_str.c_str(), (uint32_t)vote_info_str.size());
             stream >> votes_table;
@@ -226,7 +226,7 @@ void xtable_vote_contract::calc_advance_tickets(common::xaccount_address_t const
 
         node_total_votes -= votes;
     } else {
-        auto min_votes_num = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_votes_num);
+        auto min_votes_num = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_votes_pernode_num);
         XCONTRACT_ENSURE(votes >= min_votes_num, "xtable_vote_contract::handle_votes: lower than lowest votes");
 
         votes_table[adv_account.to_string()] += votes;
