@@ -229,15 +229,15 @@ bool xzec_reward_contract::reward_is_expire_v2(const uint64_t onchain_timer_roun
     xaccumulated_reward_record rew_record;
     get_accumulated_record(rew_record);// no need to check return value, rew_record has default value
     uint64_t old_time_height = record.activation_time + rew_record.last_issuance_time;
-    auto reward_issue_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(reward_distribute_interval);
-    xdbg("[xzec_reward_contract::reward_is_expire]  new_time_height %llu, old_time_height %llu, reward_issue_interval: %u\n",
-        new_time_height, old_time_height, reward_issue_interval);
-    if (new_time_height <= old_time_height || new_time_height - old_time_height < reward_issue_interval) {
+    auto reward_distribute_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(reward_distribute_interval);
+    xdbg("[xzec_reward_contract::reward_is_expire]  new_time_height %llu, old_time_height %llu, reward_distribute_interval: %u\n",
+        new_time_height, old_time_height, reward_distribute_interval);
+    if (new_time_height <= old_time_height || new_time_height - old_time_height < reward_distribute_interval) {
         return false;
     }
 
-    xinfo("[xzec_reward_contract::reward_is_expire] will reward, new_time_height %llu, old_time_height %llu, reward_issue_interval: %u\n",
-        new_time_height, old_time_height, reward_issue_interval);
+    xinfo("[xzec_reward_contract::reward_is_expire] will reward, new_time_height %llu, old_time_height %llu, reward_distribute_interval: %u\n",
+        new_time_height, old_time_height, reward_distribute_interval);
     return true;
 }
 
