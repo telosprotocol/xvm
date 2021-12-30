@@ -10,6 +10,7 @@
 #include "xchain_fork/xchain_upgrade_center.h"
 #include "xcodec/xmsgpack_codec.hpp"
 #include "xcommon/xrole_type.h"
+#include "xconfig/xpredefined_configurations.h"
 #include "xdata/xcodec/xmsgpack/xstandby_result_store_codec.hpp"
 #include "xdata/xelection/xstandby_node_info.h"
 #include "xdata/xnative_contract_address.h"
@@ -340,7 +341,8 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
 #endif
 
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
-    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, current_logic_time);
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(
+        fork_config.enable_fullnode_fork_point, 2 * XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval), current_logic_time);
 
     election::xstandby_node_info_t new_node_info;
     if (reg_node.can_be_rec()) {
