@@ -226,8 +226,8 @@ void xtable_vote_contract::calc_advance_tickets(common::xaccount_address_t const
 
         node_total_votes -= votes;
     } else {
-        auto min_votes_num = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_votes_pernode_num);
-        XCONTRACT_ENSURE(votes >= min_votes_num, "xtable_vote_contract::handle_votes: lower than lowest votes");
+        auto min_votes_pernode_num = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_votes_pernode_num);
+        XCONTRACT_ENSURE(votes >= min_votes_pernode_num, "xtable_vote_contract::handle_votes: lower than lowest votes");
 
         votes_table[adv_account.to_string()] += votes;
 
