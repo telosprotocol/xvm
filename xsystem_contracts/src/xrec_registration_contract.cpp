@@ -53,22 +53,22 @@ void xrec_registration_contract::setup() {
         xreg_node_info node_info;
         node_info.serialize_from(stream);
 
-        auto const old_role = static_cast<common::xlagacy_miner_type_t>(node_info.m_registered_role);
+        auto const old_role = static_cast<common::xlagacy_miner_type_t>(node_info.miner_type());
         switch (old_role) {
         case common::xlagacy_miner_type_t::advance:
-            node_info.m_registered_role = common::xminer_type_t::advance;
+            node_info.miner_type(common::xminer_type_t::advance);
             break;
 
         case common::xlagacy_miner_type_t::consensus:
-            node_info.m_registered_role = common::xminer_type_t::validator;
+            node_info.miner_type(common::xminer_type_t::validator);
             break;
 
         case common::xlagacy_miner_type_t::archive:
-            node_info.m_registered_role = common::xminer_type_t::archive;
+            node_info.miner_type(common::xminer_type_t::archive);
             break;
 
         case common::xlagacy_miner_type_t::edge:
-            node_info.m_registered_role = common::xminer_type_t::edge;
+            node_info.miner_type(common::xminer_type_t::edge);
             break;
 
         default:
@@ -174,7 +174,7 @@ void xrec_registration_contract::setup() {
     STRING_SET(XPORPERTY_CONTRACT_GENESIS_STAGE_KEY, value_str);
 #endif
 
-    xdbg("[xrec_registration_contract::setup] pid:%d\n", getpid());
+    xdbg("[xrec_registration_contract::setup] pid:%d", getpid());
     xreg_node_info node_info;
     {
         common::xnetwork_id_t network_id{top::config::to_chainid(XGET_CONFIG(chain_name))};
@@ -188,7 +188,11 @@ void xrec_registration_contract::setup() {
             node_info.m_account             = node_data.m_account;
             node_info.m_account_mortgage    = 0;
             node_info.m_genesis_node        = true;
-            node_info.m_registered_role     = common::xminer_type_t::edge | common::xminer_type_t::advance | common::xminer_type_t::validator;
+#if defined(XBUILD_DEV)
+            node_info.miner_type(common::xminer_type_t::edge | common::xminer_type_t::advance | common::xminer_type_t::validator | common::xminer_type_t::archive);
+#else
+            node_info.miner_type(common::xminer_type_t::edge | common::xminer_type_t::advance | common::xminer_type_t::validator);
+#endif
             node_info.m_network_ids.insert(network_id);
             node_info.nickname              = std::string("bootnode") + std::to_string(i + 1);
             node_info.consensus_public_key  = xpublic_key_t{node_data.m_publickey};
@@ -263,7 +267,7 @@ void xrec_registration_contract::registerNode2(const std::string & miner_type_na
     stream >> asset_out.m_amount;
 
     node_info.m_account = account;
-    node_info.m_registered_role = miner_type;
+    node_info.miner_type(miner_type);
 #if defined(XENABLE_MOCK_ZEC_STAKE)
     node_info.m_account_mortgage = 100000000000000;
 #else   // #if defined(XENABLE_MOCK_ZEC_STAKE)
@@ -290,8 +294,8 @@ void xrec_registration_contract::registerNode2(const std::string & miner_type_na
     init_node_credit(node_info, isforked);
 
     uint64_t const min_deposit = node_info.get_required_min_deposit();
-    xdbg(("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, transaction_type:%d, source action type: %d, m_deposit: %" PRIu64
-          ", min_deposit: %" PRIu64 ", account: %s"),
+    xdbg("[xrec_registration_contract::registerNode2] call xregistration_contract registerNode() pid:%d, transaction_type:%d, source action type: %d, m_deposit: %" PRIu64
+         ", min_deposit: %" PRIu64 ", account: %s",
          getpid(),
          trans_ptr->get_tx_type(),
          trans_ptr->get_source_action_type(),
@@ -366,7 +370,7 @@ void xrec_registration_contract::updateNodeInfo(const std::string & nickname, co
     XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeInfo: invalid node_type!");
 
     node_info.nickname          = nickname;
-    node_info.m_registered_role = miner_type;
+    node_info.miner_type(miner_type);
 
     uint64_t const min_deposit = node_info.get_required_min_deposit();
     if (updateDepositType == 1) { // stake deposit
@@ -840,17 +844,15 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
     XMETRICS_TIME_RECORD(XREG_CONTRACT "updateNodeType_ExecutionTime");
     std::string const& account = SOURCE_ADDRESS();
 
-    xdbg("[xrec_registration_contract::updateNodeType] pid: %d, balance: %lld, account: %s, node_types: %s\n",
-        getpid(), GET_BALANCE(), account.c_str(), node_types.c_str());
+    xdbg("[xrec_registration_contract::updateNodeType] pid: %d, balance: %lld, account: %s, node_types: %s", getpid(), GET_BALANCE(), account.c_str(), node_types.c_str());
 
     xreg_node_info node_info;
     auto ret = get_node_info(account, node_info);
     XCONTRACT_ENSURE(ret == 0, "xrec_registration_contract::updateNodeType: node not exist");
 
-
     auto const miner_type = common::to_miner_type(node_types);
     XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "xrec_registration_contract::updateNodeType: invalid node_type!");
-    XCONTRACT_ENSURE(miner_type != node_info.m_registered_role, "xrec_registration_contract::updateNodeType: node_types can not be same!");
+    XCONTRACT_ENSURE(miner_type != node_info.miner_type(), "xrec_registration_contract::updateNodeType: node_types can not be same!");
 
     const xtransaction_ptr_t trans_ptr = GET_TRANSACTION();
     XCONTRACT_ENSURE(!account.empty(), "xrec_registration_contract::updateNodeType: account must be not empty");
@@ -865,7 +867,7 @@ void xrec_registration_contract::updateNodeType(const std::string & node_types) 
         node_info.m_account_mortgage += asset_out.m_amount;
     }
 
-    node_info.m_registered_role  = miner_type;
+    node_info.miner_type(miner_type);
     uint64_t min_deposit = node_info.get_required_min_deposit();
     xdbg(("[xrec_registration_contract::updateNodeType] min_deposit: %" PRIu64 ", account: %s, account morgage: %llu\n"),
         min_deposit, account.c_str(), node_info.m_account_mortgage);

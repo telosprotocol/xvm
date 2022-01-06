@@ -234,14 +234,14 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
                                                          xstake::xreg_node_info const & node,
                                                          data::election::xstandby_result_store_t & standby_result_store) {
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
-    auto const archive_miner_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
 
     std::set<common::xnetwork_id_t> network_ids = node.m_network_ids;
 
     auto consensus_public_key = node.consensus_public_key;
     uint64_t rec_stake{0}, zec_stake{0}, auditor_stake{0}, validator_stake{0}, edge_stake{0}, archive_stake{0}, exchange_stake{0}, fullnode_stake{0};
     bool const rec{node.can_be_rec()}, zec{node.can_be_zec()}, auditor{node.can_be_auditor()}, validator{node.can_be_validator()}, edge{node.can_be_edge()},
-        archive{archive_miner_enabled ? node.can_be_archive() : node.legacy_can_be_archive()}, exchange{node.can_be_exchange()}, fullnode{node.can_be_fullnode()};
+        archive{fullnode_enabled ? node.can_be_archive() : node.legacy_can_be_archive()}, exchange{node.can_be_exchange()}, fullnode{node.can_be_fullnode()};
     if (rec) {
         rec_stake = node.rec_stake();
     }
@@ -274,7 +274,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
         fullnode_stake = node.fullnode_stake();
     }
 
-    auto const role_type = node.get_role_type();
+    auto const role_type = node.miner_type();
     XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
     XCONTRACT_ENSURE(node.get_required_min_deposit() <= node.deposit(),
                      "[xrec_standby_pool_contract_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() + ", role_type : " + common::to_string(role_type));
@@ -287,8 +287,6 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
     new_node_info.program_version = program_version;
 
     new_node_info.is_genesis_node = node.is_genesis_node();
-
-    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
 
     bool new_node{false};
     for (const auto network_id : network_ids) {
@@ -342,7 +340,7 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
 
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
     auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(
-        fork_config.enable_fullnode_fork_point, 2 * XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_election_interval), current_logic_time);
+        fork_config.enable_fullnode_fork_point, 2 * XGET_ONCHAIN_GOVERNANCE_PARAMETER(fullnode_election_interval), current_logic_time);
 
     election::xstandby_node_info_t new_node_info;
     if (reg_node.can_be_rec()) {
