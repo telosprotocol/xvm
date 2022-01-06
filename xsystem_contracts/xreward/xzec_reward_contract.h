@@ -16,8 +16,8 @@ using namespace xvm;
 using namespace xvm::xcontract;
 
 struct xreward_onchain_param_t {
-    uint32_t min_ratio_annual_total_reward;
-    uint32_t additional_issue_year_ratio;
+    uint32_t min_ratio_annual_total_reward; // onchain_param: min_mining_annual_ratio
+    uint32_t additional_issue_year_ratio; // onchain_param: mining_annual_ratio_from_reserve_pool
     uint32_t edge_reward_ratio;
     uint32_t archive_reward_ratio;
     uint32_t validator_reward_ratio;
@@ -173,7 +173,7 @@ private:
      * @param timer_round chain timer round
      */
     void        update_accumulated_issuance(uint64_t const issuance, uint64_t const timer_round);
-    
+
     /**
      * @brief
      *
@@ -285,7 +285,7 @@ private:
      * @param table_node_reward_detail record node reward details of every table
      * @param table_node_dividend_detail record dividend reward details of every table
      * @param table_total_rewards record total rewards of every table
-     */    
+     */
     void calc_table_rewards(xreward_property_param_t & property_param,
                             std::map<common::xaccount_address_t, top::xstake::uint128_t> const & node_reward_detail,
                             std::map<common::xaccount_address_t, top::xstake::uint128_t> const & node_dividend_detail,
@@ -301,7 +301,7 @@ private:
      * @param table_node_reward_detail node self reward detail calculated in calc_nodes_rewards
      * @param table_node_dividend_detail dividend reward detail calculated in calc_nodes_rewards
      * @param community_reward community reward calculated in calc_nodes_rewards
-     * @param actual_issuance actual issuance this time 
+     * @param actual_issuance actual issuance this time
      */
     void dispatch_all_reward_v3(const common::xlogic_time_t current_time,
                                 std::map<common::xaccount_address_t, top::xstake::uint128_t> & table_total_rewards,
@@ -496,10 +496,10 @@ private:
 
     /**
      * @brief calculate table contract address
-     * 
+     *
      * @param account account
      * @return address
-     */    
+     */
     common::xaccount_address_t calc_table_contract_address(common::xaccount_address_t const & account);
 };
 
