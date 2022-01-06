@@ -755,7 +755,7 @@ static void get_rec_nodes_map(observer_ptr<store::xstore_face_t const> store,
         if (reg_node_info.m_genesis_node) {
             j["registered_node_type"] = std::string{"advance,validator,edge,archive"};
         } else {
-            j["registered_node_type"] = common::to_string(reg_node_info.m_registered_role);
+            j["registered_node_type"] = common::to_string(reg_node_info.miner_type());
         }
         j["vote_amount"] = static_cast<unsigned long long>(reg_node_info.m_vote_amount);
         {
@@ -1755,7 +1755,7 @@ static void get_rec_nodes_map(common::xaccount_address_t const & contract_addres
         if (reg_node_info.m_genesis_node) {
             j["registered_node_type"] = std::string{"advance,validator,edge"};
         } else {
-            j["registered_node_type"] = common::to_string(reg_node_info.m_registered_role);
+            j["registered_node_type"] = common::to_string(reg_node_info.miner_type());
         }
         j["vote_amount"] = static_cast<unsigned long long>(reg_node_info.m_vote_amount);
         {
