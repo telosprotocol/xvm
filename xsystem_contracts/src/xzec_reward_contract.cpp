@@ -953,7 +953,7 @@ uint64_t xzec_reward_contract::calc_votes(std::map<common::xaccount_address_t, s
         xdbg("[xzec_reward_contract::calc_votes] map_nodes: account: %s, deposit: %llu, node_type: %s, votes: %llu",
              node.m_account.c_str(),
              node.deposit(),
-             node.m_genesis_node ? "advance,validator,edge" : common::to_string(node.m_registered_role).c_str(),
+             node.m_genesis_node ? "advance,validator,edge" : common::to_string(node.miner_type()).c_str(),
              node.m_vote_amount);
     }
     // valid auditor only
