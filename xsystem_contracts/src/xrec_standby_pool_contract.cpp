@@ -337,10 +337,6 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
 bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_info const & reg_node,
                                                          xstandby_node_info_t & standby_node_info,
                                                          common::xlogic_time_t const current_logic_time) const {
-#if defined(XENABLE_MOCK_ZEC_STAKE)
-    return false;
-#endif
-
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
     // make sure fullnode must be elected out before clearing auditor type.
     auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(
