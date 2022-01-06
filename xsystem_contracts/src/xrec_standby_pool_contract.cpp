@@ -274,10 +274,11 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
         fullnode_stake = node.fullnode_stake();
     }
 
-    auto const role_type = node.miner_type();
-    XCONTRACT_ENSURE(role_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
+    auto const miner_type = node.miner_type();
+    XCONTRACT_ENSURE(miner_type != common::xminer_type_t::invalid, "[xrec_standby_pool_contract_t][nodeJoinNetwork] fail: find invalid role in MAP");
     XCONTRACT_ENSURE(node.get_required_min_deposit() <= node.deposit(),
-                     "[xrec_standby_pool_contract_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() + ", role_type : " + common::to_string(role_type));
+                     "[xrec_standby_pool_contract_t][nodeJoinNetwork] account mortgage < required_min_deposit fail: " + node.m_account.value() +
+                         ", miner_type : " + common::to_string(miner_type));
 
     xdbg("[xrec_standby_pool_contract_t][nodeJoinNetwork] %s", node.m_account.c_str());
 
@@ -325,7 +326,9 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
             new_node_info.stake_container[common::xnode_type_t::fullnode] = fullnode_stake;
         }
 
-        new_node |= standby_result_store.result_of(network_id).insert2({node.m_account, new_node_info}).second;
+        if (!new_node) {
+            new_node = standby_result_store.result_of(network_id).insert2({node.m_account, new_node_info}).second;
+        }
     }
 
     return new_node;
@@ -339,6 +342,7 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
 #endif
 
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
+    // make sure fullnode must be elected out before clearing auditor type.
     auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(
         fork_config.enable_fullnode_fork_point, 2 * XGET_ONCHAIN_GOVERNANCE_PARAMETER(fullnode_election_interval), current_logic_time);
 
@@ -349,11 +353,12 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
     if (reg_node.can_be_zec()) {
         new_node_info.stake_container.insert({ common::xnode_type_t::zec, reg_node.zec_stake() });
     }
+    if (reg_node.can_be_fullnode()) {
+        new_node_info.stake_container.insert({common::xnode_type_t::fullnode, reg_node.fullnode_stake()});
+    }
     if (fullnode_enabled) {
-        if (reg_node.can_be_fullnode()) {
-            new_node_info.stake_container.insert({common::xnode_type_t::fullnode, reg_node.fullnode_stake()});
-        }
-        if (reg_node.can_be_archive()) {
+        // after fullnode enabled, archive node generates from genesis node. Normal advance miner won't be arhive node anymore.
+        if (reg_node.can_be_archive() || reg_node.is_genesis_node()) {
             new_node_info.stake_container.insert({common::xnode_type_t::storage_archive, reg_node.archive_stake()});
         }
     } else {
@@ -428,7 +433,10 @@ bool xtop_rec_standby_pool_contract::update_standby_result_store(std::map<common
             }
             it++;
         }
-        updated |= update_activated_state(standby_network_storage_result, activation_record);
+
+        if (!updated) {
+            updated = update_activated_state(standby_network_storage_result, activation_record);
+        }
     }
     return updated;
 }
