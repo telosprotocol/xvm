@@ -282,7 +282,14 @@ data::xfulltableblock_statistic_accounts xrole_context_t::fulltableblock_statist
 
             xfulltableblock_account_data_t res_account_data;
             for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                auto account_addr = node_service->get_group(group_xvip2)->get_node(slotid)->get_account();
+                auto const& account_group = node_service->get_group(group_xvip2);
+                // if empty, then just return current data
+                if (!account_group) {
+                    XMETRICS_GAUGE(metrics::xmetrics_tag_t::contract_table_statistic_empty_ptr, 1);
+                    xerror("[xfulltableblock_statistic_accounts xrole_context_t::fulltableblock_statistic_accounts] data miss, statistic accounts not the same");
+                    return res;
+                }
+                auto account_addr = account_group->get_node(slotid)->get_account();
                 res_account_data.account_data.emplace_back(std::move(account_addr));
             }
 
@@ -343,8 +350,8 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
             xassert(nullptr != account);
             return;
         }
-        xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(), 
-                                                         account->account_send_trans_number(), account->account_send_trans_hash(), 
+        xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(),
+                                                         account->account_send_trans_number(), account->account_send_trans_hash(),
                                                          info->action, action_params, timestamp, EXPIRE_DURATION);
 
         if (info->call_way == enum_call_action_way_t::consensus) {
@@ -381,8 +388,8 @@ void xrole_context_t::call_contract(const std::string & action_params, uint64_t 
         xassert(nullptr != account);
         return;
     }
-    xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(), 
-                                                     account->account_send_trans_number(), account->account_send_trans_hash(), 
+    xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(),
+                                                     account->account_send_trans_number(), account->account_send_trans_hash(),
                                                      info->action, action_params, timestamp, EXPIRE_DURATION);
 
     if (info->call_way == enum_call_action_way_t::consensus) {
@@ -412,8 +419,8 @@ void xrole_context_t::on_fulltableblock_event(common::xaccount_address_t const& 
         xassert(nullptr != account);
         return;
     }
-    xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(), 
-                                                     account->account_send_trans_number(), account->account_send_trans_hash(), 
+    xtransaction_ptr_t tx = xtx_factory::create_sys_contract_call_self_tx(address.value(),
+                                                     account->account_send_trans_number(), account->account_send_trans_hash(),
                                                      action_name, action_params, timestamp, EXPIRE_DURATION);
 
     auto const & driver_ids = m_driver->table_ids();
