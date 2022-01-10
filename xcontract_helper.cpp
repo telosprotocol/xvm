@@ -6,6 +6,7 @@
 #include "xcontract_helper.h"
 #include "xstore/xstore_error.h"
 #include "xvm/xerror/xvm_error.h"
+#include "xbasic/xerror/xthrow_error.h"
 
 using namespace top::data;
 
