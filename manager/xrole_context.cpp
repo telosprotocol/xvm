@@ -282,10 +282,11 @@ data::xfulltableblock_statistic_accounts xrole_context_t::fulltableblock_statist
 
             xfulltableblock_account_data_t res_account_data;
             for (std::size_t slotid = 0; slotid < group_account_data.account_statistics_data.size(); ++slotid) {
-                auto& account_group = node_service->get_group(group_xvip2);
+                auto const& account_group = node_service->get_group(group_xvip2);
                 // if empty, then just return current data
                 if (!account_group) {
-                    xdbg("[xfulltableblock_statistic_accounts xrole_context_t::fulltableblock_statistic_accounts] data miss, statistic accounts not the same")
+                    XMETRICS_GAUGE(metrics::xmetrics_tag_t::contract_table_statistic_empty_ptr, 1);
+                    xerror("[xfulltableblock_statistic_accounts xrole_context_t::fulltableblock_statistic_accounts] data miss, statistic accounts not the same");
                     return res;
                 }
                 auto account_addr = account_group->get_node(slotid)->get_account();
