@@ -68,7 +68,7 @@ private:
 
 
     bool do_unqualified_node_slash_internal(std::string const& last_slash_time_str, uint32_t summarize_tableblock_count, uint32_t slash_interval_table_block_param, uint32_t slash_interval_time_block_param , common::xlogic_time_t const timestamp,
-                                            xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshhold, uint32_t slash_persent_threshhold, uint32_t award_vote_threshhold, uint32_t award_persent_threshhold, std::vector<xaction_node_info_t>& node_to_action);
+                                            xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshold, uint32_t slash_persent_threshold, uint32_t award_vote_threshold, uint32_t award_persent_threshold, std::vector<xaction_node_info_t>& node_to_action);
 
     /**
      * @brief print the summarize info
@@ -99,20 +99,20 @@ private:
      * @return std::vector<data::xaction_node_info_t>  the node to slash or reward
      */
     std::vector<data::xaction_node_info_t>
-    filter_nodes(data::xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshhold, uint32_t slash_persent_threshhold, uint32_t award_vote_threshhold, uint32_t award_persent_threshhold);
+    filter_nodes(data::xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshold, uint32_t slash_persent_threshold, uint32_t award_vote_threshold, uint32_t award_persent_threshold);
 
     /**
      * @brief filter helper to filter out the slash node
      *
      * @param node_map  the summarized node info
-     * @param slash_vote_threshhold the vote threshhold to slash
-     * @param slash_persent_threshhold the persent of node to slash
-     * @param award_vote_threshhold the vote threshhold to award
-     * @param award_persent_threshhold the persent of node to award
+     * @param slash_vote_threshold the vote threshold to slash
+     * @param slash_persent_threshold the persent of node to slash
+     * @param award_vote_threshold the vote threshold to award
+     * @param award_persent_threshold the persent of node to award
      * @return std::vector<data::xaction_node_info_t>  the node to slash or reward
      */
     std::vector<data::xaction_node_info_t>
-    filter_helper(data::xunqualified_node_info_t const & node_map, uint32_t slash_vote_threshhold, uint32_t slash_persent_threshhold, uint32_t award_vote_threshhold, uint32_t award_persent_threshhold);
+    filter_helper(data::xunqualified_node_info_t const & node_map, uint32_t slash_vote_threshold, uint32_t slash_persent_threshold, uint32_t award_vote_threshold, uint32_t award_persent_threshold);
 
     /**
      * @brief get the latest tablefullblock from last read height

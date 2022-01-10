@@ -334,16 +334,16 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
     auto slash_interval_time_block_param = XGET_ONCHAIN_GOVERNANCE_PARAMETER(slash_interval_time_block);
 
     // get filter param
-    auto slash_vote_threshhold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_slash_threshold_value);
-    auto slash_persent_threshhold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_slash_threshold_value);
-    auto award_vote_threshhold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_awardcredit_threshold_value);
-    auto award_persent_threshhold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_awardcredit_threshold_value);
+    auto slash_vote_threshold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_slash_threshold_value);
+    auto slash_persent_threshold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_slash_threshold_value);
+    auto award_vote_threshold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_awardcredit_threshold_value);
+    auto award_persent_threshold = XGET_ONCHAIN_GOVERNANCE_PARAMETER(sign_block_ranking_awardcredit_threshold_value);
 
 
     // do slash
     std::vector<xaction_node_info_t> node_to_action;
     if(do_unqualified_node_slash_internal(last_slash_time_str, summarize_tableblock_count, slash_interval_table_block_param, slash_interval_time_block_param, timestamp,
-                                           summarize_info, slash_vote_threshhold, slash_persent_threshhold, award_vote_threshhold, award_persent_threshhold, node_to_action)) {
+                                           summarize_info, slash_vote_threshold, slash_persent_threshold, award_vote_threshold, award_persent_threshold, node_to_action)) {
 
         {
             XMETRICS_TIME_RECORD("sysContract_zecSlash_set_property_contract_extended_function_key");
@@ -370,7 +370,7 @@ void xzec_slash_info_contract::do_unqualified_node_slash(common::xlogic_time_t c
 
 
 bool xzec_slash_info_contract::do_unqualified_node_slash_internal(std::string const& last_slash_time_str, uint32_t summarize_tableblock_count, uint32_t slash_interval_table_block_param, uint32_t slash_interval_time_block_param , common::xlogic_time_t const timestamp,
-                                                                  xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshhold, uint32_t slash_persent_threshhold, uint32_t award_vote_threshhold, uint32_t award_persent_threshhold, std::vector<xaction_node_info_t>& node_to_action) {
+                                                                  xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshold, uint32_t slash_persent_threshold, uint32_t award_vote_threshold, uint32_t award_persent_threshold, std::vector<xaction_node_info_t>& node_to_action) {
 
     // check slash interval time
     auto result = slash_condition_check(last_slash_time_str, summarize_tableblock_count, slash_interval_table_block_param,
@@ -381,7 +381,7 @@ bool xzec_slash_info_contract::do_unqualified_node_slash_internal(std::string co
         return false;
     }
 
-    node_to_action = filter_nodes(summarize_info, slash_vote_threshhold, slash_persent_threshhold, award_vote_threshhold, award_persent_threshhold);
+    node_to_action = filter_nodes(summarize_info, slash_vote_threshold, slash_persent_threshold, award_vote_threshold, award_persent_threshold);
     if (node_to_action.empty()) {
         xinfo("[xzec_slash_info_contract][do_unqualified_node_slash_internal] filter nodes empty, time round: %" PRIu64 ": pid:%d",
             timestamp, getpid());
@@ -463,7 +463,7 @@ void xzec_slash_info_contract::pre_condition_process(xunqualified_node_info_t& s
 
 }
 
-std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshhold, uint32_t slash_persent_threshhold, uint32_t award_vote_threshhold, uint32_t award_persent_threshhold) {
+std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunqualified_node_info_t const & summarize_info, uint32_t slash_vote_threshold, uint32_t slash_persent_threshold, uint32_t award_vote_threshold, uint32_t award_persent_threshold) {
     std::vector<xaction_node_info_t> nodes_to_slash{};
 
     if (summarize_info.auditor_info.empty() && summarize_info.validator_info.empty()) {
@@ -471,7 +471,7 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunquali
         return nodes_to_slash;
     } else {
         // summarized info
-        nodes_to_slash = filter_helper(summarize_info, slash_vote_threshhold, slash_persent_threshhold, award_vote_threshhold, award_persent_threshhold);
+        nodes_to_slash = filter_helper(summarize_info, slash_vote_threshold, slash_persent_threshold, award_vote_threshold, award_persent_threshold);
 
     }
 
@@ -479,7 +479,7 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_nodes(xunquali
     return nodes_to_slash;
 }
 
-std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqualified_node_info_t const & node_map, uint32_t slash_vote_threshhold, uint32_t slash_persent_threshhold, uint32_t award_vote_threshhold, uint32_t award_persent_threshhold) {
+std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqualified_node_info_t const & node_map, uint32_t slash_vote_threshold, uint32_t slash_persent_threshold, uint32_t award_vote_threshold, uint32_t award_persent_threshold) {
     std::vector<xaction_node_info_t> res{};
 
     // do filter
@@ -495,17 +495,17 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqual
     std::sort(node_to_action.begin(), node_to_action.end(), [](xunqualified_filter_info_t const & lhs, xunqualified_filter_info_t const & rhs) {
         return lhs.vote_percent < rhs.vote_percent;
     });
-    // uint32_t slash_size = node_to_slash.size() * slash_persent_threshhold / 100 ?  node_to_slash.size() * slash_persent_threshhold / 100 : 1;
-    uint32_t slash_size = node_to_action.size() * slash_persent_threshhold / 100;
+    // uint32_t slash_size = node_to_slash.size() * slash_persent_threshold / 100 ?  node_to_slash.size() * slash_persent_threshold / 100 : 1;
+    uint32_t slash_size = node_to_action.size() * slash_persent_threshold / 100;
     for (size_t i = 0; i < slash_size; ++i) {
-        if (node_to_action[i].vote_percent < slash_vote_threshhold || 0 == node_to_action[i].vote_percent) {
+        if (node_to_action[i].vote_percent < slash_vote_threshold || 0 == node_to_action[i].vote_percent) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type});
         }
     }
 
-    uint32_t award_size = node_to_action.size() * award_persent_threshhold / 100;
+    uint32_t award_size = node_to_action.size() * award_persent_threshold / 100;
     for (int i = (int)node_to_action.size() - 1; i >= (int)(node_to_action.size() - award_size); --i) {
-        if (node_to_action[i].vote_percent > award_vote_threshhold) {
+        if (node_to_action[i].vote_percent > award_vote_threshold) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type, false});
         }
     }
@@ -523,17 +523,17 @@ std::vector<xaction_node_info_t> xzec_slash_info_contract::filter_helper(xunqual
         return lhs.vote_percent < rhs.vote_percent;
     });
 
-    // uint32_t slash_size = node_to_slash.size() * slash_persent_threshhold / 100 ?  node_to_slash.size() * slash_persent_threshhold / 100 : 1;
-    slash_size = node_to_action.size() * slash_persent_threshhold / 100;
+    // uint32_t slash_size = node_to_slash.size() * slash_persent_threshold / 100 ?  node_to_slash.size() * slash_persent_threshold / 100 : 1;
+    slash_size = node_to_action.size() * slash_persent_threshold / 100;
     for (size_t i = 0; i < slash_size; ++i) {
-        if (node_to_action[i].vote_percent < slash_vote_threshhold || 0 == node_to_action[i].vote_percent) {
+        if (node_to_action[i].vote_percent < slash_vote_threshold || 0 == node_to_action[i].vote_percent) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type});
         }
     }
 
-    award_size = node_to_action.size() * award_persent_threshhold / 100;
+    award_size = node_to_action.size() * award_persent_threshold / 100;
     for (int i = (int)node_to_action.size() - 1; i >= (int)(node_to_action.size() - award_size); --i) {
-        if (node_to_action[i].vote_percent > award_vote_threshhold) {
+        if (node_to_action[i].vote_percent > award_vote_threshold) {
             res.push_back(xaction_node_info_t{node_to_action[i].node_id, node_to_action[i].node_type, false});
         }
     }
