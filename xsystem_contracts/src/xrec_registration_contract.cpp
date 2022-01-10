@@ -33,7 +33,6 @@ using namespace top::data;
 NS_BEG2(top, xstake)
 
 #define TIMER_ADJUST_DENOMINATOR 10
-const std::string INITIAL_CREDITSCORE = "initial_creditscore";
 
 xrec_registration_contract::xrec_registration_contract(common::xnetwork_id_t const & network_id) : xbase_t{network_id} {}
 
@@ -991,8 +990,8 @@ void xrec_registration_contract::slash_staking_time(std::string const & node_add
         }
     }
 
-    auto lock_time_inc = XGET_ONCHAIN_GOVERNANCE_PARAMETER(backward_node_lock_duration_increment);
-    auto lock_time_max = XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_nodedeposit_lock_duration);
+    auto lock_time_inc = XGET_ONCHAIN_GOVERNANCE_PARAMETER(slash_nodedeposit_lock_duration_increment);
+    auto lock_time_max = XGET_ONCHAIN_GOVERNANCE_PARAMETER(slash_max_nodedeposit_lock_duration);
     s_info.m_punish_time = current_time;
     s_info.m_staking_lock_time += lock_time_inc;
     if (s_info.m_staking_lock_time > lock_time_max) {
@@ -1063,22 +1062,18 @@ void  xrec_registration_contract::init_node_credit(xreg_node_info& node_info, bo
     if (node_info.is_validator_node()) {
         if (node_info.m_validator_credit_numerator == 0 ) {
             if (isforked) {
-                auto const& initial_credit = config::config_register.value_or<std::string>(std::string{""}, INITIAL_CREDITSCORE);
-                xdbg("[xrec_registration_contract::init_node_credit] initial credit: %s", initial_credit.c_str());
-                node_info.m_validator_credit_numerator = base::xstring_utl::touint64(initial_credit);
+                node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(initial_creditscore);
             } else {
-                node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
+                node_info.m_validator_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_creditscore);
             }
         }
     }
     if (node_info.is_auditor_node()) {
         if (node_info.m_auditor_credit_numerator == 0) {
             if (isforked) {
-                auto const& initial_credit = config::config_register.value_or<std::string>(std::string{""}, INITIAL_CREDITSCORE);
-                xdbg("[xrec_registration_contract::init_node_credit] initial credit: %s", initial_credit.c_str());
-                node_info.m_auditor_credit_numerator = base::xstring_utl::touint64(initial_credit);
+                node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(initial_creditscore);
             } else {
-                node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_credit);
+                node_info.m_auditor_credit_numerator = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_creditscore);
             }
         }
     }
