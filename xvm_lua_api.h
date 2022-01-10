@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "xvm_define.h"
-#include "xbasic/xerror/xthrow_error.h"
+#include "xbasic/xerror/xerror.h"
 #include "xerror/xvm_error.h"
 #include "xcontract_helper.h"
 #include "xutility/xhash.h"

@@ -7,7 +7,7 @@
 #include "xvm/xvm_context.h"
 #include "xvm/xerror/xvm_error.h"
 #include "xdata_stream.h"
-#include "xbasic/xerror/xthrow_error.h"
+#include "xbasic/xerror/xerror.h"
 
 NS_BEG3(top, xvm, xcontract)
 
