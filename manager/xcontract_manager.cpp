@@ -496,6 +496,7 @@ static void get_election_result_property_data(observer_ptr<store::xstore_face_t 
                                               common::xaccount_address_t const & contract_address,
                                               std::string const & property_name,
                                               xjson_format_t const json_format,
+                                              bool compatible_mode,
                                               xJson::Value & json) {
     assert(contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr}       ||  // NOLINT
            contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr}       ||  // NOLINT
@@ -513,7 +514,7 @@ static void get_election_result_property_data(observer_ptr<store::xstore_face_t 
 
             for (auto const & election_result_info : election_network_result) {
                 auto const node_type = top::get<common::xnode_type_t const>(election_result_info);
-                std::string node_type_str = common::to_presentation_string(node_type);
+                std::string node_type_str = compatible_mode ? common::to_presentation_string_compatible(node_type) : common::to_presentation_string(node_type);
                 auto const & election_result = top::get<data::election::xelection_result_t>(election_result_info);
                 xJson::Value jn;
                 for (auto const & election_cluster_result_info : election_result) {
@@ -575,6 +576,7 @@ static void get_election_result_property_data(const xaccount_ptr_t unitstate,
                                               common::xaccount_address_t const & contract_address,
                                               std::string const & property_name,
                                               xjson_format_t const json_format,
+                                              bool compatible_mode,
                                               xJson::Value & json) {
     assert(contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
            contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
@@ -592,7 +594,7 @@ static void get_election_result_property_data(const xaccount_ptr_t unitstate,
 
             for (auto const & election_result_info : election_network_result) {
                 auto const node_type = top::get<common::xnode_type_t const>(election_result_info);
-                std::string node_type_str = common::to_presentation_string(node_type);
+                std::string node_type_str = compatible_mode ? common::to_presentation_string_compatible(node_type) : common::to_presentation_string(node_type);
                 auto const & election_result = top::get<data::election::xelection_result_t>(election_result_info);
                 xJson::Value jn;
                 for (auto const & election_cluster_result_info : election_result) {
@@ -654,6 +656,7 @@ static void get_rec_standby_pool_property_data(observer_ptr<store::xstore_face_t
                                                common::xaccount_address_t const & contract_address,
                                                std::string const property_name,
                                                xjson_format_t const json_format,
+                                               bool compatible_mode,
                                                xJson::Value & json) {
     assert(property_name == XPROPERTY_CONTRACT_STANDBYS_KEY);
     assert(contract_address == common::xaccount_address_t{sys_contract_rec_standby_pool_addr});
@@ -665,7 +668,7 @@ static void get_rec_standby_pool_property_data(observer_ptr<store::xstore_face_t
             auto const & standby_network_result = top::get<data::election::xstandby_network_storage_result_t>(standby_network_result_info).all_network_result();
             for (auto const & standby_result_info : standby_network_result) {
                 auto const node_type = top::get<common::xnode_type_t const>(standby_result_info);
-                std::string node_type_str = common::to_presentation_string(node_type);
+                std::string node_type_str = compatible_mode ? common::to_presentation_string_compatible(node_type) : common::to_presentation_string(node_type);
                 auto const standby_result = top::get<data::election::xstandby_result_t>(standby_result_info);
                 for (auto const & node_info : standby_result) {
                     auto const & node_id = top::get<common::xnode_id_t const>(node_info);
@@ -1606,7 +1609,7 @@ static void get_zec_reward_contract_property(std::string const & property_name,
     }
 }
 
-void xtop_contract_manager::get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, xJson::Value & json) const {
+void xtop_contract_manager::get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, bool compatible_mode, xJson::Value & json) const {
     if (contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
         contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
         contract_address == xaccount_address_t{sys_contract_rec_elect_edge_addr} ||     // NOLINT
@@ -1615,7 +1618,7 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
         contract_address == xaccount_address_t{sys_contract_rec_elect_fullnode_addr}) {
         return get_election_result_property_data(m_store, contract_address, json_format, json);
     } else if (contract_address == xaccount_address_t{sys_contract_rec_standby_pool_addr}) {
-        return get_rec_standby_pool_property_data(m_store, contract_address, XPROPERTY_CONTRACT_STANDBYS_KEY, json_format, json);
+        return get_rec_standby_pool_property_data(m_store, contract_address, XPROPERTY_CONTRACT_STANDBYS_KEY, json_format, compatible_mode, json);
     } else if (contract_address == xaccount_address_t{sys_contract_zec_standby_pool_addr}) {
         get_zec_standby_pool_property_data(m_store, contract_address, XPROPERTY_LAST_READ_REC_STANDBY_POOL_CONTRACT_BLOCK_HEIGHT, json);
         get_zec_standby_pool_property_data(m_store, contract_address, XPROPERTY_LAST_READ_REC_STANDBY_POOL_CONTRACT_LOGIC_TIME, json);
@@ -1683,6 +1686,7 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
 void xtop_contract_manager::get_contract_data(common::xaccount_address_t const & contract_address,
                                               std::string const & property_name,
                                               xjson_format_t const json_format,
+                                              bool compatible_mode,
                                               xJson::Value & json) const {
     if (contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
         contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
@@ -1696,9 +1700,9 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
             json[property_name] = res;
             return;
         }
-        return get_election_result_property_data(m_store, contract_address, property_name, json_format, json);
+        return get_election_result_property_data(m_store, contract_address, property_name, json_format, compatible_mode, json);
     } else if (contract_address == xaccount_address_t{sys_contract_rec_standby_pool_addr}) {
-        return get_rec_standby_pool_property_data(m_store, contract_address, property_name, json_format, json);
+        return get_rec_standby_pool_property_data(m_store, contract_address, property_name, json_format, compatible_mode, json);
     } else if (contract_address == xaccount_address_t{sys_contract_zec_standby_pool_addr}) {
         return get_zec_standby_pool_property_data(m_store, contract_address, property_name, json);
     } else if (contract_address == xaccount_address_t{sys_contract_zec_group_assoc_addr}) {
@@ -2202,6 +2206,7 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
                                               const xaccount_ptr_t unitstate,
                                               std::string const & property_name,
                                               xjson_format_t const json_format,
+                                              bool compatible_mode,
                                               xJson::Value & json) const {
     if (contract_address == xaccount_address_t{sys_contract_rec_elect_rec_addr} ||      // NOLINT
         contract_address == xaccount_address_t{sys_contract_rec_elect_zec_addr} ||      // NOLINT
@@ -2215,9 +2220,9 @@ void xtop_contract_manager::get_contract_data(common::xaccount_address_t const &
             json[property_name] = res;
             return;
         }
-        return get_election_result_property_data(unitstate, contract_address, property_name, json_format, json);
+        return get_election_result_property_data(unitstate, contract_address, property_name, json_format, compatible_mode, json);
     } else if (contract_address == xaccount_address_t{sys_contract_rec_standby_pool_addr}) {
-        return get_rec_standby_pool_property_data(m_store, contract_address, property_name, json_format, json);
+        return get_rec_standby_pool_property_data(m_store, contract_address, property_name, json_format, compatible_mode, json);
     } else if (contract_address == xaccount_address_t{sys_contract_zec_standby_pool_addr}) {
         return get_zec_standby_pool_property_data(m_store, contract_address, property_name, json);
     } else if (contract_address == xaccount_address_t{sys_contract_zec_group_assoc_addr}) {
