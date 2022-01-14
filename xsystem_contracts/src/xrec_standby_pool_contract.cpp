@@ -234,7 +234,7 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
                                                          xstake::xreg_node_info const & node,
                                                          data::election::xstandby_result_store_t & standby_result_store) {
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
-    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_election_fork_point, TIME());
 
     std::set<common::xnetwork_id_t> network_ids = node.m_network_ids;
 
@@ -340,7 +340,7 @@ bool xtop_rec_standby_pool_contract::update_standby_node(top::xstake::xreg_node_
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
     // make sure fullnode must be elected out before clearing auditor type.
     auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(
-        fork_config.enable_fullnode_fork_point, 2 * XGET_ONCHAIN_GOVERNANCE_PARAMETER(fullnode_election_interval), current_logic_time);
+        fork_config.enable_fullnode_election_fork_point, 2 * XGET_ONCHAIN_GOVERNANCE_PARAMETER(fullnode_election_interval), current_logic_time);
 
     election::xstandby_node_info_t new_node_info;
     if (reg_node.can_be_rec()) {
