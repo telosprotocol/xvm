@@ -823,7 +823,7 @@ void xrec_registration_contract::check_and_set_genesis_stage() {
     }
 
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
-    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_fork_point, TIME());
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_election_fork_point, TIME());
     bool active = check_registered_nodes_active(map_nodes, fullnode_enabled);
     if (active) {
         record.activated = 1;
