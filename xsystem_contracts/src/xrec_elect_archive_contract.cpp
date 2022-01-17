@@ -149,13 +149,6 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
         xvm::serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, sys_contract_rec_standby_pool_addr, data::XPROPERTY_CONTRACT_STANDBYS_KEY);
     auto standby_network_result = standby_result_store.result_of(network_id()).network_result();
 
-#if defined(DEBUG)
-    for (auto const & r : standby_network_result) {
-        auto const node_type = top::get<common::xnode_type_t const>(r);
-        xdbg("xrec_elect_archive_contract_t::archive_elect seeing %s", common::to_string(node_type).c_str());
-    }
-#endif
-
     std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> all_archive_election_result_store;
     for (auto index = 0; index < XGET_CONFIG(archive_group_count); ++index) {
         top::common::xgroup_id_t archive_gid{ static_cast<top::common::xgroup_id_t::value_type>(common::xarchive_group_id_value_begin + index) };
