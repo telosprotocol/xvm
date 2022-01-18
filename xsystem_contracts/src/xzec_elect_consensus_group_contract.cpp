@@ -361,15 +361,15 @@ void xtop_zec_elect_consensus_group_contract::elect(common::xzone_id_t const zon
 
 #if defined DEBUG
 
-    std::string log;
-    for (auto const & standby_result : standby_network_result.results()) {
-        log += " " + common::to_string(standby_result.first) + ": ";
-        for (auto const & result : standby_result.second.results()) {
-            log += result.first.to_string() + "|";
-        }
-    }
+    //std::string log;
+    //for (auto const & standby_result : standby_network_result.results()) {
+    //    log += " " + common::to_string(standby_result.first) + ": ";
+    //    for (auto const & result : standby_result.second.results()) {
+    //        log += result.first.to_string() + "|";
+    //    }
+    //}
 
-    xdbg("[zec contract][elect_non_genesis] elect sees standbys %s", log.c_str());
+    //xdbg("[zec contract][elect_non_genesis] elect sees standbys %s", log.c_str());
 
 #endif
 
