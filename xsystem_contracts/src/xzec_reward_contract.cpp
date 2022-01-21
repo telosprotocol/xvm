@@ -229,15 +229,15 @@ bool xzec_reward_contract::reward_is_expire_v2(const uint64_t onchain_timer_roun
     xaccumulated_reward_record rew_record;
     get_accumulated_record(rew_record);// no need to check return value, rew_record has default value
     uint64_t old_time_height = record.activation_time + rew_record.last_issuance_time;
-    auto reward_issue_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(reward_issue_interval);
-    xdbg("[xzec_reward_contract::reward_is_expire]  new_time_height %llu, old_time_height %llu, reward_issue_interval: %u\n",
-        new_time_height, old_time_height, reward_issue_interval);
-    if (new_time_height <= old_time_height || new_time_height - old_time_height < reward_issue_interval) {
+    auto reward_distribute_interval = XGET_ONCHAIN_GOVERNANCE_PARAMETER(reward_distribute_interval);
+    xdbg("[xzec_reward_contract::reward_is_expire]  new_time_height %llu, old_time_height %llu, reward_distribute_interval: %u\n",
+        new_time_height, old_time_height, reward_distribute_interval);
+    if (new_time_height <= old_time_height || new_time_height - old_time_height < reward_distribute_interval) {
         return false;
     }
 
-    xinfo("[xzec_reward_contract::reward_is_expire] will reward, new_time_height %llu, old_time_height %llu, reward_issue_interval: %u\n",
-        new_time_height, old_time_height, reward_issue_interval);
+    xinfo("[xzec_reward_contract::reward_is_expire] will reward, new_time_height %llu, old_time_height %llu, reward_distribute_interval: %u\n",
+        new_time_height, old_time_height, reward_distribute_interval);
     return true;
 }
 
@@ -714,8 +714,8 @@ void xzec_reward_contract::get_reward_param(const common::xlogic_time_t current_
     record.serialize_from(stream);
     activation_time = record.activation_time;
     // get onchain param
-    onchain_param.min_ratio_annual_total_reward = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_ratio_annual_total_reward);
-    onchain_param.additional_issue_year_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(additional_issue_year_ratio);
+    onchain_param.min_ratio_annual_total_reward = XGET_ONCHAIN_GOVERNANCE_PARAMETER(min_mining_annual_ratio);
+    onchain_param.additional_issue_year_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(mining_annual_ratio_from_reserve_pool) ;
     onchain_param.edge_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(edge_reward_ratio);
     onchain_param.archive_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(archive_reward_ratio);
     onchain_param.validator_reward_ratio = XGET_ONCHAIN_GOVERNANCE_PARAMETER(validator_reward_ratio);
