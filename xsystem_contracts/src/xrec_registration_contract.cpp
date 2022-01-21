@@ -53,21 +53,21 @@ void xrec_registration_contract::setup() {
         xreg_node_info node_info;
         node_info.serialize_from(stream);
 
-        auto const old_role = static_cast<common::xlagacy_miner_type_t>(node_info.miner_type());
+        auto const old_role = static_cast<common::xlegacy_miner_type_t>(node_info.miner_type());
         switch (old_role) {
-        case common::xlagacy_miner_type_t::advance:
+        case common::xlegacy_miner_type_t::advance:
             node_info.miner_type(common::xminer_type_t::advance);
             break;
 
-        case common::xlagacy_miner_type_t::consensus:
+        case common::xlegacy_miner_type_t::consensus:
             node_info.miner_type(common::xminer_type_t::validator);
             break;
 
-        case common::xlagacy_miner_type_t::archive:
+        case common::xlegacy_miner_type_t::archive:
             node_info.miner_type(common::xminer_type_t::archive);
             break;
 
-        case common::xlagacy_miner_type_t::edge:
+        case common::xlegacy_miner_type_t::edge:
             node_info.miner_type(common::xminer_type_t::edge);
             break;
 
