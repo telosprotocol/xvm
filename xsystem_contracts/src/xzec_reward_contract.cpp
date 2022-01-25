@@ -1122,6 +1122,7 @@ void xzec_reward_contract::calc_edge_workload_rewards(xreg_node_info const & nod
 void xzec_reward_contract::calc_archive_workload_rewards(xreg_node_info const & node,
                                                          std::vector<uint32_t> const & archive_num,
                                                          const top::xstake::uint128_t archive_workload_rewards,
+                                                         bool const fullnode_enabled,
                                                          top::xstake::uint128_t & reward_to_self) {
     XCONTRACT_ENSURE(archive_num.size() == num_type_idx_num, "archive_num not 3");
     auto divide_num = archive_num[valid_idx];
@@ -1129,8 +1130,19 @@ void xzec_reward_contract::calc_archive_workload_rewards(xreg_node_info const & 
     if (0 == divide_num) {
         return;
     }
-    if (node.deposit() == 0 || (!node.can_be_auditor() && !node.could_be_archive())) {
+
+    if (node.deposit() == 0) {
         return;
+    }
+
+    if (!fullnode_enabled) {
+        if (!node.legacy_can_be_archive()) {
+            return;
+        }
+    } else {
+        if (!node.can_be_archive()) {
+            return;
+        }
     }
     reward_to_self = archive_workload_rewards / divide_num;
     xdbg("[xzec_reward_contract::calc_archive_worklaod_rewards] account: %s, archive reward: [%llu, %u]",
@@ -1428,12 +1440,23 @@ void xzec_reward_contract::calc_nodes_rewards_v5(common::xlogic_time_t const cur
                 self_reward += reward_to_self;
             }
         }
-        if (node.legacy_could_be_archive()) {
-            top::xstake::uint128_t reward_to_self = 0;
-            calc_archive_workload_rewards(node, role_nums[archiver_idx], archive_workload_rewards, reward_to_self);
-            if (reward_to_self != 0) {
-                issue_detail.m_node_rewards[account.to_string()].m_archive_reward = reward_to_self;
-                self_reward += reward_to_self;
+        if (fullnode_enabled) {
+            if (node.could_be_archive()) {
+                top::xstake::uint128_t reward_to_self = 0;
+                calc_archive_workload_rewards(node, role_nums[archiver_idx], archive_workload_rewards, fullnode_enabled, reward_to_self);
+                if (reward_to_self != 0) {
+                    issue_detail.m_node_rewards[account.to_string()].m_archive_reward = reward_to_self;
+                    self_reward += reward_to_self;
+                }
+            }
+        } else {
+            if (node.legacy_could_be_archive()) {
+                top::xstake::uint128_t reward_to_self = 0;
+                calc_archive_workload_rewards(node, role_nums[archiver_idx], archive_workload_rewards, fullnode_enabled, reward_to_self);
+                if (reward_to_self != 0) {
+                    issue_detail.m_node_rewards[account.to_string()].m_archive_reward = reward_to_self;
+                    self_reward += reward_to_self;
+                }
             }
         }
         if (node.could_be_auditor()) {
