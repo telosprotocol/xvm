@@ -1129,7 +1129,7 @@ void xzec_reward_contract::calc_archive_workload_rewards(xreg_node_info const & 
     if (0 == divide_num) {
         return;
     }
-    if (!VALID_ARCHIVER(node)) {
+    if (node.deposit() == 0 || (!node.can_be_auditor() && !node.could_be_archive())) {
         return;
     }
     reward_to_self = archive_workload_rewards / divide_num;
@@ -1428,7 +1428,7 @@ void xzec_reward_contract::calc_nodes_rewards_v5(common::xlogic_time_t const cur
                 self_reward += reward_to_self;
             }
         }
-        if (node.could_be_archive()) {
+        if (node.legacy_could_be_archive()) {
             top::xstake::uint128_t reward_to_self = 0;
             calc_archive_workload_rewards(node, role_nums[archiver_idx], archive_workload_rewards, reward_to_self);
             if (reward_to_self != 0) {
