@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Telos Foundation & contributors
+// Copyright (c) 2017-2021 Telos Foundation & contributors
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -73,9 +73,9 @@ void xtop_rec_elect_archive_contract::elect_config_nodes(common::xlogic_time_t c
         if (archive_gid.value() == common::xarchive_group_id_value) {
             node_type = common::xnode_type_t::storage_archive;
             static_node_str = "archive_start_nodes";
-        } else if (archive_gid.value() == common::xfull_node_group_id_value) {
-            node_type = common::xnode_type_t::storage_full_node;
-            static_node_str = "fullnode_start_nodes";
+        } else if (archive_gid.value() == common::xexchange_group_id_value) {
+            node_type = common::xnode_type_t::storage_exchange;
+            static_node_str = "exchange_start_nodes";
         } else {
             xassert(false);
         }
@@ -143,18 +143,11 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
     xinfo("xrec_elect_archive_contract_t::archive_elect %" PRIu64, current_time);
 
     xrange_t<config::xgroup_size_t> archive_group_range{ 1, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size) };
-    xrange_t<config::xgroup_size_t> full_node_group_range{ 0, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size) };
+    xrange_t<config::xgroup_size_t> exchange_group_range{0, XGET_ONCHAIN_GOVERNANCE_PARAMETER(max_archive_group_size)};
 
     auto standby_result_store =
         xvm::serialization::xmsgpack_t<xstandby_result_store_t>::deserialize_from_string_prop(*this, sys_contract_rec_standby_pool_addr, data::XPROPERTY_CONTRACT_STANDBYS_KEY);
     auto standby_network_result = standby_result_store.result_of(network_id()).network_result();
-
-#if defined(DEBUG)
-    for (auto const & r : standby_network_result) {
-        auto const node_type = top::get<common::xnode_type_t const>(r);
-        xdbg("xrec_elect_archive_contract_t::archive_elect seeing %s", common::to_string(node_type).c_str());
-    }
-#endif
 
     std::unordered_map<common::xgroup_id_t, data::election::xelection_result_store_t> all_archive_election_result_store;
     for (auto index = 0; index < XGET_CONFIG(archive_group_count); ++index) {
@@ -169,8 +162,8 @@ void xtop_rec_elect_archive_contract::on_timer(const uint64_t current_time) {
         auto & election_network_result = election_result_store.result_of(network_id());
 
         auto range = archive_group_range;
-        if (archive_gid == common::xfull_node_group_id) {
-            range = full_node_group_range;
+        if (archive_gid == common::xexchange_group_id) {
+            range = exchange_group_range;
         }
 
         if (elect_group(common::xarchive_zone_id,
@@ -195,14 +188,14 @@ common::xnode_type_t xtop_rec_elect_archive_contract::standby_type(common::xzone
 
     assert(zid == common::xarchive_zone_id);
     assert(cid == common::xdefault_cluster_id);
-    assert(gid == common::xarchive_group_id || gid == common::xfull_node_group_id);
+    assert(gid == common::xarchive_group_id || gid == common::xexchange_group_id);
 
     if (gid == common::xarchive_group_id) {
         return common::xnode_type_t::storage_archive;
     }
 
-    if (gid == common::xfull_node_group_id) {
-        return common::xnode_type_t::storage_full_node;
+    if (gid == common::xexchange_group_id) {
+        return common::xnode_type_t::storage_exchange;
     }
 
     assert(false);

@@ -113,7 +113,7 @@ public:
      * @param address contract address
      * @param cluster_address contract cluster address
      */
-    void             register_contract_cluster_address(common::xaccount_address_t const & address, common::xaccount_address_t const & cluster_address);
+    void register_contract_cluster_address(common::xaccount_address_t const & address, common::xaccount_address_t const & cluster_address);
     /**
      * @brief Get the node service object
      *
@@ -157,10 +157,19 @@ public:
      */
     static int32_t get_account_from_xip(const xvip2_t & target_node, std::string& target_addr);
 
-    void get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, xJson::Value & json) const;
+    void get_contract_data(common::xaccount_address_t const & contract_address, xjson_format_t const json_format, bool compatible_mode, xJson::Value & json) const;
     void get_contract_data(common::xaccount_address_t const & contract_address, std::uint64_t const height, xjson_format_t const json_format, xJson::Value & json, std::error_code & ec) const;
-    void get_contract_data(common::xaccount_address_t const & contract_address, std::string const & property_name, xjson_format_t const json_format, xJson::Value & json) const;
-    void get_contract_data(common::xaccount_address_t const & contract_address, const xaccount_ptr_t unitstate, std::string const & property_name, xjson_format_t const json_format, xJson::Value & json) const;
+    void get_contract_data(common::xaccount_address_t const & contract_address,
+                           std::string const & property_name,
+                           xjson_format_t const json_format,
+                           bool compatible_mode,
+                           xJson::Value & json) const;
+    void get_contract_data(common::xaccount_address_t const & contract_address,
+                           const xaccount_ptr_t unitstate,
+                           std::string const & property_name,
+                           xjson_format_t const json_format,
+                           bool compatible_mode,
+                           xJson::Value & json) const;
     void get_contract_data(common::xaccount_address_t const & contract_address, std::string const & property_name, std::string const & key, xjson_format_t const json_format, xJson::Value & json) const;
 
 private:

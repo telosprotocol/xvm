@@ -163,7 +163,7 @@ private:
      *
      * @param node_info
      */
-    void        update_node_info(xreg_node_info & node_info);
+    void        update_node_info(xreg_node_info const & node_info);
 
     /**
      * @brief delete node info

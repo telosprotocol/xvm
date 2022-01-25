@@ -7,6 +7,8 @@
 #include "xvm/xvm_context.h"
 #include "xvm/xerror/xvm_error.h"
 #include "xdata_stream.h"
+#include "xbasic/xerror/xerror.h"
+
 NS_BEG3(top, xvm, xcontract)
 
 // FROM https://stackoverflow.com/questions/7858817/unpacking-a-tuple-to-call-a-matching-function-pointer

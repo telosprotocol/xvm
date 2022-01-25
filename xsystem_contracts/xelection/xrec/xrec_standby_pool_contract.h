@@ -38,7 +38,7 @@ private:
     void nodeJoinNetwork2(common::xaccount_address_t const & node_id,
                          common::xnetwork_id_t const & joined_network_id,
 #if defined XENABLE_MOCK_ZEC_STAKE
-                         common::xrole_type_t role_type,
+                         common::xminer_type_t role_type,
                          std::string const & pubkey,
                          uint64_t const stake,
 #endif
@@ -52,9 +52,12 @@ private:
 
     bool update_standby_result_store(std::map<common::xnode_id_t, xstake::xreg_node_info> const & registration_data,
                                      data::election::xstandby_result_store_t & standby_result_store,
-                                     xstake::xactivation_record const & activation_record);
+                                     xstake::xactivation_record const & activation_record,
+                                     common::xlogic_time_t const current_logic_time);
 
-    bool update_standby_node(top::xstake::xreg_node_info const & reg_node, top::data::election::xstandby_node_info_t & standby_node_info) const;
+    bool update_standby_node(top::xstake::xreg_node_info const & reg_node,
+                             top::data::election::xstandby_node_info_t & standby_node_info,
+                             common::xlogic_time_t const current_logic_time) const;
 
     bool update_activated_state(data::election::xstandby_network_storage_result_t & standby_network_storage_result, xstake::xactivation_record const & activation_record);
 };

@@ -64,7 +64,8 @@ public:
        {"con",common::xnode_type_t::consensus_validator},
        {"edge",common::xnode_type_t::edge},
        {"archive",common::xnode_type_t::storage_archive},
-       {"fullnode",common::xnode_type_t::storage_full_node},
+       {"exchange", common::xnode_type_t::storage_exchange},
+       {"fullnode", common::xnode_type_t::fullnode},
     };
 
     std::vector<standby_node_info> get_standby_config();
