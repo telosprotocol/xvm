@@ -268,7 +268,8 @@ private:
      * @param node_dividend_detail record dividend reward of accounts
      * @param community_reward record community reward to transfer
      */
-    void calc_nodes_rewards_v5(const common::xlogic_time_t issue_time_length,
+    void calc_nodes_rewards_v5(common::xlogic_time_t const current_time,
+                               common::xlogic_time_t const issue_time_length,
                                xreward_onchain_param_t const & onchain_param,
                                xreward_property_param_t & property_param,
                                xissue_detail & issue_detail,
@@ -340,7 +341,7 @@ private:
      * @param map_nodes nodes to count
      * @return count resualt
      */
-    std::vector<std::vector<uint32_t>> calc_role_nums(std::map<common::xaccount_address_t, xreg_node_info> const & map_nodes);
+    std::vector<std::vector<uint32_t>> calc_role_nums(std::map<common::xaccount_address_t, xreg_node_info> const & map_nodes, bool fullnode_enabled);
 
     /**
      * @brief set votes_detail into map_nodes and calculate total valid auditor votes
@@ -418,6 +419,7 @@ private:
     void calc_archive_workload_rewards(xreg_node_info const & node,
                                        std::vector<uint32_t> const & archive_num,
                                        const top::xstake::uint128_t archive_workload_rewards,
+                                       bool const fullnode_enabled,
                                        top::xstake::uint128_t & reward_to_self);
 
     /**
