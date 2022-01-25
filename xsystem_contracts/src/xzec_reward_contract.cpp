@@ -910,7 +910,7 @@ std::vector<std::vector<uint32_t>> xzec_reward_contract::calc_role_nums(std::map
                 // total archiver nums
                 role_nums[archiver_idx][total_idx]++;
                 // valid archiver nums
-                if (node.legacy_can_be_archive()) {
+                if (node.deposit() > 0 && node.legacy_can_be_archive()) {
                     role_nums[archiver_idx][valid_idx]++;
                 }
                 // deposit zero archiver nums
@@ -1342,7 +1342,11 @@ void xzec_reward_contract::calc_nodes_rewards_v5(common::xlogic_time_t const cur
     auto auditor_total_votes = calc_votes(property_param.votes_detail, property_param.map_nodes, account_votes);
 
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::get_chain_fork_config();
+#if defined(XENABLE_TESTS)
+    auto const fullnode_enabled = false;
+#else
     auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_related_func_fork_point, current_time);
+#endif
     std::vector<std::vector<uint32_t>> role_nums = calc_role_nums(property_param.map_nodes, fullnode_enabled);
 
     xinfo(
