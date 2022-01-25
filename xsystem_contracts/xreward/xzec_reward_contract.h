@@ -419,6 +419,7 @@ private:
     void calc_archive_workload_rewards(xreg_node_info const & node,
                                        std::vector<uint32_t> const & archive_num,
                                        const top::xstake::uint128_t archive_workload_rewards,
+                                       bool const fullnode_enabled,
                                        top::xstake::uint128_t & reward_to_self);
 
     /**
