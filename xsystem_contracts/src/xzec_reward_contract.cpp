@@ -6,6 +6,7 @@
 
 #include "xbase/xutl.h"
 #include "xbasic/xutility.h"
+#include "xchain_fork/xchain_upgrade_center.h"
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xdata/xgenesis_data.h"
 #include "xstake/xstake_algorithm.h"
@@ -193,7 +194,7 @@ void xzec_reward_contract::reward(const common::xlogic_time_t current_time, std:
     std::map<common::xaccount_address_t, top::xstake::uint128_t> node_reward_detail;   // <node, self reward>
     std::map<common::xaccount_address_t, top::xstake::uint128_t> node_dividend_detail; // <node, dividend reward>
     top::xstake::uint128_t community_reward;    // community reward
-    calc_nodes_rewards_v5(current_time - activation_time, onchain_param, property_param, issue_detail, node_reward_detail, node_dividend_detail, community_reward);
+    calc_nodes_rewards_v5(current_time, current_time - activation_time, onchain_param, property_param, issue_detail, node_reward_detail, node_dividend_detail, community_reward);
     std::map<common::xaccount_address_t, std::map<common::xaccount_address_t, top::xstake::uint128_t>> table_nodes_rewards;   // <table, <node, reward>>
     std::map<common::xaccount_address_t, std::map<common::xaccount_address_t, top::xstake::uint128_t>> table_vote_rewards;    // <table, <node be voted, reward>>
     std::map<common::xaccount_address_t, top::xstake::uint128_t> contract_rewards; // <table, total reward>
@@ -847,7 +848,7 @@ top::xstake::uint128_t xzec_reward_contract::calc_total_issuance(const common::x
     return calc_issuance_internal(time, record.last_issuance_time, minimum_issuance, additional_issue_year_ratio, record.issued_until_last_year_end);
 }
 
-std::vector<std::vector<uint32_t>> xzec_reward_contract::calc_role_nums(std::map<common::xaccount_address_t, xreg_node_info> const & map_nodes) {
+std::vector<std::vector<uint32_t>> xzec_reward_contract::calc_role_nums(std::map<common::xaccount_address_t, xreg_node_info> const & map_nodes, bool fullnode_enabled) {
     std::vector<std::vector<uint32_t>> role_nums;
     // vector init
     role_nums.resize(role_type_idx_num);
@@ -891,16 +892,31 @@ std::vector<std::vector<uint32_t>> xzec_reward_contract::calc_role_nums(std::map
                 role_nums[edger_idx][deposit_zero_num]++;
             }
         }
-        if (node.could_be_archive()) {
-            // total archiver nums
-            role_nums[archiver_idx][total_idx]++;
-            // valid archiver nums
-            if (VALID_ARCHIVER(node)) {
-                role_nums[archiver_idx][valid_idx]++;
+        if (fullnode_enabled) {
+            if (node.could_be_archive()) {
+                // total archiver nums
+                role_nums[archiver_idx][total_idx]++;
+                // valid archiver nums
+                if (node.deposit() > 0 && node.can_be_archive()) {
+                    role_nums[archiver_idx][valid_idx]++;
+                }
+                // deposit zero archiver nums
+                if (node.deposit() == 0) {
+                    role_nums[archiver_idx][deposit_zero_num]++;
+                }
             }
-            // deposit zero archiver nums
-            if (node.deposit() == 0) {
-                role_nums[archiver_idx][deposit_zero_num]++;
+        } else {
+            if (node.legacy_could_be_archive()) {
+                // total archiver nums
+                role_nums[archiver_idx][total_idx]++;
+                // valid archiver nums
+                if (node.legacy_can_be_archive()) {
+                    role_nums[archiver_idx][valid_idx]++;
+                }
+                // deposit zero archiver nums
+                if (node.deposit() == 0) {
+                    role_nums[archiver_idx][deposit_zero_num]++;
+                }
             }
         }
         if (node.could_be_auditor()) {
@@ -1291,7 +1307,8 @@ common::xaccount_address_t xzec_reward_contract::calc_table_contract_address(com
     return common::xaccount_address_t{table_address};
 }
 
-void xzec_reward_contract::calc_nodes_rewards_v5(const common::xlogic_time_t issue_time_length,
+void xzec_reward_contract::calc_nodes_rewards_v5(common::xlogic_time_t const current_time,
+                                                 common::xlogic_time_t const issue_time_length,
                                                  xreward_onchain_param_t const & onchain_param,
                                                  xreward_property_param_t & property_param,
                                                  xissue_detail & issue_detail,
@@ -1323,7 +1340,10 @@ void xzec_reward_contract::calc_nodes_rewards_v5(const common::xlogic_time_t iss
     // step 2: calculate different votes and role nums
     std::map<common::xaccount_address_t, uint64_t> account_votes;
     auto auditor_total_votes = calc_votes(property_param.votes_detail, property_param.map_nodes, account_votes);
-    std::vector<std::vector<uint32_t>> role_nums = calc_role_nums(property_param.map_nodes);
+
+    auto const & fork_config = chain_fork::xchain_fork_config_center_t::get_chain_fork_config();
+    auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_related_func_fork_point, current_time);
+    std::vector<std::vector<uint32_t>> role_nums = calc_role_nums(property_param.map_nodes, fullnode_enabled);
 
     xinfo(
         "[xzec_reward_contract::calc_nodes_rewards] issue_time_length: %llu, "
