@@ -234,7 +234,11 @@ bool xtop_rec_standby_pool_contract::nodeJoinNetworkImpl(std::string const & pro
                                                          xstake::xreg_node_info const & node,
                                                          data::election::xstandby_result_store_t & standby_result_store) {
     auto const & fork_config = chain_fork::xchain_fork_config_center_t::chain_fork_config();
+#if defined(XENABLE_TESTS)
+    auto const fullnode_enabled = true;
+#else
     auto const fullnode_enabled = chain_fork::xchain_fork_config_center_t::is_forked(fork_config.enable_fullnode_election_fork_point, TIME());
+#endif
 
     std::set<common::xnetwork_id_t> network_ids = node.m_network_ids;
 
