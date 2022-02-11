@@ -2,13 +2,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
+
 #include "xchain_upgrade/xchain_data_processor.h"
 #include "xcommon/xip.h"
-#include "xdata/xgenesis_data.h"
 #include "xdata/xfull_tableblock.h"
+#include "xdata/xgenesis_data.h"
+#include "xdata/xnative_contract_address.h"
 #include "xstake/xstake_algorithm.h"
 #include "xvm/manager/xcontract_manager.h"
-#include "xvm/xsystem_contracts/xslash/xzec_slash_info_contract.h"
 
 
 using namespace top::data;
@@ -25,7 +27,7 @@ void xzec_slash_info_contract::setup() {
     // initialize map key
     MAP_CREATE(xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY);
     std::vector<std::pair<std::string, std::string>> db_kv_131;
-    chain_data::xchain_data_processor_t::get_stake_map_property(SELF_ADDRESS(), xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, db_kv_131);
+    chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{SELF_ADDRESS()}, xstake::XPORPERTY_CONTRACT_UNQUALIFIED_NODE_KEY, db_kv_131);
     process_reset_data(db_kv_131);
     MAP_CREATE(xstake::XPROPERTY_CONTRACT_TABLEBLOCK_NUM_KEY);
 

@@ -7,6 +7,7 @@
 #include "xcommon/xlogic_time.h"
 #include "xdata/xslash.h"
 #include "xdata/xblock_statistics_data.h"
+#include "xvledger/xvcnode.h"
 #include "xvm/xcontract/xcontract_base.h"
 #include "xvm/xcontract/xcontract_exec.h"
 

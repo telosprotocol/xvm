@@ -40,7 +40,7 @@ void xrec_proposal_contract::setup() {
     STRING_CREATE(CURRENT_VOTED_PROPOSAL);
 
     top::chain_data::data_processor_t data;
-    top::chain_data::xtop_chain_data_processor::get_contract_data(SELF_ADDRESS(), data);
+    top::chain_data::xtop_chain_data_processor::get_contract_data(common::xlegacy_account_address_t{SELF_ADDRESS()}, data);
     TOP_TOKEN_INCREASE(data.top_balance);
 }
 
