@@ -32,7 +32,7 @@ void xtop_table_reward_claiming_contract::setup() {
             for (auto j = 0; j < old_tables_count; j++) {
                 auto table_addr = std::string{sys_contract_sharding_reward_claiming_addr} + "@" + base::xstring_utl::tostring(j);
                 std::vector<std::pair<std::string, std::string>> db_kv_121;
-                chain_data::xchain_data_processor_t::get_stake_map_property(common::xaccount_address_t{table_addr}, property, db_kv_121);
+                chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{table_addr}, property, db_kv_121);
                 for (auto const & _p : db_kv_121) {
                     base::xvaccount_t vaccount{_p.first};
                     auto account_table_id = vaccount.get_ledger_subaddr();
@@ -56,7 +56,7 @@ void xtop_table_reward_claiming_contract::setup() {
         for (auto i = 0; i < old_tables_count; i++) {
             auto table_addr = std::string{sys_contract_sharding_reward_claiming_addr} + "@" + base::xstring_utl::tostring(i);
             std::vector<std::pair<std::string, std::string>> db_kv_124;
-            chain_data::xchain_data_processor_t::get_stake_map_property(common::xaccount_address_t{table_addr}, XPORPERTY_CONTRACT_NODE_REWARD_KEY, db_kv_124);
+            chain_data::xchain_data_processor_t::get_stake_map_property(common::xlegacy_account_address_t{table_addr}, XPORPERTY_CONTRACT_NODE_REWARD_KEY, db_kv_124);
             for (auto const & _p : db_kv_124) {
                 base::xvaccount_t vaccount{_p.first};
                 auto account_table_id = vaccount.get_ledger_subaddr();
